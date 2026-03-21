@@ -1,12 +1,6 @@
-import { AuthMode } from "../../types";
-import { getStoredGeminiToken } from "../storage";
-import {
-  setApplyStatus,
-  setAuthStatus,
-  showMainApp,
-  showOnboarding,
-  appendMessage,
-} from "../ui";
+/* global HTMLElement, console */
+
+import { setApplyStatus, setAuthStatus, showMainApp, showOnboarding, appendMessage } from "../ui";
 
 export interface AuthUIContext {
   authStatusEl: HTMLElement | null;

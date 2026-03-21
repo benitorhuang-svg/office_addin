@@ -1,3 +1,5 @@
+/* global document, HTMLElement, HTMLSelectElement */
+
 export interface ModelSelectorProps {
   id: string;
   models: string[];
@@ -5,7 +7,12 @@ export interface ModelSelectorProps {
   onChange: (value: string) => void;
 }
 
-export function createModelSelector({ id, models, selectedModel, onChange }: ModelSelectorProps): HTMLElement {
+export function createModelSelector({
+  id,
+  models,
+  selectedModel,
+  onChange,
+}: ModelSelectorProps): HTMLElement {
   const wrapper = document.createElement("div");
   wrapper.className = "selector-pill-mini";
 

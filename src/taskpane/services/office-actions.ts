@@ -5,6 +5,8 @@ import {
   insertTextIntoPowerPoint,
 } from "./powerpoint-actions";
 import { applyOfficeActions, getWordContext, insertTextIntoWord } from "./word-actions";
+/* global Office */
+
 import { OfficeAction, OfficeContextPayload } from "../types";
 
 function getHostType(): Office.HostType | "" {

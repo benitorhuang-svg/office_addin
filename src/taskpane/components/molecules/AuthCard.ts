@@ -1,3 +1,5 @@
+/* global document, HTMLElement */
+
 import { createButton } from "../atoms/Button";
 import { createInput } from "../atoms/Input";
 

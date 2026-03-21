@@ -19,9 +19,7 @@ app.use(bodyParser.json());
 
 // Request logging middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  if (/^\/(auth|api\/copilot)/.test(req.path)) {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  }
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 

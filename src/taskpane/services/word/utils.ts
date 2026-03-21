@@ -1,3 +1,5 @@
+/* global fetch, FileReader */
+
 /**
  * Atomic helper for image processing before Word insertion.
  */

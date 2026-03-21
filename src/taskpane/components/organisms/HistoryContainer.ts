@@ -1,6 +1,8 @@
+/* global document, HTMLElement */
+
 export function createHistoryContainer(): HTMLElement {
   const container = document.createElement("div");
-  container.id = "history";
+  container.id = "chat-history";
   container.className = "org-history-container atom-text";
   container.setAttribute("aria-live", "polite");
 
@@ -8,7 +10,7 @@ export function createHistoryContainer(): HTMLElement {
   welcome.className = "welcome-message-container";
   welcome.innerHTML = `
     <div class="welcome-header">
-      你好！我是 <strong>office_Agent</strong>，<span>你的文案助手</span>
+      歡迎使用文案助手
     </div>
     <div class="welcome-capabilities">
        <div class="capability-item">📝 撰寫、編輯文件內容</div>

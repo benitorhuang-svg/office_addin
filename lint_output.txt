@@ -1,0 +1,229 @@
+﻿
+> office-addin-taskpane@0.0.1 lint
+> office-addin-lint check
+
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\atoms\Button.ts
+  15:18  error  'HTMLButtonElement' is not defined  no-undef
+  16:15  error  'document' is not defined           no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\atoms\Input.ts
+  13:17  error  'HTMLInputElement' is not defined  no-undef
+  14:17  error  'document' is not defined          no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\molecules\AuthCard.ts
+  20:26  error  'HTMLElement' is not defined  no-undef
+  21:16  error  'document' is not defined     no-undef
+  24:18  error  'document' is not defined     no-undef
+  27:17  error  'document' is not defined     no-undef
+  34:16  error  'document' is not defined     no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\molecules\ChatBubble.ts
+   7:77  error  'HTMLElement' is not defined        no-undef
+   8:19  error  'document' is not defined           no-undef
+  30:59  error  'HTMLButtonElement' is not defined  no-undef
+  34:9   error  'navigator' is not defined          no-undef
+  36:11  error  'setTimeout' is not defined         no-undef
+  43:65  error  'HTMLButtonElement' is not defined  no-undef
+  49:9   error  'setTimeout' is not defined         no-undef
+  56:20  error  'document' is not defined           no-undef
+  60:20  error  'document' is not defined           no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\molecules\ModelSelector.ts
+  13:25  error  'HTMLElement' is not defined        no-undef
+  14:19  error  'document' is not defined           no-undef
+  17:18  error  'document' is not defined           no-undef
+  23:20  error  'document' is not defined           no-undef
+  31:32  error  'HTMLSelectElement' is not defined  no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\molecules\PromptGroup.ts
+  12:3   error  'presets' is defined but never used         @typescript-eslint/no-unused-vars
+  13:3   error  'selectedPreset' is defined but never used  @typescript-eslint/no-unused-vars
+  14:3   error  'onPresetChange' is defined but never used  @typescript-eslint/no-unused-vars
+  15:23  error  'HTMLElement' is not defined                no-undef
+  16:17  error  'document' is not defined                   no-undef
+  20:19  error  'document' is not defined                   no-undef
+  23:20  error  'document' is not defined                   no-undef
+  43:15  error  'document' is not defined                   no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\molecules\TypingIndicator.ts
+  1:42  error  'HTMLElement' is not defined  no-undef
+  2:21  error  'document' is not defined     no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\organisms\Header.ts
+  13:3   error  'brandName' is defined but never used  @typescript-eslint/no-unused-vars
+  20:18  error  'document' is not defined              no-undef
+  23:15  error  'document' is not defined              no-undef
+  26:19  error  'document' is not defined              no-undef
+  29:21  error  'document' is not defined              no-undef
+  41:21  error  'document' is not defined              no-undef
+  48:20  error  'document' is not defined              no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\organisms\HistoryContainer.ts
+  1:43  error  'HTMLElement' is not defined  no-undef
+  2:21  error  'document' is not defined     no-undef
+  7:19  error  'document' is not defined     no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\components\organisms\Onboarding.ts
+   4:45  error  'HTMLElement' is not defined  no-undef
+   5:21  error  'document' is not defined     no-undef
+   8:25  error  'document' is not defined     no-undef
+  31:21  error  'document' is not defined     no-undef
+  35:18  error  'document' is not defined     no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\api.ts
+   41:57  error  'RequestInit' is not defined  no-undef
+   43:20  error  'window' is not defined       no-undef
+   49:20  error  'fetch' is not defined        no-undef
+   51:7   error  'console' is not defined      no-undef
+  116:27  error  'TextDecoder' is not defined  no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\auth\gemini-provider.ts
+  12:16  error  'document' is not defined          no-undef
+  12:54  error  'HTMLInputElement' is not defined  no-undef
+  35:14  error  'err' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\auth\github-provider.ts
+   1:11  error  'Office' is defined but never used          @typescript-eslint/no-unused-vars
+   2:26  error  'getStoredToken' is defined but never used  @typescript-eslint/no-unused-vars
+  18:13  error  Empty block statement                       no-empty
+  29:16  error  'document' is not defined                   no-undef
+  29:54  error  'HTMLInputElement' is not defined           no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\auth\orchestrator.ts
+   1:11  error  'Office' is defined but never used  @typescript-eslint/no-unused-vars
+  37:5   error  'window' is not defined             no-undef
+  48:45  error  'HTMLElement' is not defined        no-undef
+  58:7   error  'setTimeout' is not defined         no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\auth\ui-bridge.ts
+   1:10  error  'AuthMode' is defined but never used              @typescript-eslint/no-unused-vars
+   2:10  error  'getStoredGeminiToken' is defined but never used  @typescript-eslint/no-unused-vars
+   6:17  error  'HTMLElement' is not defined                      no-undef
+   7:18  error  'HTMLElement' is not defined                      no-undef
+   8:14  error  'HTMLElement' is not defined                      no-undef
+  34:5   error  'console' is not defined                          no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\chat-orchestrator.ts
+    1:10  error  'CopilotResponse' is defined but never used       @typescript-eslint/no-unused-vars
+    1:27  error  'WritingPreset' is defined but never used         @typescript-eslint/no-unused-vars
+    7:10  error  'getStoredGeminiToken' is defined but never used  @typescript-eslint/no-unused-vars
+    8:10  error  'getSelectedPreset' is defined but never used     @typescript-eslint/no-unused-vars
+   11:14  error  'HTMLElement' is not defined                      no-undef
+   12:16  error  'HTMLElement' is not defined                      no-undef
+   13:13  error  'HTMLTextAreaElement' is not defined              no-undef
+   14:12  error  'HTMLButtonElement' is not defined                no-undef
+   15:15  error  'HTMLElement' is not defined                      no-undef
+   16:17  error  'HTMLElement' is not defined                      no-undef
+   91:74  error  'HTMLElement' is not defined                      no-undef
+   92:72  error  'HTMLElement' is not defined                      no-undef
+  116:33  error  'HTMLElement' is not defined                      no-undef
+  126:29  error  'HTMLElement' is not defined                      no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\office-actions.ts
+  10:25  error  'Office' is not defined  no-undef
+  11:40  error  'Office' is not defined  no-undef
+  11:58  error  'Office' is not defined  no-undef
+  12:12  error  'Office' is not defined  no-undef
+  19:16  error  'Office' is not defined  no-undef
+  22:16  error  'Office' is not defined  no-undef
+  31:16  error  'Office' is not defined  no-undef
+  34:16  error  'Office' is not defined  no-undef
+  45:16  error  'Office' is not defined  no-undef
+  48:16  error  'Office' is not defined  no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\powerpoint-actions.ts
+  1:11  error  'PowerPoint' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\presets.ts
+  33:17  error  'HTMLSelectElement' is not defined  no-undef
+  41:5   error  'window' is not defined             no-undef
+  45:20  error  'document' is not defined           no-undef
+  55:17  error  'HTMLSelectElement' is not defined  no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\storage.ts
+   8:10  error  'window' is not defined  no-undef
+  12:3   error  'window' is not defined  no-undef
+  13:3   error  'window' is not defined  no-undef
+  17:3   error  'window' is not defined  no-undef
+  18:3   error  'window' is not defined  no-undef
+  19:3   error  'window' is not defined  no-undef
+  23:10  error  'window' is not defined  no-undef
+  27:3   error  'window' is not defined  no-undef
+  28:3   error  'window' is not defined  no-undef
+  32:10  error  'window' is not defined  no-undef
+  36:3   error  'window' is not defined  no-undef
+  40:10  error  'window' is not defined  no-undef
+  44:3   error  'window' is not defined  no-undef
+  48:10  error  'window' is not defined  no-undef
+  52:3   error  'window' is not defined  no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\ui.ts
+    7:14  error  'HTMLElement' is not defined            no-undef
+   11:4   error  'HTMLElement' is not defined            no-undef
+   18:3   error  'requestAnimationFrame' is not defined  no-undef
+   28:48  error  'HTMLElement' is not defined            no-undef
+   36:21  error  'document' is not defined               no-undef
+   40:43  error  'HTMLElement' is not defined            no-undef
+   46:47  error  'HTMLElement' is not defined            no-undef
+   51:45  error  'HTMLElement' is not defined            no-undef
+   57:22  error  'HTMLElement' is not defined            no-undef
+   67:16  error  'HTMLSelectElement' is not defined      no-undef
+   76:20  error  'document' is not defined               no-undef
+   85:25  error  'document' is not defined               no-undef
+   88:5   error  'setTimeout' is not defined             no-undef
+   95:26  error  'document' is not defined               no-undef
+   96:19  error  'document' is not defined               no-undef
+  106:26  error  'document' is not defined               no-undef
+  107:19  error  'document' is not defined               no-undef
+  114:22  error  'document' is not defined               no-undef
+  114:72  error  'HTMLButtonElement' is not defined      no-undef
+  115:20  error  'document' is not defined               no-undef
+  116:20  error  'document' is not defined               no-undef
+  116:70  error  'HTMLElement' is not defined            no-undef
+  129:45  error  'HTMLElement' is not defined            no-undef
+  129:77  error  'HTMLElement' is not defined            no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\word\orchestrator.ts
+  76:5  warning  Calling load on the navigation property 'isNullObject' slows down your add-in  office-addins/no-navigational-load
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\word\streaming.ts
+  37:13  warning  Calling context.sync() inside a loop can lead to poor performance  office-addins/no-context-sync-in-loop
+  40:32  error    'setTimeout' is not defined                                        no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\services\word\utils.ts
+   5:26  error  'fetch' is not defined       no-undef
+  12:24  error  'FileReader' is not defined  no-undef
+
+C:\Users\benit\Desktop\office_addin\WordAgent\src\taskpane\taskpane.ts
+   30:32  error  'HTMLElement' is not defined          no-undef
+   43:28  error  'document' is not defined             no-undef
+   46:24  error  'document' is not defined             no-undef
+   61:25  error  'document' is not defined             no-undef
+   66:24  error  'document' is not defined             no-undef
+   81:18  error  'document' is not defined             no-undef
+   82:17  error  'document' is not defined             no-undef
+   83:16  error  'document' is not defined             no-undef
+   84:20  error  'document' is not defined             no-undef
+   85:21  error  'document' is not defined             no-undef
+   86:20  error  'document' is not defined             no-undef
+   87:26  error  'document' is not defined             no-undef
+   88:21  error  'document' is not defined             no-undef
+   94:21  error  'document' is not defined             no-undef
+  101:26  error  'document' is not defined             no-undef
+  102:25  error  'document' is not defined             no-undef
+  103:22  error  'document' is not defined             no-undef
+  104:16  error  'document' is not defined             no-undef
+  105:21  error  'document' is not defined             no-undef
+  106:19  error  'document' is not defined             no-undef
+  120:42  error  'HTMLTextAreaElement' is not defined  no-undef
+  126:38  error  'HTMLTextAreaElement' is not defined  no-undef
+  127:36  error  'HTMLButtonElement' is not defined    no-undef
+  134:34  error  'HTMLSelectElement' is not defined    no-undef
+  136:34  error  'HTMLSelectElement' is not defined    no-undef
+  151:7   error  'console' is not defined              no-undef
+  173:1   error  'Office' is not defined               no-undef
+  174:21  error  'Office' is not defined               no-undef
+
+??172 problems (170 errors, 2 warnings)
+

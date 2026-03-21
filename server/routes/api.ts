@@ -29,87 +29,116 @@ apiRouter.post('/validate-gemini', async (req: Request, res: Response) => {
   if (!geminiKeyHeader) return res.status(400).json({ ok: false, message: 'Missing API key' });
 
   try {
-    // Simple verification by asking for models or a tiny prompt
-    await copilotService.sendPromptToGeminiAPI(geminiKeyHeader, 'gemini-1.5-flash', {
-      system: 'You are a validator.',
-      user: 'say ok'
-    });
+    await copilotService.validateGeminiApiKey(geminiKeyHeader);
     res.json({ ok: true, message: 'API key is valid' });
   } catch (err: any) {
-    res.status(401).json({ ok: false, message: err.detail || 'Invalid API key' });
+    console.error("[Gemini Validation Failed]", err);
+    res.status(err.status || 401).json({ ok: false, message: err.detail || 'Invalid API key' });
   }
 });
 
 apiRouter.post('/copilot', async (req: Request, res: Response) => {
-  const { prompt, officeContext, model, presetId, writingPresetId } = req.body || {};
+  const { prompt, officeContext, model, presetId, writingPresetId, stream } = req.body || {};
   if (!prompt) return res.status(400).json({ error: 'missing prompt' });
 
   const authHeader = req.headers.authorization || '';
   const geminiKeyHeader = (req.headers['x-gemini-key'] as string) || '';
   const resolvedModel = config.AVAILABLE_MODELS.includes(model) ? model : config.COPILOT_MODEL;
-
   const wordPrompt = promptBuilder.buildWordPrompt(prompt, officeContext, resolvedModel, presetId || writingPresetId);
 
-  console.log(`[${new Date().toISOString()}] POST /api/copilot model=${resolvedModel} promptLength=${String(prompt).length} auth=${authHeader ? 'present' : 'missing'}`);
+  // Helper for SSE Streaming Header
+  const setupSSE = () => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+  };
 
   // ── Gemini Provider ──
   if (config.AVAILABLE_MODELS_GEMINI.includes(resolvedModel)) {
     const activeGeminiKey = geminiKeyHeader || config.GEMINI_API_KEY;
-    if (!activeGeminiKey) return res.status(500).json({ error: 'gemini_api_not_configured', detail: 'Missing GEMINI_API_KEY' });
+    if (!activeGeminiKey) return res.status(500).json({ error: 'gemini_api_not_configured' });
 
     try {
-      const text = await copilotService.sendPromptToGeminiAPI(activeGeminiKey, resolvedModel, wordPrompt);
-      const parsedResponse = promptBuilder.parseAssistantResponse(text, officeContext);
-      return res.json({ text: parsedResponse.text, officeActions: parsedResponse.officeActions, authMode: 'gemini', model: resolvedModel });
-    } catch (err: any) {
-      console.error('Gemini API error', err);
-      return res.status(err.status || 500).json({ error: 'gemini_api_error', detail: err.detail || String(err) });
-    }
-  }
-
-  // ── GitHub Models Provider ──
-  const modelsToken = config.getModelsToken();
-  const bearerTokenString = modelsToken ? modelsToken : authHeader.startsWith('Bearer ') ? authHeader.replace('Bearer ', '').trim() : '';
-
-  if (bearerTokenString) {
-    try {
-      const text = await copilotService.sendPromptToGitHubModelsAPI(bearerTokenString, resolvedModel, wordPrompt);
-      const parsedResponse = promptBuilder.parseAssistantResponse(text, officeContext);
-      return res.json({ text: parsedResponse.text, officeActions: parsedResponse.officeActions, authMode: 'pat', model: resolvedModel });
-    } catch (apiResError: any) {
-      console.warn('Copilot Models API returned error:', apiResError.status, apiResError.detail);
-
-      // Attempt SDK Fallback on rate-limit, auth, or server errors
-      if (apiResError.status === 429 || apiResError.status === 401 || (apiResError.status >= 500 && apiResError.status < 600)) {
-        try {
-          const sdkToken = config.getServerPatToken();
-          const fallbackText = await copilotService.sendPromptViaCopilotSdk(`${wordPrompt.system}\n\n${wordPrompt.user}`, sdkToken);
-          if (fallbackText) {
-            const parsedResponse = promptBuilder.parseAssistantResponse(fallbackText, officeContext);
-            return res.json({ text: parsedResponse.text, officeActions: parsedResponse.officeActions, authMode: 'cli', model: copilotService.normalizeSdkModel(config.COPILOT_MODEL) });
-          }
-        } catch (fallbackError) {
-          console.warn('CLI/SDK fallback failed:', fallbackError);
+      if (stream) {
+        setupSSE();
+        const generator = copilotService.streamPromptFromGeminiAPI(activeGeminiKey, resolvedModel, wordPrompt);
+        for await (const chunk of generator) {
+          res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
         }
+        res.write('data: [DONE]\n\n');
+        return res.end();
+      } else {
+        const text = await copilotService.sendPromptToGeminiAPI(activeGeminiKey, resolvedModel, wordPrompt);
+        const parsed = promptBuilder.parseAssistantResponse(text, officeContext);
+        return res.json({ text: parsed.text, officeActions: parsed.officeActions, authMode: 'gemini', model: resolvedModel });
       }
-
-      return res.status(apiResError.status || 500).json({
-        error: 'copilot_api_error',
-        status: apiResError.status,
-        detail: apiResError.status === 401 ? 'Unauthorized. Ensure PAT has GitHub Models access.' : apiResError.detail
-      });
+    } catch (err: any) {
+      const status = err.status || 500;
+      const detail = err.detail || err.message || 'Unknown Gemini error';
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: 'gemini_error', detail })}\n\n`);
+        return res.end();
+      }
+      return res.status(status).json({ error: 'gemini_error', detail });
     }
   }
 
-  // ── CLI/SDK Default Fallback ──
+  // ── GitHub Models / SDK Provider ──
+  const bearerTokenString = (authHeader.startsWith('Bearer ') ? authHeader.replace('Bearer ', '').trim() : '');
+  const authProvider = req.body.authProvider; // 'github_pat' | 'copilot_cli' | 'gemini_api' | 'preview'
+
   try {
-    const text = await copilotService.sendPromptViaCopilotSdk(`${wordPrompt.system}\n\n${wordPrompt.user}`, config.getServerPatToken());
-    const parsedResponse = promptBuilder.parseAssistantResponse(text, officeContext);
-    return res.json({ text: parsedResponse.text, officeActions: parsedResponse.officeActions, authMode: 'cli', model: copilotService.normalizeSdkModel(config.COPILOT_MODEL) });
+    if (stream) {
+      setupSSE();
+      const onChunk = (chunk: string) => {
+        res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+      };
+      
+      // Strict Routing based on Provider
+      console.log(`[Copilot API] Provider: ${authProvider}, Model: ${resolvedModel}, Stream: ${stream}`);
+      
+      if (authProvider === 'copilot_cli') {
+        console.log(`[Copilot API] Routing to SDK (CLI Mode) with model: ${resolvedModel}`);
+        await copilotService.sendPromptViaCopilotSdk(prompt, '', onChunk, true, resolvedModel);
+      } else if (bearerTokenString || config.getModelsToken()) {
+        const token = bearerTokenString || config.getModelsToken();
+        console.log(`[Copilot API] Routing to GitHub Models API`);
+        await copilotService.sendPromptToGitHubModelsAPI(token, resolvedModel, wordPrompt, onChunk);
+      } else {
+        console.log(`[Copilot API] Routing to SDK (Fallback Mode)`);
+        await copilotService.sendPromptViaCopilotSdk(prompt, config.getServerPatToken(), onChunk);
+      }
+      res.write('data: [DONE]\n\n');
+      return res.end();
+    } else {
+      let text: string;
+      let authMode = 'pat';
+
+      if (authProvider === 'copilot_cli') {
+        text = await copilotService.sendPromptViaCopilotSdk(prompt, '', undefined, true, resolvedModel);
+        authMode = 'cli';
+      } else if (bearerTokenString || config.getModelsToken()) {
+        const token = bearerTokenString || config.getModelsToken();
+        text = await copilotService.sendPromptToGitHubModelsAPI(token, resolvedModel, wordPrompt);
+      } else {
+        text = await copilotService.sendPromptViaCopilotSdk(prompt, config.getServerPatToken(), undefined, false, resolvedModel);
+        authMode = 'cli';
+      }
+      
+      const parsed = promptBuilder.parseAssistantResponse(text, officeContext);
+      return res.json({ text: parsed.text, officeActions: parsed.officeActions, authMode, model: resolvedModel });
+    }
   } catch (err: any) {
-    console.error('Copilot SDK error', err);
-    const sdkError = copilotService.describeCopilotSdkError(err);
-    return res.status(sdkError.status).json({ error: sdkError.error, detail: sdkError.detail });
+    const status = err.status || 500;
+    const errorMsg = err.error || 'provider_error';
+    const detail = err.detail || err.message || JSON.stringify(err);
+    console.error(`[API Error] Status: ${status}, Detail: ${detail}`);
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ error: errorMsg, detail })}\n\n`);
+      return res.end();
+    }
+    return res.status(status).json({ error: errorMsg, detail });
   }
 });
 

@@ -1,20 +1,19 @@
+/* global document, HTMLElement, HTMLTextAreaElement, HTMLButtonElement, HTMLSelectElement, console, Office */
+
 import { createAuthController } from "./services/auth";
-import { 
-  setApplyStatus, 
+import {
+  setApplyStatus,
   clearChatHistory,
   setPresetDescription,
   hideLoadingScreen,
 } from "./services/ui";
-import { 
+import {
   getStoredModel,
   setStoredModel,
   getStoredPreset,
   setStoredPreset,
 } from "./services/storage";
-import {
-  FALLBACK_PRESETS,
-  getSelectedPreset
-} from "./services/presets";
+import { FALLBACK_PRESETS, getSelectedPreset } from "./services/presets";
 import { ChatOrchestrator, ChatContext } from "./services/chat-orchestrator";
 import { WritingPreset } from "./types";
 
@@ -25,7 +24,7 @@ import { createPromptGroup } from "./components/molecules/PromptGroup";
 
 /**
  * TaskpaneController
- * 
+ *
  * Central orchestrator for the office_Agent taskpane.
  * Follows Atomic Design for components and delegates logic to services.
  */
@@ -48,14 +47,11 @@ class TaskpaneController {
 
     const headerRoot = document.getElementById("header-root");
     if (headerRoot) {
-      headerRoot.appendChild(createHeader({
-        brandName: "office_Agent",
-        availableModels: this.availableModels,
-        selectedModel: getStoredModel() || this.availableModels[0],
-        onModelChange: (m) => this.handleModelChange(m),
-        onLogout: () => this.authController?.logout(),
-        onNewChat: () => this.handleClearChat()
-      }));
+      headerRoot.appendChild(
+        createHeader({
+          title: "office_Agent",
+        })
+      );
     }
 
     // Mount into the history-root and prompt-root containers
@@ -66,12 +62,16 @@ class TaskpaneController {
 
     const promptRoot = document.getElementById("prompt-root");
     if (promptRoot) {
-      promptRoot.appendChild(createPromptGroup({
-        onSend: () => this.handleSendMessage(),
-        presets: this.writingPresets,
-        selectedPreset: getStoredPreset() || "generic",
-        onPresetChange: (p) => this.handlePresetChange(p)
-      }));
+      promptRoot.appendChild(
+        createPromptGroup({
+          onSend: () => this.handleSendMessage(),
+          onClearChat: () => this.handleClearChat(),
+          availableModels: this.availableModels,
+          selectedModel: getStoredModel() || this.availableModels[0],
+          onModelChange: (m) => this.handleModelChange(m),
+          onLogout: () => this.authController?.logout(),
+        })
+      );
     }
   }
 
@@ -84,7 +84,7 @@ class TaskpaneController {
       presetSelect: document.getElementById("preset-select"),
       modelSelect: document.getElementById("model-select"),
       presetDescription: document.getElementById("preset-description"),
-      runtimeModel: document.getElementById("runtime-model")
+      runtimeModel: document.getElementById("runtime-model"),
     };
   }
 
@@ -94,21 +94,26 @@ class TaskpaneController {
       applyStatusEl: this.els.applyStatus,
       historyEl: this.els.historyEl,
     });
-    
+
     // Bind buttons for the onboarding flow
     this.authController.bindButtons({
       welcomeConnectBtn: document.getElementById("pat-connect-btn"),
       geminiConnectBtn: document.getElementById("gemini-connect-btn"),
+      cliConnectBtn: document.getElementById("cli-connect-btn"),
+      oauthConnectBtn: document.getElementById("oauth-login-btn"),
       skipBtn: document.getElementById("skip-login-btn"),
       resetAuthBtn: document.getElementById("reset-auth-btn"),
       reloginBtn: document.getElementById("relogin-btn"),
     });
 
     await this.authController.checkInitialAuth();
-    
+
     // Initial UI state
     const currentPreset = getStoredPreset() || "generic";
     setPresetDescription(this.els.presetDescription, currentPreset, this.writingPresets);
+
+    // Focus the prompt for a ready-to-type experience
+    this.els.promptEl?.focus();
 
     // CRITICAL: Hide loading screen after all initialization and auth checks are done
     hideLoadingScreen();
@@ -124,12 +129,16 @@ class TaskpaneController {
       promptEl: this.els.promptEl as HTMLTextAreaElement,
       sendBtn: this.els.sendBtn as HTMLButtonElement,
       responseEl: null,
-      runtimeModel: this.els.runtimeModel
+      runtimeModel: this.els.runtimeModel,
     };
 
     try {
-      const selectedModel = (this.els.modelSelect as HTMLSelectElement)?.value || this.availableModels[0];
-      const selectedPreset = getSelectedPreset(this.els.presetSelect as HTMLSelectElement, this.writingPresets);
+      const selectedModel =
+        (this.els.modelSelect as HTMLSelectElement)?.value || this.availableModels[0];
+      const selectedPreset = getSelectedPreset(
+        this.els.presetSelect as HTMLSelectElement,
+        this.writingPresets
+      );
 
       setStoredModel(selectedModel);
       setStoredPreset(selectedPreset);
@@ -142,8 +151,8 @@ class TaskpaneController {
         ctx
       );
     } catch (error) {
-       console.error("Chat flow failed:", error);
-       setApplyStatus(this.els.applyStatus, "發送失敗，請稍後再試");
+      console.error("Chat flow failed:", error);
+      setApplyStatus(this.els.applyStatus, "發送失敗，請稍後再試");
     }
   }
 
@@ -161,6 +170,7 @@ class TaskpaneController {
   private handleClearChat() {
     clearChatHistory(this.els.historyEl, null);
     setApplyStatus(this.els.applyStatus, "已清除對話歷史");
+    this.els.promptEl?.focus();
   }
 }
 

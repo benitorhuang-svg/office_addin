@@ -1,3 +1,5 @@
+/* global document, requestAnimationFrame, setTimeout, HTMLElement, HTMLSelectElement, HTMLButtonElement */
+
 import { WritingPreset } from "../types";
 
 import { createChatBubble } from "../components/molecules/ChatBubble";
@@ -21,7 +23,7 @@ export function appendMessage(
       behavior: "smooth",
     });
   });
-  
+
   return bubble;
 }
 
@@ -99,6 +101,10 @@ export function showMainApp() {
   if (appBody) {
     appBody.style.display = "flex";
     appBody.classList.add("fade-in");
+    
+    // Ensure the chat history starts at the top
+    const historyEl = document.getElementById("chat-history");
+    if (historyEl) historyEl.scrollTop = 0;
   }
 }
 
@@ -131,7 +137,7 @@ export function clearChatHistory(historyEl: HTMLElement | null, responseEl: HTML
     historyEl.innerHTML = `
       <div class="welcome-message-container">
           <div class="welcome-header">
-            你好！我是 <strong>office_Agent</strong>，<span>你的文案助手</span>
+            歡迎使用文案助手
           </div>
           <div class="welcome-capabilities">
              <div class="capability-item">📝 撰寫、編輯文件內容</div>

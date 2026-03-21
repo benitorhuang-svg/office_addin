@@ -20,7 +20,12 @@ async function insertPageNumber(
   firstSection: Word.Section
 ) {
   const position = action.pageNumberPosition || "bottom";
-  const blockType = position === "top" ? "PageNumberTop" : position === "current" ? "PageNumberPage" : "PageNumberBottom";
+  const blockType =
+    position === "top"
+      ? "PageNumberTop"
+      : position === "current"
+        ? "PageNumberPage"
+        : "PageNumberBottom";
   const template = context.document.attachedTemplate;
   const typeItem = template.buildingBlockTypes.getByType(blockType as any);
   const categories = typeItem.categories;
@@ -37,12 +42,13 @@ async function insertPageNumber(
   const firstBlock = (buildingBlocks as any).items[0];
   if (!firstBlock) throw new Error("Attached Word template does not expose a page number block.");
 
-  const targetBody = position === "top" ? firstSection.getHeader("Primary") : firstSection.getFooter("Primary");
+  const targetBody =
+    position === "top" ? firstSection.getHeader("Primary") : firstSection.getFooter("Primary");
   firstBlock.insert(targetBody.getRange("End"), true);
 }
 
 /**
- * Universal Word Action Engine. 
+ * Universal Word Action Engine.
  * Orchestrates formatting, insertion, and complex document tasks.
  */
 export async function applyOfficeActions(
@@ -66,17 +72,20 @@ export async function applyOfficeActions(
   await Word.run(async (context) => {
     const selection = context.document.getSelection();
     const body = context.document.body;
-    const firstSection = context.document.sections.getFirstOrNullObject();
-    firstSection.load("isNullObject");
+    const sections = context.document.sections;
+    sections.load("items");
     await context.sync();
+    const firstSection = sections.items[0];
 
     function applyFormatting(selection: Word.Range, action: OfficeAction) {
       if (typeof action.bold === "boolean") selection.font.bold = action.bold;
       if (typeof action.italic === "boolean") selection.font.italic = action.italic;
-      if (typeof action.underline === "boolean") selection.font.underline = action.underline ? "Single" : "None";
+      if (typeof action.underline === "boolean")
+        selection.font.underline = action.underline ? "Single" : "None";
       if (typeof action.fontSize === "number") selection.font.size = action.fontSize;
       if (typeof action.fontColor === "string") selection.font.color = action.fontColor;
-      if (typeof action.highlightColor === "string") selection.font.highlightColor = action.highlightColor;
+      if (typeof action.highlightColor === "string")
+        selection.font.highlightColor = action.highlightColor;
       if (typeof action.fontName === "string") selection.font.name = action.fontName;
 
       const paragraph = selection.paragraphs.getFirstOrNullObject();
@@ -93,8 +102,8 @@ export async function applyOfficeActions(
           break;
         case "append_to_end":
           if (action.text) {
-             const p = body.insertParagraph(action.text, Word.InsertLocation.end);
-             applyFormatting(p as any, action);
+            const p = body.insertParagraph(action.text, Word.InsertLocation.end);
+            applyFormatting(p as any, action);
           }
           break;
         case "insert_heading": {
@@ -107,14 +116,17 @@ export async function applyOfficeActions(
         }
         case "insert_bullets":
           if (Array.isArray(action.items) && action.items.length > 0) {
-            for (const item of action.items) body.insertParagraph(`• ${item}`, Word.InsertLocation.end);
+            for (const item of action.items)
+              body.insertParagraph(`• ${item}`, Word.InsertLocation.end);
           } else if (action.text) {
             body.insertParagraph(`• ${action.text}`, Word.InsertLocation.end);
           }
           break;
         case "insert_numbered_list":
           if (Array.isArray(action.items) && action.items.length > 0) {
-            action.items.forEach((item, i) => body.insertParagraph(`${i + 1}. ${item}`, Word.InsertLocation.end));
+            action.items.forEach((item, i) =>
+              body.insertParagraph(`${i + 1}. ${item}`, Word.InsertLocation.end)
+            );
           }
           break;
         case "insert_table": {
@@ -130,10 +142,11 @@ export async function applyOfficeActions(
           break;
         }
         case "insert_page_number":
-          if (!firstSection.isNullObject) await insertPageNumber(action, context, firstSection);
+          if (firstSection) await insertPageNumber(action, context, firstSection);
           break;
         case "accept_tracked_changes":
-          if (typeof (context.document as any).acceptAllRevisions === "function") (context.document as any).acceptAllRevisions();
+          if (typeof (context.document as any).acceptAllRevisions === "function")
+            (context.document as any).acceptAllRevisions();
           break;
       }
     }

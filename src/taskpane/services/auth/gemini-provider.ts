@@ -1,3 +1,5 @@
+/* global document, HTMLInputElement, console */
+
 import { setStoredGeminiToken, getStoredGeminiToken } from "../storage";
 import { AuthUIBridge } from "./ui-bridge";
 
@@ -22,17 +24,18 @@ export class GeminiProvider {
     try {
       const { validateGeminiKey } = await import("../api");
       const validation = await validateGeminiKey(token);
-      
+
       if (validation.ok) {
         setStoredGeminiToken(token);
         this.ui.showSuccess("Gemini", "Gemini API key is active.");
         this.ui.notifyAssistant("Gemini authentication complete.");
         return true;
       } else {
-        this.ui.setStatus(`Error: ${validation.message || 'Invalid key'}`);
+        this.ui.setStatus(`Error: ${validation.message || "Invalid key"}`);
         return false;
       }
-    } catch (err) {
+    } catch (error) {
+      console.warn(error);
       // Fallback if server is not reachable but user wants to save
       setStoredGeminiToken(token);
       this.ui.showSuccess("Gemini", "Gemini key saved offline. (Validation server unreachable)");

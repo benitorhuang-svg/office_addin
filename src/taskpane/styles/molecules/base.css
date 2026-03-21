@@ -2,7 +2,7 @@
 .mol-chat-bubble {
     display: flex;
     flex-direction: column;
-    max-width: 85%;
+    max-width: 90%;
     padding: 12px 16px;
     border-radius: var(--radius-lg);
     font-size: 14px;
@@ -12,35 +12,45 @@
     box-shadow: var(--shadow-sm);
     animation: slideInUp 0.4s var(--ease-spring);
     margin-bottom: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .mol-chat-bubble.user {
     align-self: flex-end;
-    background: linear-gradient(135deg, var(--primary-color) 0%, #106EBE 100%);
+    background: var(--accent-gradient);
     color: #FFFFFF;
-    border-radius: 16px;
+    border-radius: 18px;
     border-bottom-right-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
-    padding: 10px 14px;
-    font-size: 13px;
+    box-shadow: 0 4px 15px rgba(138, 43, 226, 0.2);
+    padding: 12px 16px;
+    font-size: 13.5px;
     max-width: 80%;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 
 .mol-chat-bubble.assistant-card {
     align-self: flex-start;
     background: #FFFFFF;
     color: var(--text-primary);
-    border-radius: 20px;
+    border-radius: 4px 20px 20px 20px;
     border: 1px solid var(--border-light);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    width: 100%;
-    max-width: 100%;
-    min-height: 80px;
+    box-shadow: var(--shadow-sm);
+    width: fit-content;
+    min-width: 150px;
+    max-width: 92%;
+    margin-bottom: 20px;
+    padding: 0;
+    overflow: hidden;
+    animation: slideInLeft 0.4s var(--ease-spring);
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .mol-chat-bubble.assistant-card:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(138, 43, 226, 0.2);
 }
 
 /* Task Status Row */
@@ -48,7 +58,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    background: #FFFFFF; /* Flush with card */
+    opacity: 0.8;
 }
 
 .task-icon-area {
@@ -59,6 +72,8 @@
     align-items: center;
     justify-content: center;
 }
+
+
 
 .task-spinner {
     color: var(--primary-color);
@@ -75,11 +90,13 @@
 }
 
 .task-label {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
     color: var(--text-secondary);
     transition: color 0.3s;
+    text-transform: uppercase;
 }
 
 /* Completed state transitions */
@@ -99,32 +116,38 @@
 
 /* Text Preview */
 .text-preview {
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    padding: 10px;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 1px dashed var(--border-light);
-    font-style: italic;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    background: transparent;
+    border: none;
     transition: all 0.3s ease;
+    white-space: pre-wrap;
+    min-height: 40px; /* Ensure skeleton is visible */
 }
 
 .text-preview.skeleton {
-    background: linear-gradient(90deg, #F0F2F5 25%, #E6E8EB 50%, #F0F2F5 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite linear;
-    color: var(--text-secondary);
-    opacity: 0.7;
-    user-select: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-style: italic;
+    animation: pulseTransparency 1.5s infinite ease-in-out;
+    border: none;
+    box-shadow: none;
+}
+
+@keyframes pulseTransparency {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
 }
 
 /* Action Buttons */
 .bubble-action-group {
     display: none;
-    gap: 8px;
-    margin-top: 12px;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-secondary);
 }
 
 .mol-chat-bubble.assistant-card[data-complete="true"] .bubble-action-group {
@@ -221,35 +244,34 @@
 
 /* --- Molecules - Prompt Group --- */
 .mol-prompt-group {
-    padding: 12px 16px 24px;
+    padding: 6px 16px 8px; /* Reduced from 12px */
     background: #FFFFFF;
-    border-top: 1px solid var(--border-light);
+    border-top: none; /* Removed the line */
     position: relative;
     z-index: 100;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.03);
+    box-shadow: none; /* Removed the shadow */
     flex-shrink: 0;
 }
 
 .prompt-wrapper {
     display: flex;
-    align-items: center; /* Solves 'Height Centered' */
+    align-items: flex-end; /* Align to bottom for multiline */
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
-    background: var(--bg-secondary);
+    background: #FFFFFF;
     border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: 0 8px 0 18px; /* Balanced padding */
+    border-radius: 16px; /* Reduced from 32px to match bubbles better */
+    padding: 4px 8px 4px 16px;
     transition: all 0.3s var(--ease-spring);
-    gap: 8px;
+    gap: 10px;
     position: relative;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    box-shadow: var(--shadow-sm);
 }
 
 .prompt-wrapper:focus-within {
     border-color: var(--primary-color);
-    background: #FFFFFF;
-    box-shadow: 0 8px 32px rgba(0, 120, 212, 0.12), inset 0 2px 4px rgba(0, 0, 0, 0.01);
+    box-shadow: 0 4px 20px rgba(0, 120, 212, 0.08);
 }
 
 .prompt-wrapper .send-icon-btn {
@@ -281,3 +303,56 @@
 }
 
 .selector-pill-mini select:hover { background-color: var(--border-light); color: var(--text-primary); }
+
+/* --- Molecules - Accordion --- */
+.mol-accordion {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg, 12px);
+    background: #FFFFFF;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--bg-secondary, #F3F2F1);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: background 0.2s;
+}
+
+.accordion-header:hover {
+    background: var(--border-light, #E1DFDD);
+}
+
+.accordion-icon {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mol-accordion.open .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out;
+    background: rgba(255,255,255,0.5);
+}
+
+.mol-accordion.open .accordion-content {
+    max-height: 800px;
+}
+
+.accordion-content-inner {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}

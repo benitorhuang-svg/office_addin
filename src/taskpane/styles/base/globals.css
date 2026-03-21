@@ -58,7 +58,7 @@ html, body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    overflow-y: auto;
+    overflow: hidden; /* Capped for taskpane feel */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

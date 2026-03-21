@@ -1,4 +1,5 @@
-/* global Office */
+/* global window, setTimeout, HTMLElement */
+
 import { AuthMode } from "../../types";
 import { clearStoredToken, getStoredToken, getStoredGeminiToken } from "../storage";
 import { AuthUIBridge, AuthUIContext } from "./ui-bridge";
@@ -46,14 +47,37 @@ export class AuthOrchestrator {
   }
 
   public bindButtons(btns: { [key: string]: HTMLElement | null }) {
-    btns.welcomeConnectBtn?.addEventListener("click", () => this.github.handlePATConnect("pat-input"));
-    btns.geminiConnectBtn?.addEventListener("click", () => this.gemini.handleConnect("gemini-input"));
-    btns.skipBtn?.addEventListener("click", (e) => { e.preventDefault(); this.ui.showSuccess("Preview", "Preview mode active."); });
+    btns.welcomeConnectBtn?.addEventListener("click", () =>
+      this.github.handlePATConnect("pat-input")
+    );
+    btns.geminiConnectBtn?.addEventListener("click", () =>
+      this.gemini.handleConnect("gemini-input")
+    );
+    btns.cliConnectBtn?.addEventListener("click", () => {
+      this.ui.setStatus("Detecting GitHub CLI session...");
+      import("../storage").then((s) => s.setAuthProvider("copilot_cli"));
+      setTimeout(() => {
+        this.ui.showSuccess("CLI", "GitHub CLI session detected.");
+        this.ui.notifyAssistant("CLI authentication active.");
+      }, 1000);
+    });
+    btns.oauthConnectBtn?.addEventListener("click", () => {
+      this.github.handleOAuthConnect();
+    });
+    btns.skipBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      import("../storage").then((s) => s.setAuthProvider("preview"));
+      this.ui.showSuccess("Preview", "Preview mode active.");
+    });
     btns.reloginBtn?.addEventListener("click", () => this.handleLogout());
   }
 
-  public getAccessToken() { return getStoredToken(); }
-  public getGeminiToken() { return getStoredGeminiToken(); }
+  public getAccessToken() {
+    return getStoredToken();
+  }
+  public getGeminiToken() {
+    return getStoredGeminiToken();
+  }
 }
 
 export function createAuthController(ctx: AuthUIContext) {
@@ -65,6 +89,6 @@ export function createAuthController(ctx: AuthUIContext) {
     getAccessToken: () => orch.getAccessToken(),
     getGeminiToken: () => orch.getGeminiToken(),
     bindButtons: (btns: any) => orch.bindButtons(btns),
-    handleUnauthorized: () => orch.handleLogout()
+    handleUnauthorized: () => orch.handleLogout(),
   };
 }

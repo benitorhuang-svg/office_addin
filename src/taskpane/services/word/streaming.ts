@@ -1,12 +1,12 @@
-/* global Word */
+/* global Word, setTimeout */
 
 /**
- * High-performance streaming engine for Word. 
+ * High-performance streaming engine for Word.
  * Breaks down long AI responses and inserts them with 25-character chunks for smooth UI feel.
  */
 export async function insertTextIntoWord(
-  text: string, 
-  stream = true, 
+  text: string,
+  stream = true,
   onUpdate?: (accumulated: string) => void
 ) {
   if (!text) return;
@@ -30,14 +30,15 @@ export async function insertTextIntoWord(
     // Chunk size 25 for smoother writing throughput
     const chunks = text.match(/.{1,25}/g) || [text];
     let accumulated = "";
-    
+
     for (const chunk of chunks) {
       accumulated += chunk;
       range.insertText(chunk, Word.InsertLocation.end);
-      await context.sync();
-      
+
       if (onUpdate) onUpdate(accumulated);
-      await new Promise(r => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 20));
     }
+
+    await context.sync();
   });
 }

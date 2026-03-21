@@ -1,5 +1,5 @@
 /**
- * Forwarding layer for Word services. 
+ * Forwarding layer for Word services.
  * This maintains compatibility while the core logic is modularized in the /word directory.
  */
 export { getWordContext } from "./word/context";

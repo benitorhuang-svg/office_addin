@@ -1,3 +1,5 @@
+/* global document, HTMLButtonElement */
+
 export interface ButtonProps {
   id?: string;
   label: string;
@@ -6,7 +8,13 @@ export interface ButtonProps {
   disabled?: boolean;
 }
 
-export function createButton({ id, label, className = "btn-premium", onClick, disabled = false }: ButtonProps): HTMLButtonElement {
+export function createButton({
+  id,
+  label,
+  className = "btn-premium",
+  onClick,
+  disabled = false,
+}: ButtonProps): HTMLButtonElement {
   const btn = document.createElement("button");
   if (id) btn.id = id;
   btn.className = className;

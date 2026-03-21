@@ -1,3 +1,5 @@
+/* global document, HTMLElement */
+
 export function createTypingIndicator(): HTMLElement {
   const indicator = document.createElement("div");
   indicator.className = "mol-chat-bubble assistant";

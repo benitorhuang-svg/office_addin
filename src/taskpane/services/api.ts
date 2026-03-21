@@ -1,4 +1,7 @@
+/* global window, fetch, console, TextDecoder, RequestInit */
+
 import { CopilotResponse, ServerConfig, OfficeContextPayload } from "../types";
+import { getAuthProvider } from "./storage";
 
 function trimAndCollapseWhitespace(value: string) {
   return String(value || "")
@@ -38,25 +41,16 @@ function createCoreCopilotRequest(
 }
 
 async function fetchFromLocalPorts(path: string, init?: RequestInit) {
-  const candidatePorts = [4000, 4001];
-  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
-  let lastErr: unknown = null;
-
-  for (const port of candidatePorts) {
-    const url = `${protocol}//localhost:${port}${path}`;
-    try {
-      return await fetch(url, init);
-    } catch (error) {
-      console.warn("[copilot] local request failed", {
-        port,
-        path,
-        message: error instanceof Error ? error.message : String(error),
-      });
-      lastErr = error;
-    }
+  try {
+    // Rely on Webpack Dev Server proxy or production routing
+    return await fetch(path, init);
+  } catch (error) {
+    console.warn("[copilot] request failed", {
+      path,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   }
-
-  throw lastErr || new Error(`Failed to contact local service for ${path}`);
 }
 
 export async function getServerConfig() {
@@ -71,12 +65,18 @@ export async function validateGeminiKey(key: string): Promise<{ ok: boolean; mes
   try {
     const response = await fetchFromLocalPorts("/api/validate-gemini", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "X-Gemini-Key": key
-      }
+        "X-Gemini-Key": key,
+      },
     });
-    return await response.json();
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return await response.json().catch(() => ({ ok: false, message: "Server returned malformed JSON" }));
+    } else {
+      const text = await response.text().catch(() => "Unknown server error");
+      return { ok: false, message: text };
+    }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Network error" };
   }
@@ -88,20 +88,64 @@ export async function sendToCopilot(
   officeContext: OfficeContextPayload,
   model: string,
   presetId: string,
-  geminiToken: string | null = null
+  geminiToken: string | null = null,
+  onChunk?: (chunk: string) => void
 ): Promise<CopilotResponse> {
+  const isStreaming = Boolean(onChunk);
+
   async function doRequest(token: string | null, gKey: string | null) {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (gKey) headers["X-Gemini-Key"] = gKey;
 
+    const body = {
+      ...createCoreCopilotRequest(prompt, officeContext, model, presetId),
+      stream: isStreaming,
+      authProvider: getAuthProvider(),
+    };
+
     const res = await fetchFromLocalPorts("/api/copilot", {
       method: "POST",
       headers,
-      body: JSON.stringify(createCoreCopilotRequest(prompt, officeContext, model, presetId)),
+      body: JSON.stringify(body),
     });
-    const json = await res.json();
 
+    if (isStreaming && res.ok) {
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const dataStr = line.substring(6).trim();
+            if (dataStr === "[DONE]") break;
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.text) {
+                fullText += data.text;
+                onChunk!(data.text);
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+      return { res, json: { text: fullText } };
+    }
+
+    let json: any;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      json = await res.json().catch(() => ({}));
+    } else {
+      const text = await res.text().catch(() => "Unknown error");
+      json = { error: text };
+    }
     return { res, json };
   }
 

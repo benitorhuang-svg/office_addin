@@ -1,11 +1,10 @@
-import { CopilotResponse, WritingPreset } from "../types";
+/* global HTMLElement, HTMLTextAreaElement, HTMLButtonElement */
+
 import { sendToCopilot } from "./api";
 import { getWordContext } from "./word-actions";
 import { appendMessage, removeTypingIndicator, showTypingIndicator } from "./ui";
 import { insertTextIntoWord } from "./word-actions";
 import { applyOfficeActions } from "./word-actions";
-import { getStoredGeminiToken } from "./storage";
-import { getSelectedPreset } from "./presets";
 
 export interface ChatContext {
   historyEl: HTMLElement | null;
@@ -22,20 +21,22 @@ export class ChatOrchestrator {
   constructor() {}
 
   public async handleSend(
-    prompt: string, 
-    model: string, 
-    presetId: string, 
+    prompt: string,
+    model: string,
+    presetId: string,
     authController: any,
     ctx: ChatContext
   ): Promise<string> {
     if (this.isGenerating) return "";
-    
+
     this.isGenerating = true;
 
     // UI Setup
     if (ctx.historyEl) {
-      const existingActive = ctx.historyEl.querySelectorAll('.mol-chat-bubble.assistant-card:not([data-complete="true"])');
-      existingActive.forEach(el => el.remove());
+      const existingActive = ctx.historyEl.querySelectorAll(
+        '.mol-chat-bubble.assistant-card:not([data-complete="true"])'
+      );
+      existingActive.forEach((el) => el.remove());
       ctx.historyEl.querySelector(".welcome-message-container")?.remove();
     }
 
@@ -87,23 +88,35 @@ export class ChatOrchestrator {
 
     const assistantBubble = appendMessage(ctx.historyEl, "assistant", "", onApply);
     const previewEl = assistantBubble?.querySelector(".text-preview") as HTMLElement;
-    const taskLabel = assistantBubble?.querySelector(".task-label") as HTMLElement;
 
     try {
       const token = authController.getAccessToken();
       const officeContext = await getWordContext();
       const geminiToken = authController.getGeminiToken();
 
+      let streamBuffer = "";
       response = await sendToCopilot(
         enhancedPrompt,
         token,
         officeContext,
         model,
         presetId,
-        geminiToken
+        geminiToken,
+        (chunk) => {
+          streamBuffer += chunk;
+          if (previewEl) {
+            previewEl.classList.remove("skeleton");
+            const previewText =
+              streamBuffer.length > 200 ? streamBuffer.substring(0, 200) + "..." : streamBuffer;
+            previewEl.textContent = previewText;
+          }
+          if (assistantBubble) {
+            (assistantBubble as HTMLElement).dataset.fullText = streamBuffer;
+          }
+        }
       );
 
-      finalContent = (response?.text ?? "").trim();
+      finalContent = (response?.text ?? streamBuffer).trim();
       removeTypingIndicator();
 
       // Update the bubble metadata for Copy/Apply logic
@@ -111,13 +124,12 @@ export class ChatOrchestrator {
         (assistantBubble as HTMLElement).dataset.fullText = finalContent;
         assistantBubble.setAttribute("data-complete", "true");
       }
-      
-      if (taskLabel) taskLabel.textContent = "TASK: COMPLETED";
-      
+
       if (previewEl) {
         previewEl.classList.remove("skeleton");
         // Show a longer preview in the bubble since we aren't auto-inserting
-        const finalPreview = finalContent.length > 150 ? finalContent.substring(0, 150) + "..." : finalContent;
+        const finalPreview =
+          finalContent.length > 150 ? finalContent.substring(0, 150) + "..." : finalContent;
         previewEl.textContent = finalPreview;
       }
 
@@ -125,16 +137,12 @@ export class ChatOrchestrator {
     } catch (error) {
       removeTypingIndicator();
       const errText = `Error: ${error instanceof Error ? error.message : String(error)}`;
-      
+
       if (assistantBubble) {
-        if (taskLabel) {
-           taskLabel.textContent = "TASK: FAILED";
-           taskLabel.style.color = "#DC3545";
-        }
         if (previewEl) {
-           previewEl.classList.remove("skeleton");
-           previewEl.textContent = errText;
-           previewEl.style.color = "#DC3545";
+          previewEl.classList.remove("skeleton");
+          previewEl.textContent = errText;
+          previewEl.style.color = "#DC3545";
         }
       }
       throw error;

@@ -1,4 +1,4 @@
-/* global PowerPoint, Office */
+/* global Office */
 /// <reference types="office-js" />
 
 import { OfficeAction, OfficeContextPayload } from "../types";

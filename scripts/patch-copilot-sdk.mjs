@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 
 const candidateFiles = [
+  path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'package.json'),
   path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'node_modules', 'vscode-jsonrpc', 'package.json'),
   path.join(repoRoot, 'node_modules', 'vscode-jsonrpc', 'package.json'),
 ];
@@ -26,6 +27,10 @@ for (const packageJsonPath of candidateFiles) {
 
   if (!exportsField['.']) {
     exportsField['.'] = './lib/node/main.js';
+    changed = true;
+  } else if (typeof exportsField['.'] === 'object' && !exportsField['.'].require) {
+    // Specifically for @github/copilot-sdk main entry under CJS
+    exportsField['.'].require = exportsField['.'].import;
     changed = true;
   }
   if (!exportsField['./node']) {

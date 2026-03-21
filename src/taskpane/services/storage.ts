@@ -1,7 +1,10 @@
+/* global window */
+
 const TOKEN_KEY = "github_token";
 const GEMINI_TOKEN_KEY = "gemini_token";
 const MODEL_KEY = "selected_model";
 const PRESET_KEY = "selected_preset";
+const AUTH_PROVIDER_KEY = "auth_provider";
 
 export function getStoredToken() {
   return window.localStorage.getItem(TOKEN_KEY);
@@ -9,11 +12,13 @@ export function getStoredToken() {
 
 export function setStoredToken(token: string) {
   window.localStorage.setItem(TOKEN_KEY, token);
+  window.localStorage.setItem(AUTH_PROVIDER_KEY, "github_pat");
 }
 
 export function clearStoredToken() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(GEMINI_TOKEN_KEY);
+  window.localStorage.removeItem(AUTH_PROVIDER_KEY);
 }
 
 export function getStoredGeminiToken() {
@@ -22,6 +27,15 @@ export function getStoredGeminiToken() {
 
 export function setStoredGeminiToken(token: string) {
   window.localStorage.setItem(GEMINI_TOKEN_KEY, token);
+  window.localStorage.setItem(AUTH_PROVIDER_KEY, "gemini_api");
+}
+
+export function getAuthProvider(): string | null {
+  return window.localStorage.getItem(AUTH_PROVIDER_KEY);
+}
+
+export function setAuthProvider(provider: "github_pat" | "gemini_api" | "copilot_cli" | "preview") {
+  window.localStorage.setItem(AUTH_PROVIDER_KEY, provider);
 }
 
 export function getStoredModel() {

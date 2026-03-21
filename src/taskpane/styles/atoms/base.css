@@ -48,6 +48,26 @@
     box-shadow: 0 6px 16px rgba(138, 43, 226, 0.25);
 }
 
+/* --- Premium CLI Auth Button --- */
+.btn-premium.cli-auth {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    color: #58a6ff; /* GitHub Link Blue */
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    margin-top: 12px;
+    box-shadow: var(--shadow-md);
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+}
+
+.btn-premium.cli-auth:hover {
+    background: #000000;
+    color: #79c0ff;
+    border-color: #58a6ff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(88, 166, 255, 0.2);
+    transform: translateY(-2px);
+}
+
 .icon-btn-primary, .icon-btn-secondary {
     width: 38px;
     height: 38px;
