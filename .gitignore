@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+jspm_packages/
+typings/
+
+# Build outputs
+dist/
+build/
+bin/
+obj/
+out/
+release/
+*.tsbuildinfo
+
+# Debugging and environment
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and Tools
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+.gemini/
+brain/
+
+# Office Add-in specific
+*.pfx
+.office-addin-dev-certs/
+manifest.xml.user
+manifest.xml.log
+manifest.xml.pfx
+manifest.xml.cer
+
+# Mac / Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

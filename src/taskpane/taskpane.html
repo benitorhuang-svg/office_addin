@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>office_Agent AI Assistant</title>
+    <!-- Office.js -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+
+    <!-- Global Loading Screen -->
+    <div id="loading-screen" class="org-loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo-wrapper">
+                <img src="../../assets/logo-premium.png" alt="Logo" class="loading-logo-img" />
+            </div>
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Connecting to office_Agent...</p>
+        </div>
+    </div>
+
+    <!-- Onboarding Organism Placeholder -->
+    <div id="onboarding-root"></div>
+
+    <!-- Main Application Shell -->
+    <main id="app-body" class="taskpane-body" style="display:none;">
+        <div id="header-root"></div>
+        
+        <section class="org-chat-view">
+            <div id="history-root" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"></div>
+            <div id="prompt-root"></div>
+        </section>
+
+        <!-- Hidden container for API response text -->
+        <div id="response" style="display:none;"></div>
+    </main>
+
+</body>
+</html>

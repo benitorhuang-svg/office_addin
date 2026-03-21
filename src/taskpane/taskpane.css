@@ -1,0 +1,10 @@
+/* 
+  Taskpane Central Stylesheet 
+  Atomic Design Structure
+*/
+
+@import url('./styles/base/globals.css');
+@import url('./styles/animations/base.css');
+@import url('./styles/atoms/base.css');
+@import url('./styles/molecules/base.css');
+@import url('./styles/organisms/base.css');

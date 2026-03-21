@@ -1,0 +1,244 @@
+.btn-premium {
+    width: 100%;
+    height: 48px; /* Increased for premium feel */
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: all 0.25s var(--ease-spring);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 8px 0;
+}
+
+.btn-premium::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.btn-premium:hover::after { opacity: 1; }
+
+.btn-premium:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-premium:active { transform: translateY(0); }
+.btn-premium:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-premium.github {
+    background: linear-gradient(135deg, #24292e 0%, #1a1a1b 100%);
+    color: #FFFFFF;
+}
+.btn-premium.github:hover {
+    background: linear-gradient(135deg, #000000 0%, #1a1a1b 100%);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.btn-premium.gemini {
+    background: linear-gradient(135deg, #4285F4 0%, #8A2BE2 100%);
+    color: #FFFFFF;
+}
+.btn-premium.gemini:hover {
+    box-shadow: 0 6px 16px rgba(138, 43, 226, 0.25);
+}
+
+.icon-btn-primary, .icon-btn-secondary {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s var(--ease-spring);
+    border: none;
+    outline: none;
+    position: relative;
+}
+
+.icon-btn-primary { background: var(--primary-color); color: white; }
+.icon-btn-primary:hover { 
+    background: var(--primary-hover); 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.25);
+}
+.icon-btn-primary:active { transform: translateY(0); }
+
+.icon-btn-secondary { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.icon-btn-secondary:hover { 
+    background: var(--border-light); 
+    color: var(--text-primary); 
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+.icon-btn-secondary:active { transform: translateY(0); }
+
+.send-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s var(--ease-spring);
+    border: none;
+    outline: none;
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+}
+
+.send-icon-btn:hover:not(:disabled) { 
+    background: var(--primary-hover); 
+    transform: translateY(-1px) scale(1.05); 
+    box-shadow: 0 6px 16px rgba(0, 120, 212, 0.4);
+}
+
+.send-icon-btn:active { 
+    transform: translateY(0) scale(0.95); 
+}
+
+.send-icon-btn:disabled { 
+    background: var(--border-color); 
+    opacity: 0.5; 
+    box-shadow: none;
+    transform: none;
+}
+
+/* --- Atoms - Inputs --- */
+.atom-input-premium {
+    width: 100%;
+    height: 44px;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0 var(--space-md);
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: all 0.25s var(--ease-spring);
+    background: #FFFFFF;
+}
+
+.atom-input-premium:focus { 
+    border-color: var(--primary-color); 
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1); 
+}
+
+.atom-textarea {
+    flex: 1;
+    width: 100%;
+    min-width: 0; /* Allow flex to shrink if needed */
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: none;
+    outline: none;
+    transition: all 0.3s var(--ease-spring);
+    min-height: 40px;
+    max-height: 200px;
+    display: block;
+    overflow: hidden; /* Prevent scrollbar flickers */
+}
+
+/* Shadow removed as it will be on the wrapper now */
+.atom-textarea:focus { 
+    background: transparent; 
+}
+
+.atom-textarea::placeholder {
+    color: var(--text-muted);
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+/* --- Atoms - Badges --- */
+.auth-badge {
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.auth-badge.github { 
+    background: linear-gradient(135deg, #E8F0FE, #D2E3FC); 
+    color: #1A73E8; 
+}
+.auth-badge.gemini { 
+    background: linear-gradient(135deg, #F3E8FF, #E8D5FF); 
+    color: #7C3AED; 
+}
+
+/* --- Atoms - Preset Pill Select --- */
+.preset-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.atom-select.preset-pill {
+    appearance: none;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-full);
+    padding: 5px 28px 5px 12px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235F6368' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
+
+.atom-select.preset-pill:hover {
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+}
+
+.preset-description {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Atoms - Typing Indicator --- */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
