@@ -1,10 +1,12 @@
-/* global window */
-
+/* eslint-disable no-undef */
 const TOKEN_KEY = "github_token";
 const GEMINI_TOKEN_KEY = "gemini_token";
 const MODEL_KEY = "selected_model";
 const PRESET_KEY = "selected_preset";
 const AUTH_PROVIDER_KEY = "auth_provider";
+const AZURE_KEY = "azure_key";
+const AZURE_ENDPOINT = "azure_endpoint";
+const AZURE_DEPLOYMENT = "azure_deployment";
 
 export function getStoredToken() {
   return window.localStorage.getItem(TOKEN_KEY);
@@ -52,4 +54,19 @@ export function getStoredPreset() {
 
 export function setStoredPreset(preset: string) {
   window.localStorage.setItem(PRESET_KEY, preset);
+}
+
+export function getStoredAzureConfig() {
+  return {
+    key: window.localStorage.getItem(AZURE_KEY),
+    endpoint: window.localStorage.getItem(AZURE_ENDPOINT),
+    deployment: window.localStorage.getItem(AZURE_DEPLOYMENT),
+  };
+}
+
+export function setStoredAzureConfig(key: string, endpoint: string, deployment: string) {
+  window.localStorage.setItem(AZURE_KEY, key);
+  window.localStorage.setItem(AZURE_ENDPOINT, endpoint);
+  window.localStorage.setItem(AZURE_DEPLOYMENT, deployment);
+  window.localStorage.setItem(AUTH_PROVIDER_KEY, "azure_openai");
 }

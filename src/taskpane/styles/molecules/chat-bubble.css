@@ -1,0 +1,176 @@
+/* --- Molecules - Chat Bubble --- */
+.mol-chat-bubble {
+    display: flex;
+    flex-direction: column;
+    max-width: 85%;
+    margin-bottom: 20px;
+    position: relative;
+    animation: fadeInScale 0.4s var(--ease-spring);
+}
+
+/* User Bubble - LINE Style (Green/Blue) */
+.mol-chat-bubble.user {
+    align-self: flex-end;
+    background: #0078D4; /* Using Microsoft Blue instead of Line Green for brand consistency */
+    color: #FFFFFF;
+    border-radius: 18px 18px 0px 18px; /* Tail at bottom-right */
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+    margin-right: 4px;
+    text-align: left;
+}
+
+.mol-chat-bubble.user::after {
+    content: 'YOU';
+    position: absolute;
+    bottom: -18px;
+    right: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+}
+
+/* Assistant Card - Structured Card Style */
+.mol-chat-bubble.assistant-card {
+    align-self: flex-start;
+    background: #FFFFFF;
+    border: 1.5px solid #E0E0E0; /* More visible border */
+    border-radius: 0px 18px 18px 18px; /* Tail at top-left */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 92%;
+    overflow: visible; /* Allow content to grow naturally */
+    min-height: auto;
+    margin-left: 4px;
+}
+
+.task-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: #F8F9FA;
+    border-bottom: 1px solid #ECECEC;
+    border-radius: 0px 18px 0 0;
+}
+
+.task-icon-area {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-spinner {
+    color: var(--primary-color);
+    animation: spin 1s linear infinite;
+}
+
+.task-check {
+    color: var(--success);
+    opacity: 0;
+    transform: scale(0.5);
+    position: absolute;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.task-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+.mol-chat-bubble.assistant-card[data-complete="true"] .task-spinner {
+    opacity: 0;
+    transform: scale(0);
+}
+
+.mol-chat-bubble.assistant-card[data-complete="true"] .task-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.mol-chat-bubble.assistant-card[data-complete="true"] .task-label {
+    color: var(--success);
+}
+
+.text-preview {
+    padding: 15px 20px;
+    font-size: 14px;
+    color: #1A1A1A !important;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background: #FFFFFF;
+    border-radius: 0 0 18px 18px;
+    display: block;
+    width: 100%;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.text-preview.skeleton {
+    color: #A0A0A0;
+    font-style: italic;
+    background: linear-gradient(90deg, #F3F2F1 25%, #E1DFDD 50%, #F3F2F1 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+}
+
+/* Action Buttons */
+.bubble-action-group {
+    display: none;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid #ECECEC;
+    background: #FAFAFA;
+}
+
+.mol-chat-bubble.assistant-card[data-complete="true"] .bubble-action-group {
+    display: flex;
+    animation: fadeInAnimation 0.3s ease;
+}
+
+.action-btn-mini {
+    background: white;
+    border: 1px solid #DDD;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn-mini:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Typing Indicator Override */
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #AAA;
+    border-radius: 50%;
+    animation: typing-bounce 1s infinite alternate;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }

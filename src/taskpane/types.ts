@@ -73,6 +73,8 @@ export type CopilotResponse = {
   officeActions?: OfficeAction[];
   authMode?: string;
   model?: string;
+  detail?: string;
+  error?: string;
 };
 
 export type ServerConfig = {

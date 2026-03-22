@@ -1,5 +1,4 @@
-/* global document, requestAnimationFrame, setTimeout, HTMLElement, HTMLSelectElement, HTMLButtonElement */
-
+/* eslint-disable no-undef */
 import { WritingPreset } from "../types";
 
 import { createChatBubble } from "../components/molecules/ChatBubble";
@@ -101,7 +100,7 @@ export function showMainApp() {
   if (appBody) {
     appBody.style.display = "flex";
     appBody.classList.add("fade-in");
-    
+
     // Ensure the chat history starts at the top
     const historyEl = document.getElementById("chat-history");
     if (historyEl) historyEl.scrollTop = 0;
@@ -132,7 +131,36 @@ export function updateWelcomeForPatMode() {
   }
 }
 
-export function clearChatHistory(historyEl: HTMLElement | null, responseEl: HTMLElement | null) {
+export function showToast(message: string, type: "info" | "success" | "error" = "info") {
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add("show"), 10);
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+export function startHealthCheck() {
+  const check = async () => {
+    try {
+      const { getServerConfig } = await import("./api");
+      await getServerConfig();
+      document.body.classList.remove("server-offline");
+    } catch {
+      document.body.classList.add("server-offline");
+    }
+  };
+  check();
+  setInterval(check, 30000);
+}
+
+export function clearChatHistory(
+  historyEl: HTMLElement | null,
+  responseEl: HTMLElement | null = null
+) {
   if (historyEl) {
     historyEl.innerHTML = `
       <div class="welcome-message-container">

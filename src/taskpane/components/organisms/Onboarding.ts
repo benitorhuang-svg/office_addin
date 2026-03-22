@@ -61,7 +61,7 @@ export function createOnboardingOrganism(): HTMLElement {
   // Layout: Moving Status at top, then skip-footer
   formContainer.appendChild(statusMsg);
   formContainer.appendChild(footer); // "進入預覽模式" at the top
-  
+
   // New GitHub OAuth wrapper
   const oauthWrapper = document.createElement("div");
   oauthWrapper.className = "oauth-wrapper";
@@ -95,10 +95,10 @@ export function createOnboardingOrganism(): HTMLElement {
 
     header.addEventListener("click", () => {
       const isCurrentlyOpen = acc.classList.contains("open");
-      
+
       // Close all other accordions
-      accordions.forEach(a => a.classList.remove("open"));
-      
+      accordions.forEach((a) => a.classList.remove("open"));
+
       // Toggle current one
       if (!isCurrentlyOpen) {
         acc.classList.add("open");
@@ -112,7 +112,7 @@ export function createOnboardingOrganism(): HTMLElement {
   // Build the 4 requested Accordion groups
   const accordionGroup = document.createElement("div");
   accordionGroup.style.marginTop = "1.5rem"; // spacing between preview btn and first accordion
-  
+
   accordionGroup.appendChild(createAccordion("GitHub OAuth (推薦)", oauthWrapper, true));
   accordionGroup.appendChild(createAccordion("GitHub Copilot", githubCard, false));
   accordionGroup.appendChild(createAccordion("Google Gemini", geminiCard, false));

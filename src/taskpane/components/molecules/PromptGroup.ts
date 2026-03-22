@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { createModelSelector } from "./ModelSelector";
 
 export interface PromptGroupProps {
@@ -88,7 +89,7 @@ export function createPromptGroup({
     clearLink.style.padding = "4px 8px";
     clearLink.style.fontSize = "11px";
     clearLink.innerHTML = "清除對話歷史";
-    
+
     clearLink.addEventListener("mouseover", () => {
       clearLink.style.color = "var(--primary-color, #0078D4)";
     });

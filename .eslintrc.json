@@ -15,12 +15,35 @@
   ],
   "globals": {
     "Office": "readonly",
-    "PowerPoint": "readonly"
+    "PowerPoint": "readonly",
+    "window": "readonly",
+    "document": "readonly",
+    "console": "readonly",
+    "fetch": "readonly",
+    "AbortController": "readonly",
+    "HTMLElement": "readonly",
+    "HTMLTextAreaElement": "readonly",
+    "HTMLButtonElement": "readonly",
+    "HTMLSelectElement": "readonly",
+    "setTimeout": "readonly",
+    "clearTimeout": "readonly",
+    "setInterval": "readonly",
+    "clearInterval": "readonly",
+    "requestAnimationFrame": "readonly",
+    "TextDecoder": "readonly",
+    "RequestInit": "readonly"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
   },
   "rules": {
     "no-undef": "off",
+    "@typescript-eslint/no-undef": "off",
     "@typescript-eslint/no-var-requires": "off",
     "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
     "no-empty": "warn",
     "office-addins/no-navigational-load": "warn",
     "office-addins/no-context-sync-in-loop": "warn"

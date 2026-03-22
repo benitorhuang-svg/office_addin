@@ -1,5 +1,4 @@
-/* global window, fetch, console, TextDecoder, RequestInit */
-
+/* eslint-disable no-undef, preserve-caught-error */
 import { CopilotResponse, ServerConfig, OfficeContextPayload } from "../types";
 import { getAuthProvider } from "./storage";
 
@@ -40,16 +39,27 @@ function createCoreCopilotRequest(
   };
 }
 
-async function fetchFromLocalPorts(path: string, init?: RequestInit) {
+export async function fetchFromLocalPorts(path: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
   try {
-    // Rely on Webpack Dev Server proxy or production routing
-    return await fetch(path, init);
+    const response = await fetch(path, {
+      ...init,
+      signal: controller.signal,
+    });
+    return response;
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`請求超時：伺服器未能在 60 秒內響應 (${error.message})`);
+    }
     console.warn("[copilot] request failed", {
       path,
       message: error instanceof Error ? error.message : String(error),
     });
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -72,7 +82,9 @@ export async function validateGeminiKey(key: string): Promise<{ ok: boolean; mes
     });
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      return await response.json().catch(() => ({ ok: false, message: "Server returned malformed JSON" }));
+      return await response
+        .json()
+        .catch(() => ({ ok: false, message: "Server returned malformed JSON" }));
     } else {
       const text = await response.text().catch(() => "Unknown server error");
       return { ok: false, message: text };
@@ -94,9 +106,15 @@ export async function sendToCopilot(
   const isStreaming = Boolean(onChunk);
 
   async function doRequest(token: string | null, gKey: string | null) {
+    const { getStoredAzureConfig } = await import("./storage");
+    const azure = getStoredAzureConfig();
+
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (gKey) headers["X-Gemini-Key"] = gKey;
+    if (azure.key) headers["X-Azure-Key"] = azure.key;
+    if (azure.endpoint) headers["X-Azure-Endpoint"] = azure.endpoint;
+    if (azure.deployment) headers["X-Azure-Deployment"] = azure.deployment;
 
     const body = {
       ...createCoreCopilotRequest(prompt, officeContext, model, presetId),
@@ -138,7 +156,7 @@ export async function sendToCopilot(
       return { res, json: { text: fullText } };
     }
 
-    let json: any;
+    let json: { text?: string; error?: string } & Record<string, unknown>;
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       json = await res.json().catch(() => ({}));
@@ -146,7 +164,7 @@ export async function sendToCopilot(
       const text = await res.text().catch(() => "Unknown error");
       json = { error: text };
     }
-    return { res, json };
+    return { res, json: json as CopilotResponse };
   }
 
   let { res, json } = await doRequest(githubToken, geminiToken);

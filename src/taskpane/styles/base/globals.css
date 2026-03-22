@@ -83,3 +83,49 @@ html, body {
     background: rgba(0, 120, 212, 0.15);
     color: var(--text-primary);
 }
+
+/* Toast Notification Styles */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  background: var(--bg-main);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-spring), transform 0.3s var(--ease-spring);
+  pointer-events: none;
+  z-index: 10000;
+  border: 1px solid var(--border-color);
+  min-width: 200px;
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast-info { border-left: 4px solid var(--primary-color); }
+.toast-success { border-left: 4px solid var(--success); }
+.toast-error { border-left: 4px solid var(--error); }
+
+/* Server Offline Indicator */
+body.server-offline::after {
+  content: "伺服器已斷開連線";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--error);
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  padding: 4px;
+  z-index: 9999;
+}

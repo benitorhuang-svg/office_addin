@@ -1,0 +1,52 @@
+/* --- Molecules - Accordion --- */
+.mol-accordion {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg, 12px);
+    background: #FFFFFF;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--bg-secondary, #F3F2F1);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: background 0.2s;
+}
+
+.accordion-header:hover {
+    background: var(--border-light, #E1DFDD);
+}
+
+.accordion-icon {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mol-accordion.open .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out;
+    background: rgba(255,255,255,0.5);
+}
+
+.mol-accordion.open .accordion-content {
+    max-height: 800px;
+}
+
+.accordion-content-inner {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

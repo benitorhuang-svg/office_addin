@@ -22,10 +22,15 @@ export interface ServerConfig {
   AVAILABLE_MODELS_GEMINI: string[];
   AVAILABLE_MODELS: string[];
   GEMINI_API_KEY: string;
+  AZURE_OPENAI_API_KEY: string;
+  AZURE_OPENAI_ENDPOINT: string;
+  AZURE_OPENAI_API_VERSION: string;
+  AZURE_OPENAI_DEPLOYMENT: string;
   DEFAULT_RESPONSE_LANGUAGE: string;
   DEFAULT_PERSONA: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  COPILOT_AGENT_PORT: string;
   getServerPatToken: () => string;
   getModelsToken: () => string;
 }
@@ -33,6 +38,9 @@ export interface ServerConfig {
 const config: ServerConfig = {
   get PORT() {
     return process.env.PORT || 4000;
+  },
+  get COPILOT_AGENT_PORT() {
+    return process.env.COPILOT_AGENT_PORT || '';
   },
   get COPILOT_API_URL() {
     return process.env.COPILOT_API_URL || 'https://models.github.ai/inference/chat/completions';
@@ -58,6 +66,18 @@ const config: ServerConfig = {
   },
   get GEMINI_API_KEY() {
     return process.env.GEMINI_API_KEY || '';
+  },
+  get AZURE_OPENAI_API_KEY() {
+    return process.env.AZURE_OPENAI_API_KEY || '';
+  },
+  get AZURE_OPENAI_ENDPOINT() {
+    return process.env.AZURE_OPENAI_ENDPOINT || '';
+  },
+  get AZURE_OPENAI_API_VERSION() {
+    return process.env.AZURE_OPENAI_API_VERSION || '2024-10-21';
+  },
+  get AZURE_OPENAI_DEPLOYMENT() {
+    return process.env.AZURE_OPENAI_DEPLOYMENT || '';
   },
   get DEFAULT_RESPONSE_LANGUAGE() {
     return firstDefinedValue(process.env.DEFAULT_RESPONSE_LANGUAGE, '繁體中文');

@@ -1,11 +1,12 @@
-/* global document, HTMLElement, HTMLTextAreaElement, HTMLButtonElement, HTMLSelectElement, console, Office */
-
+/* eslint-disable no-undef */
 import { createAuthController } from "./services/auth";
 import {
   setApplyStatus,
   clearChatHistory,
   setPresetDescription,
   hideLoadingScreen,
+  startHealthCheck,
+  showToast,
 } from "./services/ui";
 import {
   getStoredModel,
@@ -99,6 +100,8 @@ class TaskpaneController {
     this.authController.bindButtons({
       welcomeConnectBtn: document.getElementById("pat-connect-btn"),
       geminiConnectBtn: document.getElementById("gemini-connect-btn"),
+      geminiApiBtn: document.getElementById("gemini-api-connect-btn"),
+      azureConnectBtn: document.getElementById("azure-connect-btn"),
       cliConnectBtn: document.getElementById("cli-connect-btn"),
       oauthConnectBtn: document.getElementById("oauth-login-btn"),
       skipBtn: document.getElementById("skip-login-btn"),
@@ -117,6 +120,7 @@ class TaskpaneController {
 
     // CRITICAL: Hide loading screen after all initialization and auth checks are done
     hideLoadingScreen();
+    startHealthCheck();
   }
 
   private async handleSendMessage() {
@@ -158,18 +162,18 @@ class TaskpaneController {
 
   private handleModelChange(m: string) {
     setStoredModel(m);
-    setApplyStatus(this.els.applyStatus, `下一次請求將使用 ${m}`);
+    showToast(`Model set to ${m}`, "info");
   }
 
   private handlePresetChange(p: string) {
     setStoredPreset(p);
     setPresetDescription(this.els.presetDescription, p, this.writingPresets);
-    setApplyStatus(this.els.applyStatus, `已切換至「${p}」模式`);
+    showToast(`Mode: ${p}`, "info");
   }
 
   private handleClearChat() {
-    clearChatHistory(this.els.historyEl, null);
-    setApplyStatus(this.els.applyStatus, "已清除對話歷史");
+    clearChatHistory(this.els.historyEl);
+    showToast(`Conversation Cleared`, "success");
     this.els.promptEl?.focus();
   }
 }

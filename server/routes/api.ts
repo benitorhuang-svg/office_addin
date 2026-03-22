@@ -1,9 +1,23 @@
 import express, { Request, Response, Router } from 'express';
 import config from '../config/env.js';
 import * as promptBuilder from '../services/promptBuilder.js';
-import * as copilotService from '../services/copilotService.js';
+import * as copilotService from '../services/copilot/index.js';
 
 const apiRouter: Router = express.Router();
+
+apiRouter.get('/health', async (_req: Request, res: Response) => {
+  const agent = await copilotService.checkAgentHealth();
+  const hasGeminiKey = Boolean(config.GEMINI_API_KEY);
+  const hasAzureKey = Boolean(config.AZURE_OPENAI_API_KEY);
+
+  res.json({
+    ok: true,
+    agent,
+    gemini: { configured: hasGeminiKey },
+    azure: { configured: hasAzureKey },
+    timestamp: new Date().toISOString()
+  });
+});
 
 apiRouter.get('/config', (_req: Request, res: Response) => {
   const serverTokenConfigured = Boolean(config.getServerPatToken());
@@ -43,6 +57,12 @@ apiRouter.post('/copilot', async (req: Request, res: Response) => {
 
   const authHeader = req.headers.authorization || '';
   const geminiKeyHeader = (req.headers['x-gemini-key'] as string) || '';
+  const azureInfo = {
+    apiKey: (req.headers['x-azure-key'] as string) || '',
+    endpoint: (req.headers['x-azure-endpoint'] as string) || '',
+    deployment: (req.headers['x-azure-deployment'] as string) || '',
+  };
+
   const resolvedModel = config.AVAILABLE_MODELS.includes(model) ? model : config.COPILOT_MODEL;
   const wordPrompt = promptBuilder.buildWordPrompt(prompt, officeContext, resolvedModel, presetId || writingPresetId);
 
@@ -54,8 +74,13 @@ apiRouter.post('/copilot', async (req: Request, res: Response) => {
     res.flushHeaders();
   };
 
-  // ── Gemini Provider ──
-  if (config.AVAILABLE_MODELS_GEMINI.includes(resolvedModel)) {
+  // ── Route Selection ──
+  const authProvider = req.body.authProvider; // 'github_pat' | 'copilot_cli' | 'gemini_api' | 'preview'
+  const isGeminiModel = config.AVAILABLE_MODELS_GEMINI.includes(resolvedModel);
+  const useNativeGemini = isGeminiModel && (authProvider === 'gemini_api' || !authProvider);
+
+  // ── Gemini Native Provider (Method 1 in some contexts, but separate from SDK) ──
+  if (useNativeGemini) {
     const activeGeminiKey = geminiKeyHeader || config.GEMINI_API_KEY;
     if (!activeGeminiKey) return res.status(500).json({ error: 'gemini_api_not_configured' });
 
@@ -86,7 +111,6 @@ apiRouter.post('/copilot', async (req: Request, res: Response) => {
 
   // ── GitHub Models / SDK Provider ──
   const bearerTokenString = (authHeader.startsWith('Bearer ') ? authHeader.replace('Bearer ', '').trim() : '');
-  const authProvider = req.body.authProvider; // 'github_pat' | 'copilot_cli' | 'gemini_api' | 'preview'
 
   try {
     if (stream) {
@@ -98,16 +122,17 @@ apiRouter.post('/copilot', async (req: Request, res: Response) => {
       // Strict Routing based on Provider
       console.log(`[Copilot API] Provider: ${authProvider}, Model: ${resolvedModel}, Stream: ${stream}`);
       
-      if (authProvider === 'copilot_cli') {
-        console.log(`[Copilot API] Routing to SDK (CLI Mode) with model: ${resolvedModel}`);
-        await copilotService.sendPromptViaCopilotSdk(prompt, '', onChunk, true, resolvedModel);
+      if (authProvider === 'copilot_cli' || authProvider === 'gemini_cli') {
+        const isGemini = authProvider === 'gemini_cli';
+        console.log(`[Copilot API] Routing to SDK (${isGemini ? 'Gemini ' : ''}CLI Mode) with model: ${resolvedModel}`);
+        await copilotService.sendPromptViaCopilotSdk(prompt, '', onChunk, true, resolvedModel, azureInfo);
       } else if (bearerTokenString || config.getModelsToken()) {
         const token = bearerTokenString || config.getModelsToken();
         console.log(`[Copilot API] Routing to GitHub Models API`);
         await copilotService.sendPromptToGitHubModelsAPI(token, resolvedModel, wordPrompt, onChunk);
       } else {
         console.log(`[Copilot API] Routing to SDK (Fallback Mode)`);
-        await copilotService.sendPromptViaCopilotSdk(prompt, config.getServerPatToken(), onChunk);
+        await copilotService.sendPromptViaCopilotSdk(prompt, config.getServerPatToken(), onChunk, false, resolvedModel, azureInfo);
       }
       res.write('data: [DONE]\n\n');
       return res.end();
@@ -115,14 +140,14 @@ apiRouter.post('/copilot', async (req: Request, res: Response) => {
       let text: string;
       let authMode = 'pat';
 
-      if (authProvider === 'copilot_cli') {
-        text = await copilotService.sendPromptViaCopilotSdk(prompt, '', undefined, true, resolvedModel);
+      if (authProvider === 'copilot_cli' || authProvider === 'gemini_cli') {
+        text = await copilotService.sendPromptViaCopilotSdk(prompt, '', undefined, true, resolvedModel, azureInfo);
         authMode = 'cli';
       } else if (bearerTokenString || config.getModelsToken()) {
         const token = bearerTokenString || config.getModelsToken();
         text = await copilotService.sendPromptToGitHubModelsAPI(token, resolvedModel, wordPrompt);
       } else {
-        text = await copilotService.sendPromptViaCopilotSdk(prompt, config.getServerPatToken(), undefined, false, resolvedModel);
+        text = await copilotService.sendPromptViaCopilotSdk(prompt, config.getServerPatToken(), undefined, false, resolvedModel, azureInfo);
         authMode = 'cli';
       }
       
