@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 /* global document, HTMLInputElement, console */
 import { setStoredToken } from "../storage";
 import { AuthUIBridge } from "./ui-bridge";
@@ -10,7 +10,7 @@ import { AuthUIBridge } from "./ui-bridge";
 export class GitHubProvider {
   constructor(private ui: AuthUIBridge) {}
 
-  public parseAuthMessage(rawMessage: any) {
+  public parseAuthMessage(rawMessage: unknown) {
     try {
       const parsed = typeof rawMessage === "string" ? JSON.parse(rawMessage) : rawMessage;
       if (parsed?.type === "github-auth") {
@@ -50,7 +50,7 @@ export class GitHubProvider {
       Office.context.ui.displayDialogAsync(
         dialogUrl.href,
         { height: 60, width: 30 },
-        (result: any) => {
+        (result: Office.AsyncResult<Office.Dialog>) => {
           if (result.status === Office.AsyncResultStatus.Failed) {
             this.ui.setStatus(`OAuth Dialog Error: ${result.error.message}`);
           } else {

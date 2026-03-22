@@ -20,15 +20,39 @@ export function createOnboardingOrganism(): HTMLElement {
     buttonLabel: "Connect with GitHub",
   });
 
-  // Gemini Auth Card
+  // Gemini Auth Card (API)
   const geminiCard = createAuthCard({
     idPrefix: "gemini",
     badgeLabel: "Google Gemini",
     badgeClass: "gemini",
     title: "",
     placeholder: "Gemini API Key",
-    buttonLabel: "Connect with Gemini",
+    buttonLabel: "Connect with Gemini API",
   });
+
+  // Add methods labels and divider to Gemini card to make it premium
+  const method1 = document.createElement("div");
+  method1.className = "method-label";
+  method1.innerText = "方法 1: 透過 API Key 連線";
+  geminiCard.insertBefore(method1, geminiCard.querySelector('input'));
+
+  const divider = document.createElement("div");
+  divider.className = "auth-divider";
+  divider.innerHTML = "<span>或</span>";
+  geminiCard.appendChild(divider);
+
+  const method2 = document.createElement("div");
+  method2.className = "method-label";
+  method2.innerText = "方法 2: 連線至本機 Gemini CLI";
+  geminiCard.appendChild(method2);
+
+  // Add Gemini CLI button to the card
+  const geminiCliBtn = createButton({
+    id: "gemini-cli-connect-btn",
+    label: "Local Gemini CLI Session",
+    className: "btn-premium gemini",
+  });
+  geminiCard.appendChild(geminiCliBtn);
 
   const statusMsg = document.createElement("div");
   statusMsg.id = "apply-status";
@@ -111,11 +135,11 @@ export function createOnboardingOrganism(): HTMLElement {
 
   // Build the 4 requested Accordion groups
   const accordionGroup = document.createElement("div");
-  accordionGroup.style.marginTop = "1.5rem"; // spacing between preview btn and first accordion
+  accordionGroup.style.marginTop = "0px"; // Removed margin to minimize whitespace under preview btn
 
-  accordionGroup.appendChild(createAccordion("GitHub OAuth (推薦)", oauthWrapper, true));
+  accordionGroup.appendChild(createAccordion("Google Gemini", geminiCard, true));
+  accordionGroup.appendChild(createAccordion("GitHub OAuth (推薦)", oauthWrapper, false));
   accordionGroup.appendChild(createAccordion("GitHub Copilot", githubCard, false));
-  accordionGroup.appendChild(createAccordion("Google Gemini", geminiCard, false));
   accordionGroup.appendChild(createAccordion("Connect Copilot CLI", cliBtn, false));
 
   formContainer.appendChild(accordionGroup);

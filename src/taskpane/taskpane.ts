@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { createAuthController } from "./services/auth";
 import {
   setApplyStatus,
@@ -11,12 +10,16 @@ import {
 import {
   getStoredModel,
   setStoredModel,
+  getStoredModelMode,
+  setStoredModelMode,
   getStoredPreset,
   setStoredPreset,
+  getAuthProvider,
 } from "./services/storage";
 import { FALLBACK_PRESETS, getSelectedPreset } from "./services/presets";
-import { ChatOrchestrator, ChatContext } from "./services/chat-orchestrator";
-import { WritingPreset } from "./types";
+import { ChatOrchestrator } from "./services/chat-orchestrator";
+import { WritingPreset, ChatContext, AuthController } from "./types";
+import { ModelManager } from "./services/molecules/model-manager";
 
 import { createHeader } from "./components/organisms/Header";
 import { createHistoryContainer } from "./components/organisms/HistoryContainer";
@@ -24,56 +27,83 @@ import { createOnboardingOrganism } from "./components/organisms/Onboarding";
 import { createPromptGroup } from "./components/molecules/PromptGroup";
 
 /**
- * TaskpaneController
- *
+ * Organism: Taskpane Controller
  * Central orchestrator for the office_Agent taskpane.
- * Follows Atomic Design for components and delegates logic to services.
+ * Follows Atomic Design for components and delegates logic to specialized services.
  */
 class TaskpaneController {
   private els!: Record<string, HTMLElement | null>;
-  private authController!: ReturnType<typeof createAuthController>;
+  private authController!: AuthController | null;
   private chatOrchestrator: ChatOrchestrator;
   private writingPresets: WritingPreset[] = [...FALLBACK_PRESETS];
-  private availableModels: string[] = ["GPT-4o mini", "GPT-5 mini", "Gemini 1.5 Pro"];
+  private availableModels: string[] = [];
 
   constructor() {
     this.chatOrchestrator = new ChatOrchestrator();
-    this.renderAtomicDesign();
     this.initElements();
   }
 
+  /**
+   * Main Render Loop (Reactive update equivalent)
+   */
   private renderAtomicDesign() {
-    const onboardingRoot = document.getElementById("onboarding-root");
-    if (onboardingRoot) onboardingRoot.appendChild(createOnboardingOrganism());
+    const provider = getAuthProvider();
+    this.availableModels = ModelManager.getAvailableModels(provider);
 
+    // 1. Render Onboarding
+    const onboardingRoot = document.getElementById("onboarding-root");
+    if (onboardingRoot) {
+      onboardingRoot.innerHTML = "";
+      onboardingRoot.appendChild(createOnboardingOrganism());
+    }
+
+    // 2. Render Header
     const headerRoot = document.getElementById("header-root");
     if (headerRoot) {
+      headerRoot.innerHTML = "";
       headerRoot.appendChild(
         createHeader({
           title: "office_Agent",
+          authProvider: provider,
         })
       );
     }
 
-    // Mount into the history-root and prompt-root containers
+    // 3. Render History
     const historyRoot = document.getElementById("history-root");
     if (historyRoot) {
-      historyRoot.appendChild(createHistoryContainer());
+      historyRoot.innerHTML = "";
+      historyRoot.appendChild(createHistoryContainer({ authProvider: provider }));
     }
 
+    // 4. Render Prompt Controls
     const promptRoot = document.getElementById("prompt-root");
     if (promptRoot) {
+      promptRoot.innerHTML = "";
       promptRoot.appendChild(
         createPromptGroup({
           onSend: () => this.handleSendMessage(),
           onClearChat: () => this.handleClearChat(),
           availableModels: this.availableModels,
-          selectedModel: getStoredModel() || this.availableModels[0],
+          selectedModel: getStoredModel() || ModelManager.getDefaultModel(this.availableModels),
+          modelMode: getStoredModelMode(),
           onModelChange: (m) => this.handleModelChange(m),
+          onModeChange: (mode) => this.handleModeChange(mode),
           onLogout: () => this.authController?.logout(),
         })
       );
     }
+  }
+
+  private handleModeChange(mode: 'auto' | 'manual') {
+    setStoredModelMode(mode);
+    this.renderAndRebind();
+    showToast(`Model mode changed to ${mode}`, "info");
+  }
+
+  private handleModelChange(m: string) {
+    setStoredModel(m);
+    showToast(`Model set to ${m}`, "info");
   }
 
   private initElements() {
@@ -90,16 +120,49 @@ class TaskpaneController {
   }
 
   public async init() {
+    this.renderAtomicDesign();
+    this.initElements();
+
     this.authController = createAuthController({
       authStatusEl: document.getElementById("auth-status"),
       applyStatusEl: this.els.applyStatus,
       historyEl: this.els.historyEl,
+    }, {
+      onAuthStateChanged: () => {
+        this.renderAndRebind();
+      }
     });
 
-    // Bind buttons for the onboarding flow
+    this.bindAuthButtons();
+    await this.authController.checkInitialAuth();
+
+    // Re-render and re-bind to sync UI with state
+    this.renderAndRebind();
+
+    // Initial Static UI settings
+    const currentPreset = getStoredPreset() || "generic";
+    setPresetDescription(this.els.presetDescription, currentPreset, this.writingPresets);
+
+    // Initial Flow: focus and cleanup loading
+    this.els.promptEl?.focus();
+    window.scrollTo(0, 0);
+    hideLoadingScreen();
+    startHealthCheck();
+  }
+
+  private renderAndRebind() {
+    this.renderAtomicDesign();
+    this.initElements();
+    this.bindAuthButtons();
+  }
+
+  private bindAuthButtons() {
+    if (!this.authController) return;
+
     this.authController.bindButtons({
       welcomeConnectBtn: document.getElementById("pat-connect-btn"),
       geminiConnectBtn: document.getElementById("gemini-connect-btn"),
+      geminiCliConnectBtn: document.getElementById("gemini-cli-connect-btn"),
       geminiApiBtn: document.getElementById("gemini-api-connect-btn"),
       azureConnectBtn: document.getElementById("azure-connect-btn"),
       cliConnectBtn: document.getElementById("cli-connect-btn"),
@@ -108,24 +171,11 @@ class TaskpaneController {
       resetAuthBtn: document.getElementById("reset-auth-btn"),
       reloginBtn: document.getElementById("relogin-btn"),
     });
-
-    await this.authController.checkInitialAuth();
-
-    // Initial UI state
-    const currentPreset = getStoredPreset() || "generic";
-    setPresetDescription(this.els.presetDescription, currentPreset, this.writingPresets);
-
-    // Focus the prompt for a ready-to-type experience
-    this.els.promptEl?.focus();
-
-    // CRITICAL: Hide loading screen after all initialization and auth checks are done
-    hideLoadingScreen();
-    startHealthCheck();
   }
 
   private async handleSendMessage() {
-    const prompt = (this.els.promptEl as HTMLTextAreaElement)?.value.trim() || "";
-    if (!prompt) return;
+    const promptValue = (this.els.promptEl as HTMLTextAreaElement)?.value.trim();
+    if (!promptValue) return;
 
     const ctx: ChatContext = {
       historyEl: this.els.historyEl,
@@ -137,8 +187,7 @@ class TaskpaneController {
     };
 
     try {
-      const selectedModel =
-        (this.els.modelSelect as HTMLSelectElement)?.value || this.availableModels[0];
+      const selectedModel = (this.els.modelSelect as HTMLSelectElement)?.value || this.availableModels[0];
       const selectedPreset = getSelectedPreset(
         this.els.presetSelect as HTMLSelectElement,
         this.writingPresets
@@ -148,7 +197,7 @@ class TaskpaneController {
       setStoredPreset(selectedPreset);
 
       await this.chatOrchestrator.handleSend(
-        prompt,
+        promptValue,
         selectedModel,
         selectedPreset,
         this.authController,
@@ -158,17 +207,6 @@ class TaskpaneController {
       console.error("Chat flow failed:", error);
       setApplyStatus(this.els.applyStatus, "發送失敗，請稍後再試");
     }
-  }
-
-  private handleModelChange(m: string) {
-    setStoredModel(m);
-    showToast(`Model set to ${m}`, "info");
-  }
-
-  private handlePresetChange(p: string) {
-    setStoredPreset(p);
-    setPresetDescription(this.els.presetDescription, p, this.writingPresets);
-    showToast(`Mode: ${p}`, "info");
   }
 
   private handleClearChat() {

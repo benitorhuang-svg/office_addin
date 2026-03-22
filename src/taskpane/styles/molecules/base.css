@@ -4,53 +4,48 @@
     flex-direction: column;
     max-width: 90%;
     padding: 12px 16px;
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     font-size: 14px;
     line-height: 1.5;
     position: relative;
-    transition: all 0.2s var(--ease-spring);
-    box-shadow: var(--shadow-sm);
-    animation: slideInUp 0.4s var(--ease-spring);
-    margin-bottom: 8px;
+    transition: all 0.3s var(--ease-spring);
+    margin-bottom: 12px;
     word-wrap: break-word;
-    overflow-wrap: break-word;
 }
 
 .mol-chat-bubble.user {
     align-self: flex-end;
-    background: var(--accent-gradient);
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     color: #FFFFFF;
-    border-radius: 18px;
-    border-bottom-right-radius: 4px;
-    box-shadow: 0 4px 15px rgba(138, 43, 226, 0.2);
-    padding: 12px 16px;
-    font-size: 13.5px;
+    border-radius: 20px 20px 4px 20px;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    padding: 12px 18px;
+    font-size: 14px;
     max-width: 80%;
-    margin-bottom: 12px;
+    animation: slideInRight 0.4s var(--ease-spring) forwards;
 }
 
 .mol-chat-bubble.assistant-card {
     align-self: flex-start;
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--text-primary);
-    border-radius: 4px 20px 20px 20px;
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow-sm);
+    border-radius: 20px 20px 20px 4px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     width: fit-content;
-    min-width: 150px;
+    min-width: 140px;
     max-width: 92%;
     margin-bottom: 20px;
     padding: 0;
     overflow: hidden;
-    animation: slideInLeft 0.4s var(--ease-spring);
-    position: relative;
-    display: flex;
-    flex-direction: column;
+    animation: slideInLeft 0.4s var(--ease-spring) forwards;
 }
 
 .mol-chat-bubble.assistant-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: rgba(138, 43, 226, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95);
 }
 
 /* Task Status Row */
@@ -141,38 +136,38 @@
     50% { opacity: 1; }
 }
 
-/* Action Buttons */
-.bubble-action-group {
-    display: none;
-    gap: 12px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border-light);
-    background: var(--bg-secondary);
-}
-
-.mol-chat-bubble.assistant-card[data-complete="true"] .bubble-action-group {
+/* Updated Action Buttons (Pills) */
+.bubble-actions-container {
+    padding: 0 16px 16px;
     display: flex;
-    animation: fadeInAnimation 0.3s ease;
+    gap: 8px;
 }
 
-.action-btn-mini {
-    background: var(--bg-main);
-    border: 1px solid var(--border-light);
+.action-pill-btn {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
     border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-secondary);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
     cursor: pointer;
-    transition: all 0.2s var(--ease-spring);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.action-btn-mini:hover {
-    background: var(--primary-color);
+.action-pill-btn:hover {
+    background: #6366f1;
     color: white;
-    border-color: var(--primary-color);
+    border-color: #6366f1;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 120, 212, 0.2);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.action-pill-btn:active {
+    transform: translateY(0);
 }
 
 .mol-chat-bubble .role {
@@ -244,29 +239,33 @@
 
 /* --- Molecules - Prompt Group --- */
 .mol-prompt-group {
-    padding: 6px 16px 8px; /* Reduced from 12px */
-    background: #FFFFFF;
-    border-top: none; /* Removed the line */
-    position: relative;
-    z-index: 100;
-    box-shadow: none; /* Removed the shadow */
-    flex-shrink: 0;
+    padding: 12px 16px 24px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 1) 70%, rgba(255, 255, 255, 0) 100%);
+    position: sticky;
+    bottom: 0px;
+    left: 0;
+    right: 0;
+    z-index: 500;
 }
 
 .prompt-wrapper {
     display: flex;
-    align-items: flex-end; /* Align to bottom for multiline */
+    align-items: flex-end;
     width: 100%;
-    max-width: 600px;
     margin: 0 auto;
     background: #FFFFFF;
-    border: 1.5px solid var(--border-color);
-    border-radius: 16px; /* Reduced from 32px to match bubbles better */
-    padding: 4px 8px 4px 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    padding: 6px 10px 6px 16px;
     transition: all 0.3s var(--ease-spring);
     gap: 10px;
     position: relative;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.prompt-wrapper:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
 }
 
 .prompt-wrapper:focus-within {

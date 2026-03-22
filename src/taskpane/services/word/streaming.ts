@@ -23,7 +23,7 @@ export async function insertTextIntoWord(
 
   // Use a stable range for streaming
   await Word.run(async (context) => {
-    let range = context.document.getSelection();
+    const range = context.document.getSelection();
     range.insertText("", Word.InsertLocation.replace); // Clear selection first
     await context.sync();
 

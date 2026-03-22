@@ -12,12 +12,6 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
 
   if (role === "assistant") {
     wrapper.innerHTML = `
-      <div class="task-status-row">
-        <div class="task-icon-area">
-          <svg class="task-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-          <svg class="task-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        </div>
-      </div>
       <div class="text-preview skeleton">Writing content...</div>
       <div class="bubble-action-group">
         <button class="action-btn-mini apply-to-word" title="實作至 Word">✨ 實作至 Word</button>
@@ -33,9 +27,10 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
       copyBtn.onclick = () => {
         const contentText = wrapper.dataset.fullText || text;
         navigator.clipboard.writeText(contentText).then(() => {
+          const originalText = copyBtn.innerHTML;
           copyBtn.textContent = "✅ Copied!";
           setTimeout(() => {
-            copyBtn.textContent = "📋 Copy";
+            copyBtn.innerHTML = originalText;
           }, 2000);
         });
       };
@@ -45,11 +40,12 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
     if (applyBtn && onApply) {
       applyBtn.onclick = () => {
         applyBtn.disabled = true;
+        const originalText = applyBtn.innerHTML;
         applyBtn.textContent = "⌛ Applying...";
         onApply();
         setTimeout(() => {
           applyBtn.disabled = false;
-          applyBtn.textContent = "✨ 實作至 Word";
+          applyBtn.innerHTML = originalText;
         }, 3000);
       };
     }

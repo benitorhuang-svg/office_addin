@@ -1,10 +1,10 @@
-import { WordAction } from "../types";
+import { OfficeAction } from "../types";
 
 export type WordTestAction = {
   id: string;
   label: string;
   status: string;
-  buildActions(promptText?: string): WordAction[];
+  buildActions(promptText?: string): OfficeAction[];
 };
 
 export const WORD_TEST_ACTIONS: WordTestAction[] = [

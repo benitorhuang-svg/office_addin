@@ -27,19 +27,19 @@ async function insertPageNumber(
         ? "PageNumberPage"
         : "PageNumberBottom";
   const template = context.document.attachedTemplate;
-  const typeItem = template.buildingBlockTypes.getByType(blockType as any);
+  const typeItem = template.buildingBlockTypes.getByType(blockType as unknown as Word.BuildingBlockType);
   const categories = typeItem.categories;
   categories.load("items/name");
   await context.sync();
 
-  const firstCategory = (categories as any).items[0];
+  const firstCategory = (categories as unknown as { items: { buildingBlocks: Word.BuildingBlockCollection }[] }).items[0];
   if (!firstCategory) throw new Error("No page number building blocks are available.");
 
   const buildingBlocks = firstCategory.buildingBlocks;
   buildingBlocks.load("items/name");
   await context.sync();
 
-  const firstBlock = (buildingBlocks as any).items[0];
+  const firstBlock = (buildingBlocks as unknown as { items: { insert: (range: Word.Range, replace: boolean) => void }[] }).items[0];
   if (!firstBlock) throw new Error("Attached Word template does not expose a page number block.");
 
   const targetBody =
@@ -95,23 +95,27 @@ export async function applyOfficeActions(
     for (const action of preparedActions) {
       if (!action || !action.type) continue;
       switch (action.type) {
+        case "replace":
         case "replace_selection":
-        case "insert_at_cursor":
-          if (action.text) selection.insertText(action.text, Word.InsertLocation.replace);
+        case "insert":
+        case "insert_at_cursor": {
+          const content = action.value || action.text;
+          if (content) selection.insertText(content, Word.InsertLocation.replace);
           applyFormatting(selection, action);
           break;
+        }
         case "append_to_end":
           if (action.text) {
             const p = body.insertParagraph(action.text, Word.InsertLocation.end);
-            applyFormatting(p as any, action);
+            applyFormatting(p as unknown as Word.Range, action);
           }
           break;
         case "insert_heading": {
           if (!action.text) break;
           const heading = body.insertParagraph(action.text, Word.InsertLocation.end);
-          if (action.level === 2) (heading as any).styleBuiltIn = "Heading 2";
-          else if (action.level === 3) (heading as any).styleBuiltIn = "Heading 3";
-          else (heading as any).styleBuiltIn = "Heading 1";
+          if (action.level === 2) (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 2";
+          else if (action.level === 3) (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 3";
+          else (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 1";
           break;
         }
         case "insert_bullets":
@@ -145,8 +149,9 @@ export async function applyOfficeActions(
           if (firstSection) await insertPageNumber(action, context, firstSection);
           break;
         case "accept_tracked_changes":
-          if (typeof (context.document as any).acceptAllRevisions === "function")
-            (context.document as any).acceptAllRevisions();
+           
+          if (typeof (context.document as unknown as Record<string, unknown>).acceptAllRevisions === "function")
+            (context.document as unknown as { acceptAllRevisions: () => void }).acceptAllRevisions();
           break;
       }
     }

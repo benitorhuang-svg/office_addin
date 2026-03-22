@@ -1,28 +1,22 @@
-/* global document, HTMLElement */
+import { createWelcomeMessage } from "../molecules/WelcomeMessage";
 
-export function createHistoryContainer(): HTMLElement {
+export interface HistoryContainerProps {
+  authProvider: string | null;
+}
+
+/**
+ * Organism: Chat History Container
+ * Manages the message list and initial welcome state.
+ */
+export function createHistoryContainer({ authProvider: _authProvider }: HistoryContainerProps): HTMLElement {
   const container = document.createElement("div");
   container.id = "chat-history";
-  container.className = "org-history-container atom-text";
+  container.className = "org-history-container";
   container.setAttribute("aria-live", "polite");
 
-  const welcome = document.createElement("div");
-  welcome.className = "welcome-message-container";
-  welcome.innerHTML = `
-    <div class="welcome-header">
-      歡迎使用文案助手
-    </div>
-    <div class="welcome-capabilities">
-       <div class="capability-item">📝 撰寫、編輯文件內容</div>
-       <div class="capability-item">💡 延伸主題、提煉賣點</div>
-       <div class="capability-item">📊 建立表格、清單結構</div>
-       <div class="capability-item">🎨 格式化文字與排版</div>
-    </div>
-    <div class="welcome-footer">
-      請告訴我你想寫什麼，或直接貼上需要修改的內容，我們開始吧！
-    </div>
-  `;
-
+  // Initial Welcome State (Molecule)
+  const welcome = createWelcomeMessage();
   container.appendChild(welcome);
+
   return container;
 }

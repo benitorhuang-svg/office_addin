@@ -31,8 +31,11 @@ export type OfficeAction = {
     | "insert_table_of_contents"
     | "insert_page_number"
     | "accept_tracked_changes"
-    | "reject_tracked_changes";
+    | "reject_tracked_changes"
+    | "replace"
+    | "insert";
   text?: string;
+  value?: string; // Consistency with server 'value'
   items?: string[];
   headers?: string[];
   rows?: string[][];
@@ -71,6 +74,7 @@ export type OfficeAction = {
 export type CopilotResponse = {
   text?: string;
   officeActions?: OfficeAction[];
+  actions?: { type: string; value: string }[];
   authMode?: string;
   model?: string;
   detail?: string;
@@ -84,3 +88,21 @@ export type ServerConfig = {
   writingPresets?: WritingPreset[];
   serverTokenConfigured?: boolean;
 };
+
+/* global HTMLElement, HTMLTextAreaElement, HTMLButtonElement */
+export interface ChatContext {
+  historyEl: HTMLElement | null;
+  applyStatus: HTMLElement | null;
+  promptEl: HTMLTextAreaElement | null;
+  sendBtn: HTMLButtonElement | null;
+  responseEl: HTMLElement | null;
+  runtimeModel: HTMLElement | null;
+}
+
+export interface AuthController {
+  getAccessToken: () => string | null;
+  getGeminiToken: () => string | null;
+  checkInitialAuth: () => void;
+  bindButtons: (els: Record<string, HTMLElement | null>) => void;
+  logout: () => void;
+}

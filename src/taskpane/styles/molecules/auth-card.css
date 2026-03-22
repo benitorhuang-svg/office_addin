@@ -32,3 +32,31 @@
     color: var(--text-primary);
     line-height: 1.2;
 }
+
+.method-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 8px 0 4px 0;
+}
+
+.auth-divider {
+    position: relative;
+    text-align: center;
+    margin: 20px 0;
+    border-top: 1px solid var(--border-light);
+}
+
+.auth-divider span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 0 10px;
+    font-size: 10px;
+    font-weight: bold;
+    color: var(--text-muted);
+}

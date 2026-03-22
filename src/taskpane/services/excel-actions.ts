@@ -43,12 +43,12 @@ export async function applyExcelActions(actions: OfficeAction[] | undefined, fal
 
   await Excel.run(async (context) => {
     const sheet = context.workbook.worksheets.getActiveWorksheet();
-    let selection = context.workbook.getSelectedRange();
+    const selection = context.workbook.getSelectedRange();
     selection.load("address, rowIndex, columnIndex");
     await context.sync();
 
     let currentRow = selection.rowIndex;
-    let currentCol = selection.columnIndex;
+    const currentCol = selection.columnIndex;
 
     for (const action of actions) {
       if (!action || !action.type) continue;

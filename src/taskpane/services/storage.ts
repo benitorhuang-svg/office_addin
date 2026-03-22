@@ -1,4 +1,29 @@
-/* eslint-disable no-undef */
+ 
+
+/**
+ * Frontend Storage Service
+ *
+ * Auth provider values aligned with the 4 ACP connection methods:
+ *   - 'gemini_cli'   → Method 1: Gemini CLI (ACP)
+ *   - 'copilot_cli'  → Method 2: Default Copilot CLI
+ *   - 'azure_byok'   → Method 3: Azure OpenAI BYOK
+ *   - 'azure_openai'  → Method 3: (alias for Azure BYOK from frontend)
+ *   - 'remote_cli'   → Method 4: Remote CLI
+ *   - 'gemini_api'   → Native Gemini REST (non-SDK)
+ *   - 'github_pat'   → GitHub Models API with PAT
+ *   - 'preview'      → Preview / Fallback mode
+ */
+
+export type FrontendAuthProvider =
+  | 'gemini_cli'
+  | 'copilot_cli'
+  | 'azure_byok'
+  | 'azure_openai'
+  | 'remote_cli'
+  | 'gemini_api'
+  | 'github_pat'
+  | 'preview';
+
 const TOKEN_KEY = "github_token";
 const GEMINI_TOKEN_KEY = "gemini_token";
 const MODEL_KEY = "selected_model";
@@ -7,6 +32,7 @@ const AUTH_PROVIDER_KEY = "auth_provider";
 const AZURE_KEY = "azure_key";
 const AZURE_ENDPOINT = "azure_endpoint";
 const AZURE_DEPLOYMENT = "azure_deployment";
+const MODEL_MODE_KEY = "selected_model_mode";
 
 export function getStoredToken() {
   return window.localStorage.getItem(TOKEN_KEY);
@@ -36,7 +62,7 @@ export function getAuthProvider(): string | null {
   return window.localStorage.getItem(AUTH_PROVIDER_KEY);
 }
 
-export function setAuthProvider(provider: "github_pat" | "gemini_api" | "copilot_cli" | "preview") {
+export function setAuthProvider(provider: FrontendAuthProvider) {
   window.localStorage.setItem(AUTH_PROVIDER_KEY, provider);
 }
 
@@ -46,6 +72,14 @@ export function getStoredModel() {
 
 export function setStoredModel(model: string) {
   window.localStorage.setItem(MODEL_KEY, model);
+}
+
+export function getStoredModelMode(): 'auto' | 'manual' {
+  return (window.localStorage.getItem(MODEL_MODE_KEY) as 'auto' | 'manual') || 'auto';
+}
+
+export function setStoredModelMode(mode: 'auto' | 'manual') {
+  window.localStorage.setItem(MODEL_MODE_KEY, mode);
 }
 
 export function getStoredPreset() {

@@ -1,6 +1,10 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const devCerts = require('office-addin-dev-certs');
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const ports = [3000, 4000, 4001];
@@ -66,7 +70,7 @@ function killStaleRepoListeners() {
   }
 }
 
-function startProcess(command, args, label) {
+function startProcess(command, args, label, children) {
   const child = spawn(command, args, {
     cwd: path.resolve(repoRoot),
     stdio: 'inherit',
@@ -92,25 +96,42 @@ function startProcess(command, args, label) {
   return child;
 }
 
-killStaleRepoListeners();
+async function runDev() {
+  killStaleRepoListeners();
 
-const npmCliPath = process.env.npm_execpath;
-if (!npmCliPath) {
-  throw new Error('npm_execpath is required to launch dev subprocesses');
+  console.log('[Dev] Ensuring dev certificates are installed...');
+  try {
+    await devCerts.getHttpsServerOptions();
+  } catch (err) {
+    console.error('[Dev] Failed to ensure dev certificates:', err.message);
+    console.warn('[Dev] Continuing, but subprocesses may fail to install certificates concurrently.');
+  }
+
+  const npmCliPath = process.env.npm_execpath;
+  if (!npmCliPath) {
+    throw new Error('npm_execpath is required to launch dev subprocesses');
+  }
+
+  const children = [];
+  children.push(startProcess(process.execPath, [npmCliPath, 'run', 'dev-server'], 'dev-server', children));
+  children.push(startProcess(process.execPath, [npmCliPath, 'run', 'start:server'], 'start:server', children));
+  children.push(startProcess(process.execPath, [npmCliPath, 'run', 'start:addin'], 'addin', children));
+  
+  // Gemini CLI now dynamically spawned by SDK because it doesn't support long-running port servers
+
+  const shutdown = () => {
+    for (const child of children) {
+      if (!child.killed) {
+        child.kill();
+      }
+    }
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
-const children = [
-  startProcess(process.execPath, [npmCliPath, 'run', 'dev-server'], 'dev-server'),
-  startProcess(process.execPath, [npmCliPath, 'run', 'start:server'], 'start:server'),
-];
-
-const shutdown = () => {
-  for (const child of children) {
-    if (!child.killed) {
-      child.kill();
-    }
-  }
-};
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+runDev().catch((err) => {
+  console.error('[Critical] Dev script failed:', err);
+  process.exit(1);
+});

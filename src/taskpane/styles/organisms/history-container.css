@@ -23,6 +23,27 @@
     animation: fadeInScale 0.5s var(--ease-spring);
 }
 
+.auth-status-indicator {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 6px 14px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+}
+
+.auth-status-indicator .provider-name {
+    color: var(--primary-color);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .welcome-header {
     font-family: 'Outfit', sans-serif;
     font-size: 1.05rem;

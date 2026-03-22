@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import { createModelSelector } from "./ModelSelector";
 
 export interface PromptGroupProps {
@@ -7,6 +7,8 @@ export interface PromptGroupProps {
   availableModels: string[];
   selectedModel?: string;
   onModelChange: (model: string) => void;
+  modelMode?: 'auto' | 'manual';
+  onModeChange: (mode: 'auto' | 'manual') => void;
   onLogout: () => void;
 }
 
@@ -16,6 +18,8 @@ export function createPromptGroup({
   availableModels,
   selectedModel,
   onModelChange,
+  modelMode = 'auto',
+  onModeChange,
   onLogout,
 }: PromptGroupProps): HTMLElement {
   const group = document.createElement("section");
@@ -68,14 +72,35 @@ export function createPromptGroup({
   actionsRow.style.marginTop = "8px";
   actionsRow.style.padding = "0 4px";
 
-  // Left: Model Selector
+  // Left: Mode & Model Selector
+  const leftGroup = document.createElement("div");
+  leftGroup.style.display = "flex";
+  leftGroup.style.gap = "4px";
+  leftGroup.style.alignItems = "center";
+
+  const modeBtn = document.createElement("button");
+  modeBtn.className = "action-btn-mini";
+  modeBtn.style.padding = "2px 6px";
+  modeBtn.style.fontSize = "10px";
+  modeBtn.style.fontWeight = "bold";
+  modeBtn.style.borderRadius = "4px";
+  modeBtn.textContent = modelMode === 'auto' ? "預設" : "手動";
+  modeBtn.style.background = modelMode === 'auto' ? "var(--primary-light, #E8F0FE)" : "#F5F5F5";
+  modeBtn.style.color = modelMode === 'auto' ? "var(--primary, #1A73E8)" : "#666";
+  modeBtn.style.border = "1px solid rgba(0,0,0,0.05)";
+  modeBtn.style.cursor = "pointer";
+  modeBtn.onclick = () => onModeChange(modelMode === 'auto' ? 'manual' : 'auto');
+  
   const modelSelector = createModelSelector({
     id: "model-select",
     models: availableModels,
     selectedModel,
     onChange: onModelChange,
   });
-  actionsRow.appendChild(modelSelector);
+
+  leftGroup.appendChild(modeBtn);
+  leftGroup.appendChild(modelSelector);
+  actionsRow.appendChild(leftGroup);
 
   // Center: Clear Link
   if (onClearChat) {
@@ -84,14 +109,13 @@ export function createPromptGroup({
     clearLink.style.background = "transparent";
     clearLink.style.border = "none";
     clearLink.style.color = "var(--text-muted, #888)";
-    clearLink.style.textDecoration = "underline";
     clearLink.style.cursor = "pointer";
     clearLink.style.padding = "4px 8px";
-    clearLink.style.fontSize = "11px";
-    clearLink.innerHTML = "清除對話歷史";
+    clearLink.title = "清除對話歷史";
+    clearLink.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"></path></svg>`;
 
     clearLink.addEventListener("mouseover", () => {
-      clearLink.style.color = "var(--primary-color, #0078D4)";
+      clearLink.style.color = "var(--error, #D93025)";
     });
     clearLink.addEventListener("mouseout", () => {
       clearLink.style.color = "var(--text-muted, #888)";

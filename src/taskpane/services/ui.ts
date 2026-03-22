@@ -1,8 +1,9 @@
-/* eslint-disable no-undef */
+ 
 import { WritingPreset } from "../types";
 
 import { createChatBubble } from "../components/molecules/ChatBubble";
 import { createTypingIndicator } from "../components/molecules/TypingIndicator";
+import { createWelcomeMessage } from "../components/molecules/WelcomeMessage";
 
 export function appendMessage(
   historyEl: HTMLElement | null,
@@ -72,7 +73,7 @@ export function populateModelOptions(
   if (!modelSelect) return;
   modelSelect.innerHTML = "";
 
-  const preferredModel = selectedModel || models[0] || "GPT-5 mini";
+  const preferredModel = selectedModel || models[0] || "No Model Available";
   models.forEach((model) => {
     const option = document.createElement("option");
     option.value = model;
@@ -146,8 +147,8 @@ export function showToast(message: string, type: "info" | "success" | "error" = 
 export function startHealthCheck() {
   const check = async () => {
     try {
-      const { getServerConfig } = await import("./api");
-      await getServerConfig();
+      const { getConfig } = await import("./api");
+      await getConfig();
       document.body.classList.remove("server-offline");
     } catch {
       document.body.classList.add("server-offline");
@@ -159,25 +160,12 @@ export function startHealthCheck() {
 
 export function clearChatHistory(
   historyEl: HTMLElement | null,
-  responseEl: HTMLElement | null = null
+  responseEl: HTMLElement | null = null,
+  authProvider: string | null = null
 ) {
   if (historyEl) {
-    historyEl.innerHTML = `
-      <div class="welcome-message-container">
-          <div class="welcome-header">
-            歡迎使用文案助手
-          </div>
-          <div class="welcome-capabilities">
-             <div class="capability-item">📝 撰寫、編輯文件內容</div>
-             <div class="capability-item">💡 延伸主題、提煉賣點</div>
-             <div class="capability-item">📊 建立表格、清單結構</div>
-             <div class="capability-item">🎨 格式化文字與排版</div>
-          </div>
-          <div class="welcome-footer">
-            請告訴我你想寫什麼，或直接貼上需要修改的內容，我們開始吧！
-          </div>
-      </div>
-    `;
+    historyEl.innerHTML = "";
+    historyEl.appendChild(createWelcomeMessage({ authProvider }));
   }
   if (responseEl) {
     responseEl.textContent = "";

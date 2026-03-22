@@ -60,8 +60,44 @@
 .header-actions .icon-btn-secondary, 
 .header-actions .icon-btn-primary {
     flex-shrink: 0;
-    width: 32px;  /* Shrunk from 38px */
-    height: 32px;
+    width: 28px;  /* Shrunk from 32px */
+    height: 28px;
+}
+
+.header-status {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-light);
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+    z-index: 100;
+    position: sticky;
+    top: 0;
+    animation: slideDown 0.4s var(--ease-spring);
+}
+
+.header-status .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #34A853; /* Green for connected */
+    box-shadow: 0 0 8px rgba(52, 168, 83, 0.4);
+}
+
+.header-status .status-method {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary-color);
 }
 
 .selectors-group {
@@ -87,7 +123,8 @@
     padding: 24px 16px;
     background: linear-gradient(160deg, #F0F4FF 0%, #E8ECF5 40%, #F5F0FF 100%);
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* Decorative gradient orb */

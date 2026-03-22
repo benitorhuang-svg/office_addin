@@ -43,6 +43,39 @@ export class GeminiProvider {
     }
   }
 
+  public async handleCliConnect() {
+    this.ui.setStatus("Launching Gemini CLI session...");
+    
+    try {
+      // Trigger the backend to start the CLI (npx @google/gemini-cli --experimental-acp)
+      // We don't necessarily need to wait for it to be "ready" as the client will retry connection via ACP
+      fetch("/api/gemini/start-cli", { method: "POST" })
+        .catch(e => console.error("Failed to start Gemini CLI via backend:", e));
+
+      // Switch connection mode to Gemini CLI via ACP
+      const s = await import("../storage");
+      s.setAuthProvider("gemini_cli");
+      
+      // Ensure the model is a Gemini model
+      const currentModel = s.getStoredModel();
+      if (!currentModel || !currentModel.toLowerCase().includes("gemini")) {
+        s.setStoredModel("gemini-1.5-flash");
+      }
+      
+      // Set a dummy token so other UI pieces know Gemini is selected
+      const dummyToken = "local-gemini-session";
+      window.localStorage.setItem("gemini_token", dummyToken);
+      
+      this.ui.showSuccess("Gemini CLI", "Gemini CLI session active.");
+      this.ui.notifyAssistant("Gemini CLI launched.");
+      return true;
+    } catch (err) {
+      console.error(err);
+      this.ui.setStatus("Failed to trigger Gemini CLI.");
+      return false;
+    }
+  }
+
   public getToken() {
     return getStoredGeminiToken();
   }
