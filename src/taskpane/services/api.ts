@@ -53,7 +53,9 @@ export async function sendToCopilot(
     const chunks: string[] = [];
 
     await STREAM_DECODER.decodeSSE(reader, (chunk) => {
-      chunks.push(chunk);
+      if (!chunk.startsWith("[ASK_USER]:")) {
+        chunks.push(chunk);
+      }
       onChunk(chunk);
     });
 

@@ -113,6 +113,15 @@ export class ChatOrchestrator {
             receivedFirstChunk = true;
             removeTypingIndicator();
           }
+
+          if (chunk.startsWith("[ASK_USER]:")) {
+            const parts = chunk.split(":");
+            const sessionId = parts[1];
+            const issue = parts.slice(2).join(":"); // Rejoin everything else as the question
+            ChatUiHelper.renderAskUser(assistantBubble, sessionId, issue);
+            return;
+          }
+
           streamBuffer += chunk;
           ChatUiHelper.updateAssistantBubble(
             assistantBubble,

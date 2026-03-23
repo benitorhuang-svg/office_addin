@@ -58,6 +58,19 @@ apiRouter.get('/health', async (req, res) => {
   }
 });
 
+// Endpoint 5: Respond to AI Question (Resolves pendings in SDK Orchestrator)
+apiRouter.post('/copilot/response', async (req, res) => {
+  try {
+    const { sessionId, answer } = req.body;
+    const { ModernSDKOrchestrator } = await import('../services/copilot/organisms/sdk-orchestrator-v2.js');
+    
+    ModernSDKOrchestrator.resolveInput(sessionId, answer);
+    res.json({ status: 200, detail: 'Response received' });
+  } catch (err: unknown) {
+    res.status(500).json({ status: 500, detail: String(err) });
+  }
+});
+
 // Endpoint 4: Core Copilot (Handled by Atomized Handler)
 apiRouter.post('/copilot', handleCopilotRequest);
 

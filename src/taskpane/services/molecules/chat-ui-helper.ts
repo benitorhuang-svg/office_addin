@@ -127,6 +127,85 @@ export const ChatUiHelper = {
   },
 
   /**
+   * Renders an interactive question box for the ask_user tool.
+   */
+  renderAskUser(
+    bubble: HTMLElement | null,
+    sessionId: string,
+    question: string
+  ) {
+    if (!bubble) return;
+
+    const askContainer = document.createElement("div");
+    askContainer.id = `ask-user-${sessionId}`;
+    askContainer.className = "ask-user-container";
+    askContainer.style.marginTop = "10px";
+    askContainer.style.padding = "10px";
+    askContainer.style.border = "1px solid #0078D4";
+    askContainer.style.borderRadius = "8px";
+    askContainer.style.backgroundColor = "rgba(0, 120, 212, 0.05)";
+
+    const qEl = document.createElement("div");
+    qEl.textContent = `🤔 ${question}`;
+    qEl.style.fontWeight = "bold";
+    qEl.style.marginBottom = "8px";
+    askContainer.appendChild(qEl);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "請輸入您的回覆...";
+    input.style.width = "100%";
+    input.style.padding = "8px";
+    input.style.marginBottom = "8px";
+    input.style.borderRadius = "4px";
+    input.style.border = "1px solid #ccc";
+    askContainer.appendChild(input);
+
+    const btn = document.createElement("button");
+    btn.textContent = "傳送回覆";
+    btn.className = "action-pill-btn";
+    btn.style.backgroundColor = "#0078D4";
+    btn.style.color = "white";
+    
+    btn.onclick = async () => {
+      const answer = input.value.trim();
+      if (!answer) return;
+
+      btn.disabled = true;
+      input.disabled = true;
+      btn.textContent = "處理中...";
+
+      try {
+        const port = await (await import("../atoms/api-client")).findActiveServer();
+        const res = await fetch(`https://localhost:${port}/api/copilot/response`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, answer }),
+        });
+        
+        if (res.ok) {
+          askContainer.innerHTML = `<div style="color: #28A745; font-size: 0.9em;">✅ 已送出：${answer}</div>`;
+          setTimeout(() => askContainer.remove(), 2000);
+        } else {
+          throw new Error("Failed to send response");
+        }
+      } catch (err) {
+        btn.disabled = false;
+        input.disabled = false;
+        btn.textContent = "重試";
+        alert("無法傳送回覆，請稍後再試。");
+      }
+    };
+
+    askContainer.appendChild(btn);
+
+    const previewEl = bubble.querySelector(".text-preview");
+    if (previewEl) {
+      previewEl.after(askContainer);
+    }
+  },
+
+  /**
    * Renders an error message in the bubble.
    */
   renderError(bubble: HTMLElement | null, errorText: string) {
