@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import authRouter from '../routes/auth.js';
-import apiRouter from '../routes/api.js';
+import authRouter from '../routes/organisms/auth-router.js';
+import apiRouter from '../routes/organisms/api-router.js';
 
 /**
  * Molecule: Express App Factory

@@ -35,6 +35,18 @@ export const BASE_ENV = {
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || '',
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '',
 
+  GITHUB_MODELS_URL: process.env.GITHUB_MODELS_URL || 'https://models.github.ai/inference/chat/completions',
+  GEMINI_REST_URL: process.env.GEMINI_REST_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+  DEFAULT_TEMPERATURE: process.env.DEFAULT_TEMPERATURE || '0.7',
+  MAX_TOKENS: process.env.MAX_TOKENS || '2048',
+
   DEFAULT_RESPONSE_LANGUAGE: firstDefinedValue(process.env.DEFAULT_RESPONSE_LANGUAGE, '繁體中文'),
   DEFAULT_PERSONA: firstDefinedValue(process.env.DEFAULT_PERSONA, '文案高手，擅長根據主題延伸發想、提煉賣點、補充角度與產出可直接使用的內容'),
+  APP_TITLE: firstDefinedValue(process.env.APP_TITLE, 'office_Agent'),
+  FALLBACK_PRESETS_JSON: firstDefinedValue(process.env.FALLBACK_PRESETS_JSON, JSON.stringify([
+    { id: "general", label: "General Writing", description: "Balanced drafting for normal editing." },
+    { id: "summary", label: "Summary", description: "Concise summary of selection." }
+  ])),
+  PREVIEW_MODE_GUIDE_MD: firstDefinedValue(process.env.PREVIEW_MODE_GUIDE_MD, `您目前處於 **預覽模式**。<br>**本工具支援以下登入方式：**<br>1. **Google Gemini**：使用 CLI 或 API Key 。<br>2. **GitHub Copilot**：使用 CLI 、 透過OAuth 或 PAT 連線。<br>3. **Azure OpenAI**：使用自有憑證。<br>**如何開始使用？**<br>點擊右下角 **登出按鈕** 即可設定連線。`),
+  DEFAULT_WORD_FONT_STYLE: firstDefinedValue(process.env.DEFAULT_WORD_FONT_STYLE, "font-family: '微軟正黑體', 'Microsoft JhengHei', 'Segoe UI', sans-serif; font-size: 11pt;"),
 };

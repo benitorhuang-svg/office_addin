@@ -7,7 +7,7 @@ import {
 import { applyOfficeActions, getWordContext, insertTextIntoWord } from "./word-actions";
 /* global Office */
 
-import { OfficeAction, OfficeContextPayload } from "../types";
+import { OfficeAction, OfficeContextPayload } from "../atoms/types";
 
 function getHostType(): Office.HostType | "" {
   if (typeof Office !== "undefined" && Office.context && Office.context.host) {

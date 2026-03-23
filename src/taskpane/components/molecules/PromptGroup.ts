@@ -3,7 +3,6 @@ import { createButton } from "../atoms/Button";
 
 export interface PromptGroupProps {
   onSend: () => void;
-  onClearChat?: () => void;
   availableModels: string[];
   selectedModel?: string;
   onModelChange: (model: string) => void;
@@ -14,7 +13,6 @@ export interface PromptGroupProps {
 
 export function createPromptGroup({
   onSend,
-  onClearChat,
   availableModels,
   selectedModel,
   onModelChange,
@@ -86,6 +84,7 @@ export function createPromptGroup({
     onChange: onModelChange,
   });
 
+  leftGroup.appendChild(modeBtn);
   leftGroup.appendChild(modelSelector);
   actionsRow.appendChild(leftGroup);
 

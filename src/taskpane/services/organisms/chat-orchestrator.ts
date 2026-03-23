@@ -1,18 +1,18 @@
-/* global HTMLElement */
-
 import { marked } from "marked";
-import { CopilotResponse, ChatContext, AuthController } from "../types";
-import { sendToCopilot } from "./api";
-import { getWordContext, insertTextIntoWord, applyOfficeActions } from "./word-actions";
-import { appendMessage, removeTypingIndicator } from "./ui";
-import { PROFESSIONAL_DRAFT_DIRECTIVE } from "./atoms/prompt-template";
-import { ChatUiHelper } from "./molecules/chat-ui-helper";
+import { CopilotResponse, ChatContext, AuthController } from "../atoms/types";
+import { sendToCopilot } from "./api-orchestrator";
+import { getWordContext, applyOfficeActions } from "../molecules/word-actions";
+import { appendMessage, removeTypingIndicator } from "../molecules/ui-renderer";
+import { PROFESSIONAL_DRAFT_DIRECTIVE } from "../atoms/prompt-template";
+import { ChatUiHelper } from "../molecules/chat-ui-helper";
+import { WordIntegrator } from "../molecules/word-integrator";
 
 /**
  * Organism: Chat Orchestrator
  * Coordinates the full chat interaction flow between UI, Office context, and AI service.
  */
 export class ChatOrchestrator {
+  public static config: Partial<Record<string, string>> = {};
   private isGenerating = false;
 
   constructor() { }
@@ -31,7 +31,7 @@ export class ChatOrchestrator {
     if (this.isGenerating) return "";
     this.isGenerating = true;
 
-    // 1. Prepare UI
+    // 1. Prepare UI (Molecule Delegation)
     ChatUiHelper.prepare(ctx, prompt);
 
     const enhancedPrompt = PROFESSIONAL_DRAFT_DIRECTIVE(prompt);
@@ -40,35 +40,10 @@ export class ChatOrchestrator {
     let copilotResponse: CopilotResponse | null = null;
     let receivedFirstChunk = false;
 
-    // 2. Define the callback for applying changes to Word
+    // 2. Define the callback for applying changes to Word (Molecule Delegation)
     const onApply = async () => {
       if (!finalContent) return;
-
-      // Check if it's the preview guide (has HTML tags like <br>) or has markdown markers
-      if (finalContent.includes("<br>") || finalContent.includes("<li>") || finalContent.includes("**")) {
-        // Use Word's insertHtml for better layout (Supports Bold, Lists, Breaks)
-        await Word.run(async (context) => {
-          const range = context.document.getSelection();
-          // Convert Markdown to true HTML (strong tags instead of **)
-          const renderedHtml = marked.parse(finalContent);
-          // Set a premium default font (Microsoft JhengHei for TC)
-          const htmlWrapper = `
-            <html>
-              <head>
-                <style>
-                  body { font-family: '微軟正黑體', 'Microsoft JhengHei', 'Segoe UI', sans-serif; font-size: 11pt; }
-                </style>
-              </head>
-              <body>${renderedHtml}</body>
-            </html>`;
-          range.insertHtml(htmlWrapper, Word.InsertLocation.replace);
-          await context.sync();
-        });
-      } else {
-        // Fallback for real AI responses: Strip any remaining raw tags and insert
-        const cleanContent = finalContent.replace(/<[^>]*>?/gm, '');
-        await insertTextIntoWord(cleanContent, true);
-      }
+      await WordIntegrator.applyContent(finalContent);
 
       if (copilotResponse?.officeActions) {
         await applyOfficeActions(copilotResponse.officeActions, "");
@@ -82,7 +57,7 @@ export class ChatOrchestrator {
       // 4. Check for Preview Mode (Canned response)
       if (authController.getAuthProvider() === "preview") {
         removeTypingIndicator();
-        const guideText = `您目前處於 **預覽模式**。<br>**本工具支援以下登入方式：**<br>1. **Google Gemini**：使用 CLI 或 API Key 。<br>2. **GitHub Copilot**：使用 CLI 、 透過OAuth 或 PAT 連線。<br>3. **Azure OpenAI**：使用自有憑證。<br>**如何開始使用？**<br>點擊右下角 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> **登出按鈕** 即可設定連線。`;
+        const guideText = (ChatOrchestrator.config.PREVIEW_MODE_GUIDE_MD as string) || "Preview mode active.";
 
         ChatUiHelper.updateAssistantBubble(assistantBubble, guideText, (txt) => marked.parse(txt) as string);
         ChatUiHelper.completeAssistantBubble(assistantBubble, guideText);
@@ -126,7 +101,7 @@ export class ChatOrchestrator {
           ChatUiHelper.updateAssistantBubble(
             assistantBubble,
             streamBuffer,
-            (txt) => marked.parse(txt) as string
+            (txt: string) => marked.parse(txt) as string
           );
         }
       );
@@ -137,7 +112,7 @@ export class ChatOrchestrator {
 
       // Functional Optimization: Render Action Buttons (Replace/Insert)
       if (copilotResponse && copilotResponse.actions && copilotResponse.actions.length > 0) {
-        ChatUiHelper.renderActions(assistantBubble, copilotResponse.actions, async (type, val) => {
+        ChatUiHelper.renderActions(assistantBubble, copilotResponse.actions, async (type: string, val: string) => {
           await applyOfficeActions([{ type: type as "replace" | "insert", value: val }], "");
         });
       }

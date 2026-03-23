@@ -1,5 +1,5 @@
-import { AgentEnvironment, ACPConnectionMethod } from './types.js';
-import config from '../../config/env.js';
+import { AgentEnvironment, ACPConnectionMethod } from '../atoms/types.js';
+import config from '../../../config/env.js';
 
 /**
  * Resolves the appropriate environment configuration (2026 Adaptive Pattern).

@@ -1,4 +1,4 @@
-import { createAuthController } from "./services/auth";
+import { createAuthController } from "../services/molecules/auth-aggregator";
 import {
   setApplyStatus,
   clearChatHistory,
@@ -6,7 +6,7 @@ import {
   hideLoadingScreen,
   startHealthCheck,
   showToast,
-} from "./services/ui";
+} from "../services/molecules/ui-renderer";
 import {
   getStoredModel,
   setStoredModel,
@@ -15,16 +15,16 @@ import {
   getStoredPreset,
   setStoredPreset,
   getAuthProvider,
-} from "./services/storage";
-import { FALLBACK_PRESETS, getSelectedPreset } from "./services/presets";
-import { ChatOrchestrator } from "./services/chat-orchestrator";
-import { WritingPreset, ChatContext, AuthController } from "./types";
-import { ModelManager } from "./services/molecules/model-manager";
+} from "../services/atoms/storage-provider";
+import { FALLBACK_PRESETS, getSelectedPreset } from "../services/atoms/preset-manager";
+import { ChatOrchestrator } from "../services/organisms/chat-orchestrator";
+import { WritingPreset, ChatContext, AuthController } from "../services/atoms/types";
+import { ModelManager } from "../services/molecules/model-manager";
 
-import { createHeader } from "./components/organisms/Header";
-import { createHistoryContainer } from "./components/organisms/HistoryContainer";
-import { createOnboardingOrganism } from "./components/organisms/Onboarding";
-import { createPromptGroup } from "./components/molecules/PromptGroup";
+import { createHeader } from "../components/organisms/Header";
+import { createHistoryContainer } from "../components/organisms/HistoryContainer";
+import { createOnboardingOrganism } from "../components/organisms/Onboarding";
+import { createPromptGroup } from "../components/molecules/PromptGroup";
 
 /**
  * Organism: Taskpane Controller
@@ -46,7 +46,7 @@ class TaskpaneController {
   /**
    * Main Render Loop (Reactive update equivalent)
    */
-  private renderAtomicDesign() {
+  private renderAtomicDesign(title: string = "office_Agent") {
     const provider = getAuthProvider();
     this.availableModels = ModelManager.getAvailableModels(provider);
 
@@ -63,7 +63,7 @@ class TaskpaneController {
       headerRoot.innerHTML = "";
       headerRoot.appendChild(
         createHeader({
-          title: "office_Agent",
+          title: title,
           authProvider: provider,
           onClearChat: () => this.handleClearChat(),
         })
@@ -121,7 +121,17 @@ class TaskpaneController {
   }
 
   public async init() {
-    this.renderAtomicDesign();
+    // Initial fetch of config to remove hardcoding
+    let title = "office_Agent";
+    try {
+      const { getConfig } = await import("../services/organisms/api-orchestrator");
+      const config = await getConfig();
+      if (config.APP_TITLE) title = config.APP_TITLE;
+      if (config.FALLBACK_PRESETS) this.writingPresets = config.FALLBACK_PRESETS;
+      ChatOrchestrator.config = config;
+    } catch { /* fallback to default */ }
+
+    this.renderAtomicDesign(title);
     this.initElements();
 
     this.authController = createAuthController(

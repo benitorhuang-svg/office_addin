@@ -8,7 +8,8 @@ import { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
  */
 export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
   // Use absolute path identified on this machine for maximum reliability
-  const geminiCoreIndex = "C:/Users/benit/AppData/Roaming/npm/node_modules/@google/gemini-cli/dist/index.js";
+  // Resolve gemini-cli index dynamically from devDependencies
+  const geminiCoreIndex = require.resolve("@google/gemini-cli/dist/index.js");
   
   return {
     clientOptions: {
@@ -16,8 +17,17 @@ export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
       // This ensures we use the exact same Node.js that is running this server
       cliPath: process.execPath,
       useStdio: true,
-      // Provide the script path as the first argument, followed by ACP flags
-      cliArgs: [geminiCoreIndex, '--acp', '-y'], 
+      // Filter out flags that gemini-cli does not support (like --headless, --stdio, etc.)
+      cliArgs: [
+        '-e', 
+        `const { spawn } = require('child_process'); 
+         const args = process.argv.slice(2).filter(a => ![
+           '--headless', '--auto-update', '--autoUpdate', 
+           '--log-level', '--logLevel', '--stdio'
+         ].includes(a)); 
+         spawn(process.execPath, [args[0], ...args.slice(1)], { stdio: 'inherit' });`,
+        geminiCoreIndex, '--acp', '-y'
+      ], 
     },
     sessionOptions: {
       streaming: !!cfg.streaming,

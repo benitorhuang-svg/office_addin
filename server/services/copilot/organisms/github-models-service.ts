@@ -1,3 +1,4 @@
+import config from '../../../config/env.js';
 import { fetch } from '../../../atoms/fetcher.js';
 import { PromptPayload, ChatCompletionResponse } from '../atoms/types.js';
 import { SSE_PARSER } from '../molecules/sse-parser.js';
@@ -13,7 +14,7 @@ export const GitHubModelsService = {
     payload: PromptPayload, 
     onChunk?: (chunk: string) => void
   ): Promise<string> {
-    const url = 'https://models.github.ai/inference/chat/completions';
+    const url = config.GITHUB_MODELS_URL;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -26,7 +27,7 @@ export const GitHubModelsService = {
           { role: 'user', content: payload.user }
         ],
         model: model,
-        temperature: 0.7,
+        temperature: config.DEFAULT_TEMPERATURE,
         stream: Boolean(onChunk)
       }),
     });

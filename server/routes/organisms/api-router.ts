@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import config from '../config/env.js';
-import { GeminiRestService } from '../services/copilot/organisms/gemini-rest-service.js';
-import { handleCopilotRequest } from './handlers/copilot-handler.js';
+import config from '../../config/env.js';
+import { GeminiRestService } from '../../services/copilot/organisms/gemini-rest-service.js';
+import { handleCopilotRequest } from './copilot-handler.js';
 
 const apiRouter = Router();
 
@@ -10,6 +10,10 @@ apiRouter.get('/config', (req, res) => {
   res.json({
     COPILOT_MODEL: config.COPILOT_MODEL,
     AVAILABLE_MODELS_GEMINI: config.AVAILABLE_MODELS_GEMINI,
+    APP_TITLE: config.APP_TITLE,
+    FALLBACK_PRESETS: config.FALLBACK_PRESETS,
+    PREVIEW_MODE_GUIDE_MD: config.PREVIEW_MODE_GUIDE_MD,
+    DEFAULT_WORD_FONT_STYLE: config.DEFAULT_WORD_FONT_STYLE,
   });
 });
 
@@ -40,7 +44,7 @@ apiRouter.post('/gemini/start-cli', async (req, res) => {
 // Endpoint 3: Health Check for SDK and ACP connections
 apiRouter.get('/health', async (req, res) => {
   try {
-    const { ModernSDKOrchestrator } = await import('../services/copilot/organisms/sdk-orchestrator-v2.js');
+    const { ModernSDKOrchestrator } = await import('../../services/copilot/organisms/sdk-orchestrator-v2.js');
     const health = await ModernSDKOrchestrator.healthCheck();
     
     res.json({
@@ -62,7 +66,7 @@ apiRouter.get('/health', async (req, res) => {
 apiRouter.post('/copilot/response', async (req, res) => {
   try {
     const { sessionId, answer } = req.body;
-    const { ModernSDKOrchestrator } = await import('../services/copilot/organisms/sdk-orchestrator-v2.js');
+    const { ModernSDKOrchestrator } = await import('../../services/copilot/organisms/sdk-orchestrator-v2.js');
     
     ModernSDKOrchestrator.resolveInput(sessionId, answer);
     res.json({ status: 200, detail: 'Response received' });

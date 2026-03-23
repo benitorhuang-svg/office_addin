@@ -1,8 +1,8 @@
 import express, { Request, Response, Router } from 'express';
-import config from '../config/env.js';
-import { renderStatusHTML } from './atoms/status-html.js';
-import { SESSION_STORE } from './molecules/session-store.js';
-import { OAuthService } from './organisms/oauth-service.js';
+import config from '../../config/env.js';
+import { renderStatusHTML } from '../atoms/status-html.js';
+import { SESSION_STORE } from '../molecules/session-store.js';
+import { OAuthService } from './oauth-service.js';
 
 /**
  * Organism: Auth Router

@@ -1,4 +1,4 @@
-/* global document, navigator, setTimeout, HTMLElement */
+/* global document, navigator, HTMLElement */
 
 import { createButton } from "../atoms/Button";
 

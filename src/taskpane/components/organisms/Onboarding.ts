@@ -1,6 +1,6 @@
 /* global document, HTMLElement */
 
-import { createAuthCard } from "../molecules/AuthCard";
+  
 import { createButton } from "../atoms/Button";
 import { createInput } from "../atoms/Input";
 import { createAccordion } from "../molecules/Accordion";
@@ -42,7 +42,7 @@ export function createOnboardingOrganism(): HTMLElement {
   const geminiInput = createInput({ id: "gemini-input", type: "password", placeholder: "Gemini API Key" });
   const geminiConnectBtn = createButton({ id: "gemini-connect-btn", label: "Gemini API", className: "btn-premium gemini" });
   
-  const gDivider = createDivider(); 
+  
   
   const geminiContent = document.createElement("div");
   geminiContent.className = "onboarding-auth-group";

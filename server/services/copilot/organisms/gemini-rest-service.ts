@@ -13,7 +13,7 @@ export const GeminiRestService = {
    */
   async send(apiKey: string, model: string, payload: PromptPayload): Promise<string> {
     const modelId = model.replace(/^models\//, '');
-    const url = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key=${apiKey}`;
+    const url = `${config.GEMINI_REST_URL}?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -24,8 +24,8 @@ export const GeminiRestService = {
           { role: 'system', content: payload.system },
           { role: 'user', content: payload.user }
         ],
-        temperature: 0.7,
-        max_tokens: 2048
+        temperature: config.DEFAULT_TEMPERATURE,
+        max_tokens: config.MAX_TOKENS
       }),
     });
 
@@ -42,7 +42,7 @@ export const GeminiRestService = {
    */
   async *stream(apiKey: string, model: string, payload: PromptPayload): AsyncGenerator<string> {
     const modelId = model.replace(/^models\//, '');
-    const url = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key=${apiKey}`;
+    const url = `${config.GEMINI_REST_URL}?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -53,8 +53,8 @@ export const GeminiRestService = {
           { role: 'system', content: payload.system },
           { role: 'user', content: payload.user }
         ],
-        temperature: 0.7,
-        max_tokens: 2048,
+        temperature: config.DEFAULT_TEMPERATURE,
+        max_tokens: config.MAX_TOKENS,
         stream: true
       }),
     });

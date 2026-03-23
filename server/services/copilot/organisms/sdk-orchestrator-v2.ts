@@ -1,5 +1,5 @@
 import { CopilotClient, SessionConfig, CopilotSession, AssistantMessageEvent, CopilotClientOptions, defineTool, Tool } from "@github/copilot-sdk";
-import config from '../../../config/env.js';
+import config from '../../../config/molecules/server-config.js';
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
 import { ACPConnectionMethod, AzureInfo, ACPSessionConfig } from '../atoms/types.js';
 import { extractResponseText } from '../atoms/formatters.js';
@@ -38,6 +38,29 @@ export class ModernSDKOrchestrator {
   }
 
   /**
+   * Search tool for background research (High-quality inquiry) 
+   * Extracted to avoid redundant definition inside session loop
+   */
+  private static readonly searchTool: Tool<{ query: string }> = defineTool("google_search", {
+    description: "搜尋網路以獲獲最新資訊或精確定義（例如縮寫、專有名詞）。",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "搜尋關鍵字" }
+      },
+      required: ["query"]
+    },
+    handler: async ({ query }) => {
+      console.log(`${CORE_SDK_CONFIG.MOCK_ACP_SEARCH_RESULT.substring(0, 20)}: ${query}`);
+      // Background knowledge for ACP in this project context
+      if (query.toUpperCase().includes("ACP") && query.toUpperCase().includes("COPILOT")) {
+        return CORE_SDK_CONFIG.MOCK_ACP_SEARCH_RESULT;
+      }
+      return CORE_SDK_CONFIG.MOCK_SEARCH_NO_RESULT.replace('{query}', query);
+    }
+  });
+
+  /**
    * Create session with modern event handling patterns
    */
   private static async createSession(
@@ -46,36 +69,16 @@ export class ModernSDKOrchestrator {
     onChunk?: (chunk: string) => void
   ): Promise<{ session: CopilotSession; sessionId: string }> {
     const sessionId = `session-${Date.now()}`;
-
-    // Define search tool for background research (High-quality inquiry)
-    const searchTool: Tool<any> = defineTool("google_search", {
-      description: "搜尋網路以獲取最新資訊或精確定義（例如縮寫、專有名詞）。",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "搜尋關鍵字" }
-        },
-        required: ["query"]
-      },
-      handler: async ({ query }) => {
-        console.log(`[高品質提向研判] 正在進行背景搜尋: ${query}`);
-        // Background knowledge for ACP in this project context
-        if (query.toUpperCase().includes("ACP") && query.toUpperCase().includes("COPILOT")) {
-          return "【搜尋結果】在 GitHub Copilot SDK 脈絡下，ACP 指的是『Agent Connection Protocol』。這是一個連接 SDK 與本地 Agent (CLI) 的自定義通訊協定。常見連接方式包括：copilot_cli, gemini_cli, azure_byok。";
-        }
-        return `搜尋結果摘要 (${query})：未找到與專案直接相關的唯一定義。建議詢問使用者是否指某種特定的策略或協定。`;
-      }
-    });
     
     // Support for interactive ask_user tool and activity hooks
     const sessionOptionsWithHandler: SessionConfig = {
       ...sessionOptions,
-      tools: [searchTool],
+      tools: [this.searchTool], // Use centralized tool definition
       hooks: {
         onPreToolUse: async (input) => {
           if (onChunk) {
             // Provide visual feedback during long-running tool calls
-            onChunk(`\n> 🔍 *AI 正在針對「${input.toolName}」進行預研與思考...*\n\n`);
+            onChunk(`${CORE_SDK_CONFIG.PROGRESS_FEEDBACK_PREFIX}${input.toolName}${CORE_SDK_CONFIG.PROGRESS_FEEDBACK_SUFFIX}`);
           }
         }
       },
@@ -93,13 +96,13 @@ export class ModernSDKOrchestrator {
             resolve({ answer, wasFreeform: true });
           });
           
-          // Timeout protection for user response (2 mins)
+          // Timeout protection for user response (using config)
           setTimeout(() => {
             if (this.pendingInputs.has(sessionId)) {
               this.pendingInputs.delete(sessionId);
               resolve({ answer: "User did not respond in time.", wasFreeform: true });
             }
-          }, 120000);
+          }, CORE_SDK_CONFIG.USER_INPUT_TIMEOUT_MS);
         });
       }
     };
@@ -159,7 +162,7 @@ export class ModernSDKOrchestrator {
     };
 
     let retryCount = 0;
-    const maxRetries = 1; // Faster failover
+    const maxRetries = CORE_SDK_CONFIG.MAX_SDK_RETRIES; // From config
 
     while (retryCount <= maxRetries) {
       try {
@@ -169,7 +172,7 @@ export class ModernSDKOrchestrator {
         // Use the onEvent hook inside createSession to monitor Gemini activity without breaking types
         const augmentedOptions = {
           ...sessionOptions,
-          onEvent: (event: any) => {
+          onEvent: (event: { type: string; data?: any }) => {
             if (method === 'gemini_cli') {
               console.log(`[SDK V2 Gemini Debug] Event: ${event.type}`);
               if (event.type === 'session.error') {
@@ -185,7 +188,7 @@ export class ModernSDKOrchestrator {
         // This bypasses the unreliable session.idle event and its 60s timeout
         const result = await new Promise<string>((resolve, reject) => {
           let fullContent = '';
-          const INACTIVITY_MS = 10000; // 10 seconds of no output/tool activity = complete
+          const INACTIVITY_MS = CORE_SDK_CONFIG.WATCHDOG_INACTIVITY_MS; 
           let inactivityWatcher: NodeJS.Timeout | null = null;
           
           const globalTimeout = setTimeout(() => {
@@ -195,7 +198,7 @@ export class ModernSDKOrchestrator {
           const ping = () => {
             if (inactivityWatcher) clearTimeout(inactivityWatcher);
             inactivityWatcher = setTimeout(() => {
-              console.log(`[Watchdog] 偵測到 10 秒無活動，判定為生成結束 (Session: ${sessionId})`);
+              console.log(`[Watchdog] No activity for ${INACTIVITY_MS/1000}s, finishing (Session: ${sessionId})`);
               finish();
             }, INACTIVITY_MS);
           };
@@ -263,7 +266,7 @@ export class ModernSDKOrchestrator {
         } catch {}
 
         if (retryCount > maxRetries) {
-          const fallbackText = `SDK V2 連接失敗 (方式：${method})。\n\n錯誤詳情：${errorMessage}`;
+          const fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (方式：${method})。\n\n錯誤詳情：${errorMessage}`;
           if (onChunk) onChunk(fallbackText);
           return fallbackText;
         }

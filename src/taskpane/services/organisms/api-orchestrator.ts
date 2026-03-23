@@ -3,9 +3,9 @@
  * Orchestrates backend communication using Atoms and Molecules.
  */
 
-import { fetchWithTimeout, findActiveServer } from "./atoms/api-client";
-import { STREAM_DECODER } from "./molecules/stream-decoder";
-import { CopilotResponse, OfficeContextPayload, ServerConfig } from "../types";
+import { fetchWithTimeout, findActiveServer } from "../atoms/api-client";
+import { STREAM_DECODER } from "../molecules/stream-decoder";
+import { CopilotResponse, OfficeContextPayload, ServerConfig } from "../../types";
 
 /**
  * Organism: Sends prompt to Copilot via local server.

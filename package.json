@@ -26,7 +26,7 @@
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
     "watch": "webpack --mode development --watch",
-    "start:server": "tsx watch server/index.ts",
+    "start:server": "tsx watch server/ecosystems/server-entry.ts",
     "test": "node --import tsx node_modules/mocha/bin/mocha.js \"server/tests/**/*.ts\" --timeout 5000",
     "dev": "node scripts/dev-win.mjs",
     "dev:original": "node scripts/dev.mjs"

@@ -1,29 +1,35 @@
 /* --- Molecules - Selectors --- */
 .selector-pill-mini select {
-    border: none;
+    border: 1.5px solid var(--border-light);
     background: var(--bg-secondary);
     color: var(--text-secondary);
     font-family: inherit;
     font-weight: 600;
     font-size: 13px;
+    padding: 6px 36px 6px 14px;
+    border-radius: var(--radius-full);
     outline: none;
     cursor: pointer;
     appearance: none;
-    padding: 6px 44px 6px 16px;
-    border-radius: var(--radius-full);
     background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%235F6368' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 18px center;
-    min-width: 250px;
-    max-width: none !important;
+    background-position: right 14px center;
+    width: 100%;
+    min-width: 160px;
+    max-width: 280px;
     margin-right: 12px;
     white-space: nowrap;
-    overflow: visible;
-    transition: all 0.2s;
-    width: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.25s var(--ease-spring);
 }
 
 .selector-pill-mini select:hover {
     background-color: var(--border-light);
+    border-color: var(--primary-color);
     color: var(--text-primary);
+}
+
+.selector-pill-mini select:focus {
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.15);
 }

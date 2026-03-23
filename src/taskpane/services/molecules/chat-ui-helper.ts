@@ -1,7 +1,7 @@
 /* global HTMLElement */
 import { marked } from "marked";
-import { appendMessage, showTypingIndicator, removeTypingIndicator } from "../ui";
-import { ChatContext } from "../../types";
+import { appendMessage, showTypingIndicator, removeTypingIndicator } from "./ui-renderer";
+import { ChatContext } from "../atoms/types";
 
 /**
  * Molecule: Chat UI Helper
@@ -189,7 +189,7 @@ export const ChatUiHelper = {
         } else {
           throw new Error("Failed to send response");
         }
-      } catch (err) {
+      } catch (_err) {
         btn.disabled = false;
         input.disabled = false;
         btn.textContent = "重試";

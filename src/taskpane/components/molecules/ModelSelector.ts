@@ -19,20 +19,31 @@ export function createModelSelector({
   const select = document.createElement("select");
   select.id = id;
   select.className = "atom-model-select";
-  select.setAttribute("aria-label", "Select model");
+  select.setAttribute("aria-label", "Select AI model");
 
-  const preferredModel = selectedModel || models[0] || "GPT-5 mini";
-  models.forEach((model) => {
-    const option = document.createElement("option");
-    option.value = model;
-    option.textContent = model;
-    if (model === preferredModel) option.selected = true;
-    select.appendChild(option);
-  });
+  // Handle empty or missing model list gracefully
+  if (!models || models.length === 0) {
+    const emptyOption = document.createElement("option");
+    emptyOption.textContent = "No models available";
+    emptyOption.disabled = true;
+    select.appendChild(emptyOption);
+    select.disabled = true;
+  } else {
+    // Determine the initially selected model correctly
+    const preferredModel = selectedModel || models[0];
+    
+    models.forEach((model) => {
+      const option = document.createElement("option");
+      option.value = model;
+      option.textContent = model;
+      if (model === preferredModel) option.selected = true;
+      select.appendChild(option);
+    });
+  }
 
   select.addEventListener("change", (e) => {
     const target = e.target as HTMLSelectElement;
-    onChange(target.value);
+    if (target.value) onChange(target.value);
   });
 
   wrapper.appendChild(select);

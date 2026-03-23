@@ -21,6 +21,14 @@ export interface ServerConfig {
   DEFAULT_PERSONA: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  GITHUB_MODELS_URL: string;
+  GEMINI_REST_URL: string;
+  DEFAULT_TEMPERATURE: number;
+  MAX_TOKENS: number;
+  APP_TITLE: string;
+  FALLBACK_PRESETS: any[];
+  PREVIEW_MODE_GUIDE_MD: string;
+  DEFAULT_WORD_FONT_STYLE: string;
   getServerPatToken: () => string;
   getModelsToken: () => string;
   isAzureConfigured: () => boolean;
@@ -65,6 +73,17 @@ const config: ServerConfig = {
   get DEFAULT_PERSONA() { return BASE_ENV.DEFAULT_PERSONA; },
   get GITHUB_CLIENT_ID() { return BASE_ENV.GITHUB_CLIENT_ID; },
   get GITHUB_CLIENT_SECRET() { return BASE_ENV.GITHUB_CLIENT_SECRET; },
+  get GITHUB_MODELS_URL() { return BASE_ENV.GITHUB_MODELS_URL; },
+  get GEMINI_REST_URL() { return BASE_ENV.GEMINI_REST_URL; },
+  get DEFAULT_TEMPERATURE() { return Number(BASE_ENV.DEFAULT_TEMPERATURE); },
+  get MAX_TOKENS() { return Number(BASE_ENV.MAX_TOKENS); },
+  get APP_TITLE() { return BASE_ENV.APP_TITLE; },
+  get FALLBACK_PRESETS() { 
+    try { return JSON.parse(BASE_ENV.FALLBACK_PRESETS_JSON); } 
+    catch { return []; }
+  },
+  get PREVIEW_MODE_GUIDE_MD() { return BASE_ENV.PREVIEW_MODE_GUIDE_MD; },
+  get DEFAULT_WORD_FONT_STYLE() { return BASE_ENV.DEFAULT_WORD_FONT_STYLE; },
 
   getServerPatToken: () => firstDefinedValue(
     process.env.COPILOT_GITHUB_TOKEN,

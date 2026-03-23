@@ -1,6 +1,6 @@
 /* global window, HTMLElement */
 
-import { AuthMode } from "../../types";
+import { AuthMode } from "../atoms/types";
 import {
   clearStoredToken,
   getStoredToken,
@@ -9,7 +9,7 @@ import {
   getStoredAzureConfig,
   hasStoredAuthState,
   setStoredAzureConfig,
-} from "../storage";
+} from "../atoms/storage-provider";
 import { AuthUIBridge, AuthUIContext } from "./ui-bridge";
 import { GitHubProvider } from "./github-provider";
 import { GeminiProvider } from "./gemini-provider";
@@ -122,7 +122,7 @@ export class AuthOrchestrator {
     });
     btns.cliConnectBtn?.addEventListener("click", async () => {
       this.ui.setStatus("Detecting GitHub CLI session...");
-      const s = await import("../storage");
+      const s = await import("../atoms/storage-provider");
       s.setAuthProvider("copilot_cli");
       this.ui.showSuccess("CLI", "GitHub CLI session detected.");
       this.onAuthStateChanged?.();
@@ -132,7 +132,7 @@ export class AuthOrchestrator {
     });
     btns.skipBtn?.addEventListener("click", async (e) => {
       e.preventDefault();
-      const s = await import("../storage");
+      const s = await import("../atoms/storage-provider");
       s.setAuthProvider("preview");
       this.ui.showSuccess("Preview", "Preview mode active.");
       this.onAuthStateChanged?.();
@@ -156,7 +156,7 @@ export function createAuthController(ctx: AuthUIContext, callbacks?: AuthControl
     logout: () => orch.handleLogout(),
     getAccessToken: () => orch.getAccessToken(),
     getGeminiToken: () => orch.getGeminiToken(),
-    getAuthProvider: () => (require("../storage").getAuthProvider() || "none"), // Implementation
+    getAuthProvider: () => (getAuthProvider() || "none"),
     bindButtons: (btns: Record<string, HTMLElement | null>) => orch.bindButtons(btns),
     handleUnauthorized: () => orch.handleLogout(),
   };

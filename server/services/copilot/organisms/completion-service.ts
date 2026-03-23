@@ -1,8 +1,8 @@
-import config from '../../../config/env.js';
+import config from '../../../config/molecules/server-config.js';
 import { OfficeContext } from '../atoms/types.js';
 import { GeminiRestService } from './gemini-rest-service.js';
 import { GitHubModelsService } from './github-models-service.js';
-import { buildWordPrompt } from '../../promptBuilder.js';
+import { PromptOrchestrator } from './prompt-orchestrator.js';
 
 export interface CompletionRequest {
   prompt: string;
@@ -21,7 +21,7 @@ export interface CompletionRequest {
 export const CompletionService = {
   async execute(req: CompletionRequest, onChunk?: (chunk: string) => void): Promise<string | void> {
     const resolvedModel = req.model || config.COPILOT_MODEL;
-    const { system, user } = buildWordPrompt(req.prompt, req.officeContext, resolvedModel, req.presetId || 'general');
+    const { system, user } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, resolvedModel, req.presetId || 'general');
 
     try {
       // Branch 1: GitHub Models API (Direct REST)
@@ -45,7 +45,7 @@ export const CompletionService = {
       // Branch 3: Modern Copilot SDK (CLI-based / BYOK) with enhanced orchestrator
       const isExplicitGeminiCli = req.authProvider === 'gemini_cli';
       const patToken = config.getServerPatToken();
-      const { sendPromptViaCopilotSdk } = await import('../sdkProvider.js');
+      const { sendPromptViaCopilotSdk } = await import('./sdk-provider.js');
 
       return await sendPromptViaCopilotSdk(
         user, 
@@ -56,7 +56,7 @@ export const CompletionService = {
         undefined, // azure info
         isExplicitGeminiCli ? 'gemini_cli' : undefined
       );
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[Modern CompletionService Error]', err);
       throw err;
     }

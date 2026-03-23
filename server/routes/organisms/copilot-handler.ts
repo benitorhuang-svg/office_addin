@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import config from '../../config/env.js';
 import { CompletionService } from '../../services/copilot/organisms/completion-service.js';
-import { parseAssistantResponse } from '../../services/promptBuilder.js';
+import { ResponseParser } from '../../services/copilot/molecules/response-parser.js';
 
 /**
  * Organism: Copilot Route Handler
@@ -52,11 +52,11 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         geminiKey
       }) as string;
 
-      // Functional Optimization: Parse Word-specific actions
-      const { text, actions } = parseAssistantResponse(rawText, officeContext);
+      // Functional Optimization: Parse Word-specific actions via Molecule
+      const { cleanText, actions } = ResponseParser.parse(rawText);
 
       return res.json({ 
-        text, 
+        text: cleanText, 
         actions,
         model: model || config.COPILOT_MODEL,
         timestamp: new Date().toISOString()

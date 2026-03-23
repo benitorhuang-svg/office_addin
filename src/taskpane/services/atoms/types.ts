@@ -82,11 +82,12 @@ export type CopilotResponse = {
 };
 
 export type ServerConfig = {
-  authMode?: AuthMode;
-  model?: string;
-  availableModels?: string[];
-  writingPresets?: WritingPreset[];
-  serverTokenConfigured?: boolean;
+  COPILOT_MODEL?: string;
+  AVAILABLE_MODELS_GEMINI?: string[];
+  APP_TITLE?: string;
+  FALLBACK_PRESETS?: WritingPreset[];
+  PREVIEW_MODE_GUIDE_MD?: string;
+  DEFAULT_WORD_FONT_STYLE?: string;
 };
 
 /* global HTMLElement, HTMLTextAreaElement, HTMLButtonElement */

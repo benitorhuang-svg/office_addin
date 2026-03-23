@@ -2,6 +2,21 @@ import { CopilotClientOptions, SessionConfig } from "@github/copilot-sdk";
 
 export type ACPConnectionMethod = 'copilot_cli' | 'gemini_cli' | 'azure_byok' | 'remote_cli';
 
+/** All supported auth/provider identifiers across the whole system */
+export type AuthProvider =
+  | ACPConnectionMethod
+  | 'gemini_api'
+  | 'github_pat'
+  | 'azure_openai'
+  | 'preview';
+
+export interface AgentEnvironment {
+  type: 'commercial' | 'gcc' | 'consumer' | 'preview';
+  apiVersion?: string;
+  endpointUrl?: string;
+  securityMode?: 'high' | 'standard';
+}
+
 export interface AzureInfo {
   apiKey?: string;
   endpoint?: string;
