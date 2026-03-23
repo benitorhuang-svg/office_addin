@@ -10,7 +10,8 @@ export interface ChatBubbleProps {
 
 export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTMLElement {
   const container = document.createElement("div");
-  container.className = `mol-chat-bubble ${role}`;
+  // Use assistant-card class for assistant bubbles to match CSS
+  container.className = `mol-chat-bubble ${role} ${role === "assistant" ? "assistant-card" : ""}`;
 
   // 1. Label/Icon Row (Premium identification)
   const header = document.createElement("div");
@@ -36,6 +37,7 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
   
   if (role === "assistant") {
     container.dataset.fullText = text;
+    // assistant-card-premium is used for additional JS-based styling if needed
     content.className += " assistant-card-premium";
     
     // Preview area (Markdown enabled)
@@ -44,19 +46,19 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
     preview.textContent = text || "Thinking...";
     content.appendChild(preview);
 
-    // Hidden until complete via CSS or JS toggle
+    // Matches .bubble-action-group in chat-bubble.css
     const footer = document.createElement("div");
-    footer.className = "bubble-footer-actions";
+    footer.className = "bubble-action-group";
     
     const applyBtn = createButton({
       label: "實作至 Word",
-      className: "action-pill-btn apply",
+      className: "action-btn-mini", // Matches .action-btn-mini in CSS
     });
     if (onApply) applyBtn.onclick = onApply;
 
     const copyBtn = createButton({
       label: "複製",
-      className: "action-pill-btn",
+      className: "action-btn-mini",
     });
     copyBtn.onclick = () => {
       const raw = container.dataset.fullText || text;
@@ -69,7 +71,10 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
     footer.appendChild(copyBtn);
     content.appendChild(footer);
   } else {
-    content.textContent = text;
+    const userText = document.createElement("div");
+    userText.className = "bubble-user-text";
+    userText.textContent = text;
+    content.appendChild(userText);
   }
 
   container.appendChild(content);

@@ -21,9 +21,9 @@ export const BASE_ENV = {
   GEMINI_CLI_ARGS: process.env.GEMINI_CLI_ARGS || '--experimental-acp',
   GEMINI_CLI_PORT: process.env.GEMINI_CLI_PORT || '8080',
 
-  COPILOT_API_URL: process.env.COPILOT_API_URL || 'https://models.github.ai/inference/chat/completions',
+  COPILOT_API_URL: process.env.COPILOT_API_URL || '',
   GITHUB_MODELS_API_VERSION: process.env.GITHUB_MODELS_API_VERSION || '2022-11-28',
-  COPILOT_MODEL: firstDefinedValue(process.env.COPILOT_MODEL, 'GPT-5 mini'),
+  COPILOT_MODEL: firstDefinedValue(process.env.COPILOT_MODEL, 'gpt-5-mini'),
 
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
 

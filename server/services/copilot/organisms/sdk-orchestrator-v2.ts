@@ -33,6 +33,7 @@ export class ModernSDKOrchestrator {
     sessionOptions: SessionConfig,
     onChunk?: (chunk: string) => void
   ): Promise<{ session: CopilotSession; sessionId: string }> {
+    console.log(`[SDK V2] Creating session with model: ${sessionOptions.model}, streaming: ${sessionOptions.streaming}`);
     const session = await client.createSession(sessionOptions);
     const sessionId = `session-${Date.now()}`;
     
@@ -128,6 +129,12 @@ export class ModernSDKOrchestrator {
         retryCount++;
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`[SDK V2] Attempt ${retryCount}/${maxRetries + 1} failed:`, errorMessage);
+
+        // Force cleanup and restart client for next attempt
+        try {
+          // Access the underlying client-manager via our static method (assuming we updated it)
+          await stopAllClients(); 
+        } catch {}
 
         if (retryCount > maxRetries) {
           const fallbackText = `SDK V2 連接失敗 (方式：${method})。\n\n錯誤詳情：${errorMessage}`;

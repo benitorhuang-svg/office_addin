@@ -1,1 +1,5 @@
+taskkill /f /im node.exe /t ; node scripts/patch-copilot-sdk.mjs ; npm run dev
+
+
 請解說 copilot SDK 的 ACP 機制
+

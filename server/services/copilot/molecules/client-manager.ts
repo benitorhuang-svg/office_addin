@@ -10,10 +10,18 @@ const clientCache: Map<string, CopilotClient> = new Map();
  */
 export async function getOrCreateClient(
   method: ACPConnectionMethod, 
-  options: CopilotClientOptions
+  options: CopilotClientOptions,
+  forceNew: boolean = false
 ): Promise<CopilotClient> {
   const cacheKey = method;
   let client = clientCache.get(cacheKey);
+
+  if (client && forceNew) {
+    console.warn(`[ACP Manager] Forced restart requested for ${method}...`);
+    try { await client.stop(); } catch {}
+    clientCache.delete(cacheKey);
+    client = undefined;
+  }
 
   if (client) {
     try {

@@ -1,4 +1,4 @@
-import { getStoredModelMode } from "../storage";
+
 
 /**
  * Molecule: Model Manager
@@ -6,22 +6,16 @@ import { getStoredModelMode } from "../storage";
  */
 export const ModelManager = {
   getAvailableModels(provider: string | null): string[] {
-    const mode = getStoredModelMode();
-
     if (provider?.includes("gemini")) {
-      if (mode === "auto") {
-        return ["Auto (Gemini 2.5)", "Auto (Gemini 1.5)"];
-      } else {
-        return ["Gemini 2.0 Flash", "Gemini 1.5 Pro", "Gemini 1.5 Flash"];
-      }
-    } else if (provider === "github_pat" || provider === "copilot_cli") {
-      return ["GPT-4o", "GPT-4 Turbo", "GPT-4o mini"];
+      return ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3.1-pro", "gemini-3.1-flash", "gemini-3.1-flash-lite"];
+    } else if (provider === "github_pat" || provider === "copilot_cli" || provider === "github_oauth") {
+      return ["gpt-5-mini", "gpt-5.4-mini", "gpt-5.4", "claude sonnet 4.6"];
     } else {
-      return ["GPT-4o mini", "Gemini 1.5 Flash"];
+      return ["gpt-5-mini", "gemini-2.5-flash"];
     }
   },
 
   getDefaultModel(models: string[]): string {
-    return models[0] || "GPT-4o mini";
+    return models[0] || "gpt-5-mini";
   },
 };
