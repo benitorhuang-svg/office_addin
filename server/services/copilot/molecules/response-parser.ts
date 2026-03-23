@@ -6,8 +6,8 @@
  * 2. Markdown Code Blocks with specific language 'word-action'
  */
 export const ResponseParser = {
-  parse(text: string): { cleanText: string; actions: any[] } {
-    const actions: any[] = [];
+  parse(text: string): { cleanText: string; actions: { type: string; value: string }[] } {
+    const actions: { type: string; value: string }[] = [];
     let cleanText = text;
 
     // Pattern 1: XML-like tags <office-action type="...">...</office-action>

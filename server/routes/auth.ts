@@ -59,11 +59,12 @@ authRouter.get('/callback', async (req: Request, res: Response) => {
       '#0078D4', 
       true
     ));
-  } catch (err: any) {
-    console.error(`[OAuth Callback Error]`, err);
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error(`[OAuth Callback Error]`, error);
     res.status(500).send(renderStatusHTML(
       '連線失敗', 
-      `發生錯誤：${err.message}`, 
+      `發生錯誤：${error.message}`, 
       '#D93025'
     ));
   }

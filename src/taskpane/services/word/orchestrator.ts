@@ -27,19 +27,27 @@ async function insertPageNumber(
         ? "PageNumberPage"
         : "PageNumberBottom";
   const template = context.document.attachedTemplate;
-  const typeItem = template.buildingBlockTypes.getByType(blockType as unknown as Word.BuildingBlockType);
+  const typeItem = template.buildingBlockTypes.getByType(
+    blockType as unknown as Word.BuildingBlockType
+  );
   const categories = typeItem.categories;
   categories.load("items/name");
   await context.sync();
 
-  const firstCategory = (categories as unknown as { items: { buildingBlocks: Word.BuildingBlockCollection }[] }).items[0];
+  const firstCategory = (
+    categories as unknown as { items: { buildingBlocks: Word.BuildingBlockCollection }[] }
+  ).items[0];
   if (!firstCategory) throw new Error("No page number building blocks are available.");
 
   const buildingBlocks = firstCategory.buildingBlocks;
   buildingBlocks.load("items/name");
   await context.sync();
 
-  const firstBlock = (buildingBlocks as unknown as { items: { insert: (range: Word.Range, replace: boolean) => void }[] }).items[0];
+  const firstBlock = (
+    buildingBlocks as unknown as {
+      items: { insert: (range: Word.Range, replace: boolean) => void }[];
+    }
+  ).items[0];
   if (!firstBlock) throw new Error("Attached Word template does not expose a page number block.");
 
   const targetBody =
@@ -113,8 +121,10 @@ export async function applyOfficeActions(
         case "insert_heading": {
           if (!action.text) break;
           const heading = body.insertParagraph(action.text, Word.InsertLocation.end);
-          if (action.level === 2) (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 2";
-          else if (action.level === 3) (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 3";
+          if (action.level === 2)
+            (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 2";
+          else if (action.level === 3)
+            (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 3";
           else (heading as unknown as { styleBuiltIn: string }).styleBuiltIn = "Heading 1";
           break;
         }
@@ -149,9 +159,13 @@ export async function applyOfficeActions(
           if (firstSection) await insertPageNumber(action, context, firstSection);
           break;
         case "accept_tracked_changes":
-           
-          if (typeof (context.document as unknown as Record<string, unknown>).acceptAllRevisions === "function")
-            (context.document as unknown as { acceptAllRevisions: () => void }).acceptAllRevisions();
+          if (
+            typeof (context.document as unknown as Record<string, unknown>).acceptAllRevisions ===
+            "function"
+          )
+            (
+              context.document as unknown as { acceptAllRevisions: () => void }
+            ).acceptAllRevisions();
           break;
       }
     }

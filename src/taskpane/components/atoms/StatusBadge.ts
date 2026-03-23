@@ -1,4 +1,3 @@
- 
 /**
  * StatusBadge - Atomic Design (Atom)
  *

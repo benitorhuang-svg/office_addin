@@ -1,36 +1,32 @@
 /* global document, HTMLElement */
 
-import { createButton } from "../atoms/Button";
-import { createInput } from "../atoms/Input";
-
-export interface OnboardingCardProps {
-  idPrefix: string;
-  badgeLabel: string;
-  badgeClass: string; // e.g. "github" or "gemini"
-  title: string;
-  placeholder: string;
-  buttonLabel: string;
+export interface AuthCardProps {
+  badgeLabel?: string;
+  badgeClass?: string; // e.g. "github" or "gemini"
+  title?: string;
+  className?: string; // extra classes
+  children?: HTMLElement[];
 }
 
 export function createAuthCard({
-  idPrefix,
   badgeLabel,
-  badgeClass,
+  badgeClass = "",
   title,
-  placeholder,
-  buttonLabel,
-}: OnboardingCardProps): HTMLElement {
+  className = "",
+  children = [],
+}: AuthCardProps): HTMLElement {
   const card = document.createElement("div");
-  card.className = "auth-card";
+  card.className = `auth-card ${className}`.trim();
 
   const header = document.createElement("div");
   header.className = "auth-card-header";
 
-  const badge = document.createElement("span");
-  badge.className = `auth-badge ${badgeClass}`;
-  badge.textContent = badgeLabel;
-
-  header.appendChild(badge);
+  if (badgeLabel) {
+    const badge = document.createElement("span");
+    badge.className = `auth-badge ${badgeClass}`;
+    badge.textContent = badgeLabel;
+    header.appendChild(badge);
+  }
 
   if (title) {
     const h3 = document.createElement("h3");
@@ -38,21 +34,12 @@ export function createAuthCard({
     header.appendChild(h3);
   }
 
-  const input = createInput({
-    id: `${idPrefix}-input`,
-    type: "password",
-    placeholder,
-  });
+  if (badgeLabel || title) {
+    card.appendChild(header);
+  }
 
-  const btn = createButton({
-    id: `${idPrefix}-connect-btn`,
-    label: buttonLabel,
-    className: `btn-premium ${badgeClass}`,
-  });
-
-  card.appendChild(header);
-  card.appendChild(input);
-  card.appendChild(btn);
+  // Add children
+  children.forEach(child => card.appendChild(child));
 
   return card;
 }

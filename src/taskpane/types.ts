@@ -102,7 +102,15 @@ export interface ChatContext {
 export interface AuthController {
   getAccessToken: () => string | null;
   getGeminiToken: () => string | null;
+  getAuthProvider: () => string;
   checkInitialAuth: () => void;
   bindButtons: (els: Record<string, HTMLElement | null>) => void;
   logout: () => void;
+}
+
+export interface HeaderProps {
+  title?: string;
+  authProvider?: string | null;
+  online?: boolean;
+  onClearChat?: () => void;
 }

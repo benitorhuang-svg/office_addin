@@ -98,6 +98,31 @@
     align-items: center;
     gap: 4px;
     color: var(--primary-color);
+    white-space: nowrap; /* Single line as requested */
+}
+
+.header-new-chat-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    padding: 6px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.header-new-chat-btn:hover {
+    background: rgba(0, 120, 212, 0.08);
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.header-new-chat-btn:active {
+    transform: scale(0.95);
 }
 
 .selectors-group {
@@ -115,117 +140,106 @@
 
 /* --- Organisms - Onboarding --- */
 .org-onboarding {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: block; 
     width: 100%;
-    min-height: 100vh;
-    padding: 24px 16px;
-    background: linear-gradient(160deg, #F0F4FF 0%, #E8ECF5 40%, #F5F0FF 100%);
-    position: relative;
-    overflow-x: hidden;
+    height: 100%; 
+    padding: 32px 20px 80px; 
+    box-sizing: border-box;
+    background: linear-gradient(165deg, #F8FAFF 0%, #F0F4FF 40%, #E8F0FE 100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow-y: auto;
-}
-
-/* Decorative gradient orb */
-.org-onboarding::before {
-    content: '';
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,120,212,0.08), transparent 70%);
-    top: -60px;
-    right: -80px;
-    pointer-events: none;
-}
-
-.org-onboarding::after {
-    content: '';
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(138,43,226,0.06), transparent 70%);
-    bottom: 40px;
-    left: -60px;
-    pointer-events: none;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    z-index: 9999;
 }
 
 .onboarding-form-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     width: 100%;
-    max-width: 320px;
-    margin: 8px auto 0;
+    max-width: 340px;
+    margin: 0 auto;
     animation: fadeInScale 0.6s var(--ease-spring);
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
-.onboarding-footer {
+/* Logo Section */
+.onboarding-logo-section {
+    text-align: center;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.onboarding-logo {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 8px 16px rgba(0, 120, 212, 0.2));
+    animation: float 4s ease-in-out infinite;
+}
+
+.onboarding-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+}
+
+.onboarding-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 4px 0 0;
+    opacity: 0.8;
+}
+
+/* Skip Wrapper */
+.onboarding-skip-wrapper {
     display: flex;
     justify-content: center;
-    margin-bottom: 0px;
+    margin-bottom: 24px;
 }
 
-.status-msg {
-    min-height: 0;
-    font-size: 13px;
-    text-align: center;
-    padding: 0;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    width: 100%;
-    white-space: pre-wrap;
-    line-height: 1.2;
-}
-
-.status-msg:not(:empty) {
-    background: rgba(220, 53, 69, 0.08);
-    color: var(--error);
-    border: 1px solid rgba(220, 53, 69, 0.2);
-    margin: 0 0 8px 0;
-    padding: 10px 12px;
-    animation: slideInUp 0.3s var(--ease-spring);
-}
-
-.skip-link {
-    background: rgba(0, 120, 212, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 120, 212, 0.2);
+.skip-link.premium-soft {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 120, 212, 0.15);
     color: var(--primary-color);
     font-size: 11px;
     font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
     padding: 10px 24px;
     border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
     transition: all 0.4s var(--ease-spring);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    white-space: nowrap;
-    width: auto;
-    margin-bottom: 4px;
 }
 
-.skip-link:hover {
-    background: rgba(255, 255, 255, 0.6);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+.skip-link.premium-soft:hover {
+    background: #FFFFFF;
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px 0 rgba(0, 120, 212, 0.15);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
     letter-spacing: 0.15em;
 }
 
-.skip-link:active {
-    transform: translateY(0);
+/* Accordion Group */
+.onboarding-accordion-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 /* --- Organisms - History --- */
@@ -233,7 +247,7 @@
     flex: 1;
     overflow-y: scroll !important; /* Force always show scroll bar gutter */
     overflow-x: hidden;
-    padding: 12px 16px 120px; /* Ample bottom space for prompt */
+    padding: 0 16px 120px; /* Reduced from 12px for tighter feel */
     display: flex;
     flex-direction: column;
     gap: 8px; /* Tighter gap */
@@ -249,7 +263,7 @@
     padding: 0 16px 8px;
     text-align: center;
     max-width: 380px;
-    margin: 8px auto 0; /* Reduced from 32px */
+    margin: 0px auto 0; /* Reduced from 8px for immediate appearance */
     animation: fadeInScale 0.5s var(--ease-spring);
 }
 
@@ -272,7 +286,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 
 .capability-item {
@@ -305,6 +319,9 @@
     color: var(--text-secondary);
     line-height: 1.6;
     opacity: 0.8;
+    white-space: normal; /* Restore wrap! Long text can't be one line */
+    margin-top: 8px;
+    max-width: 100%;
 }
 
 /* --- Organisms - Chat View Layout --- */
@@ -378,3 +395,16 @@
     font-weight: 500;
     letter-spacing: 0.02em;
 }
+
+.onboarding-auth-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.onboarding-auth-group .btn-premium,
+.onboarding-auth-group .atom-input-premium {
+    margin: 0;
+}
+

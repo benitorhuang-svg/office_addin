@@ -5,6 +5,9 @@
 ---
 
 ## 1. 清理路徑
+
+taskkill /f /im node.exe /t ; node scripts/patch-copilot-sdk.mjs ; npm run dev
+
 請在檔案總管中導航至以下路徑並清空其所有內容：
 
 `C:\Users\benit\AppData\Local\Microsoft\Office\16.0\Wef`
@@ -12,6 +15,7 @@
 ---
 
 ## 2. 執行清理的時機 (When to Clean)
+
 當遇到以下情況時，強烈建議執行手動清理：
 
 1. **修改 HTML 結構**：例如新增或修改了 `taskpane.html` 的 ID 或元素結構。
@@ -22,6 +26,7 @@
 ---
 
 ## 3. 正確執行步驟
+
 1. **完全關閉** 所有執行中的 Word 程式。
 2. 開啟檔案總管，進入上述 **Wef 路徑** 並 **刪除所有子資料夾**。
 3. 返回開發終端機，重啟 `npm run dev` 並 **重新 Side-load (重啟增益集)**。

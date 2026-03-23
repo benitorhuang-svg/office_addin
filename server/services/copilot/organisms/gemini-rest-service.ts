@@ -81,14 +81,15 @@ export const GeminiRestService = {
    */
   async validate(apiKey: string): Promise<void> {
     const models = config.AVAILABLE_MODELS_GEMINI;
-    let lastErr: any = null;
+    let lastErr: unknown = null;
     for (const m of models) {
       try {
         await this.send(apiKey, m, { system: 'Validation', user: 'hi' });
         return;
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastErr = err;
-        if (err?.status === 401 || err?.status === 403) throw err;
+        const error = err as { status?: number };
+        if (error?.status === 401 || error?.status === 403) throw err;
       }
     }
     throw lastErr || { status: 401, detail: 'Gemini Key validation failed' };

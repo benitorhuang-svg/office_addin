@@ -92,12 +92,21 @@ module.exports = async (env, options) => {
       proxy: [
         {
           context: ['/api', '/auth'],
-          target: 'https://127.0.0.1:4000',
+          target: 'https://localhost:4000',
           secure: false,
           changeOrigin: true,
-          logLevel: 'debug'
+          logLevel: 'debug',
+          // Crucial for Streaming Support
+          onProxyRes: (proxyRes) => {
+            proxyRes.headers['x-accel-buffering'] = 'no';
+            proxyRes.headers['cache-control'] = 'no-cache';
+          },
+          onError: (err, req, res) => {
+            console.log('[Proxy Error]', err.message);
+          }
         }
       ],
+      compress: false, // Disable compression for reliable SSE
       server: {
         type: "https",
         options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),

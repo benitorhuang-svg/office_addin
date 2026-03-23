@@ -14,6 +14,8 @@ const sdkFilesToRewrite = [
   path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'dist', 'session.js'),
   path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'dist', 'session.d.ts'),
   path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'dist', 'client.js'),
+  path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'dist', 'cjs', 'session.js'),
+  path.join(repoRoot, 'node_modules', '@github', 'copilot-sdk', 'dist', 'cjs', 'client.js'),
 ];
 
 for (const packageJsonPath of candidateFiles) {
@@ -100,22 +102,28 @@ for (const sdkFilePath of sdkFilesToRewrite) {
       );
 
       // Fix 3: Remove existsSync check for cliPath so we can use global commands like "npx"
+      // Added support for (0, import_node_fs.existsSync) and import_node_fs.existsSync
       rewritten = rewritten.replace(
-        /if\s*\(!existsSync\(this\.options\.cliPath\)\)\s*\{[\s\S]*?throw\s*new\s*Error\([\s\S]*?Copilot CLI not found[\s\S]*?\);[\s\S]*?\}/,
+        /if\s*\(!(?:\(0,\s*)?(?:import_node_fs\.)?existsSync(?:\s*\)\s*)?\(this\.options\.cliPath\)\)\s*\{[\s\S]*?throw\s*new\s*Error\([\s\S]*?Copilot CLI not found[\s\S]*?\);[\s\S]*?\}/,
         '/* existsSync check removed by patch */'
       );
 
+      // Atomic Logic: Apply robust spawn patching
+      const applySpawnPatch = (regex, replacement) => {
+        rewritten = rewritten.replace(regex, replacement);
+      };
+
       // Fix 4: Handle Windows path spaces and shell requirements.
-      // For the JS block: We use shell: false because getNodeExecPath() (node.exe) is an absolute path with spaces.
-      // For the else block: We use shell: true and quote the executable.
-      rewritten = rewritten.replace(
-        /this\.cliProcess = spawn\(getNodeExecPath\(\), \[this\.options\.cliPath, \.\.\.args\], \{([\s\S]*?)windowsHide: true(?:, shell: process\.platform === "win32")?/g,
-        'this.cliProcess = spawn(getNodeExecPath(), [this.options.cliPath, ...args], {$1windowsHide: true, shell: false'
+      // JS-file spawn block
+      applySpawnPatch(
+        /((?:this\.cliProcess = )?(?:\(0,\s*)?(?:import_node_child_process\.)?spawn(?:\s*\)\s*)?)\(getNodeExecPath\(\), \[this\.options\.cliPath, \.\.\.args\], \{([\s\S]*?)windowsHide: true(?!\s*,\s*shell:)(?:, shell: process\.platform === "win32")?/g,
+        '$1(getNodeExecPath(), [this.options.cliPath, ...args], {$2windowsHide: true, shell: false'
       );
 
-      rewritten = rewritten.replace(
-        /this\.cliProcess = spawn\(this\.options\.cliPath, args, \{([\s\S]*?)windowsHide: true(?:, shell: process\.platform === "win32")?/g,
-        'this.cliProcess = spawn((process.platform === "win32" && this.options.cliPath.includes(" ")) ? `"${this.options.cliPath}"` : this.options.cliPath, args, {$1windowsHide: true, shell: process.platform === "win32"'
+      // Generic spawn block (with space protection)
+      applySpawnPatch(
+        /((?:this\.cliProcess = )?(?:\(0,\s*)?(?:import_node_child_process\.)?spawn(?:\s*\)\s*)?)\(this\.options\.cliPath, args, \{([\s\S]*?)windowsHide: true(?!\s*,\s*shell:)(?:, shell: process\.platform === "win32")?/g,
+        '$1((process.platform === "win32" && this.options.cliPath.includes(" ")) ? `"${this.options.cliPath}"` : this.options.cliPath, args, {$2windowsHide: true, shell: process.platform === "win32"'
       );
     }
 

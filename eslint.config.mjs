@@ -39,6 +39,7 @@ export default tseslint.config(
       "office-addins": officeAddins,
     },
     rules: {
+      ...officeAddins.configs.recommended.rules,
       // Relax rules that would create excessive noise
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
@@ -64,6 +65,11 @@ export default tseslint.config(
       globals: {
         ...globals.node,
       },
+    },
+    rules: {
+      // Show server-side explicit-any and unused-vars warnings
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
     },
   },
 

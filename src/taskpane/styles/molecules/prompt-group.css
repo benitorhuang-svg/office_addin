@@ -32,3 +32,84 @@
     flex-shrink: 0;
     margin: 6px 0;
 }
+
+/* --- Molecule: Bottom actions row --- */
+.prompt-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding: 0 4px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.prompt-left-group {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* Atom: Mode toggle pill */
+.prompt-mode-btn {
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    line-height: 1.6;
+}
+
+.prompt-mode-btn.active {
+    background: var(--primary-light, #E8F0FE);
+    color: var(--primary-color);
+}
+
+.prompt-mode-btn:hover {
+    border-color: var(--primary-color);
+}
+
+/* Atom: Clear chat button */
+.prompt-clear-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prompt-clear-btn:hover {
+    color: var(--error);
+    background: rgba(217, 48, 37, 0.06);
+}
+
+/* Atom: Logout button */
+.prompt-logout-btn {
+    width: 30px;
+    height: 30px;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.prompt-logout-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+}

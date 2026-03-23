@@ -13,13 +13,14 @@ import { buildRemoteCliOptions } from './options/remote-cli-options.js';
 export function resolveMethodFromContext(
   modelName: string,
   azureInfo?: AzureInfo,
-  isExplicitCli: boolean = false
+  _isExplicitCli: boolean = false
 ): ACPConnectionMethod {
   const isGeminiModel = modelName.toLowerCase().includes('gemini');
+  if (isGeminiModel) return 'gemini_cli';
+  
   const hasAzureKey = !!(azureInfo?.apiKey || config.AZURE_OPENAI_API_KEY);
   const hasRemotePort = !!config.COPILOT_AGENT_PORT;
 
-  if (isGeminiModel && isExplicitCli) return 'gemini_cli';
   if (hasAzureKey) return 'azure_byok';
   if (hasRemotePort) return 'remote_cli';
   return 'copilot_cli';

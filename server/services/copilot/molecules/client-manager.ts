@@ -2,7 +2,6 @@ import { CopilotClient, CopilotClientOptions } from "@github/copilot-sdk";
 import { ACPConnectionMethod } from '../atoms/types.js';
 
 // Global Client Cache for CLI-based methods (e.g., Gemini CLI)
-// Extracted from original atom: Global Client Cache
 const clientCache: Map<string, CopilotClient> = new Map();
 
 /**
@@ -18,8 +17,9 @@ export async function getOrCreateClient(
 
   if (client) {
     try {
-      // Small ping to check if still alive
+      console.log(`[ACP Manager] Health check for ${method}...`);
       await client.ping('health-check');
+      console.log(`[ACP Manager] Health check for ${method} SUCCESS.`);
       return client;
     } catch {
       console.warn(`[ACP Manager] Cached client for ${method} is dead. Restarting...`);
@@ -30,16 +30,15 @@ export async function getOrCreateClient(
 
   console.log(`[ACP Manager] Spawning new ${method} process...`);
   client = new CopilotClient(options);
-  await client.start();
+  try {
+    await client.start();
+    console.log(`[ACP Manager] ${method} process STARTED successfully.`);
+  } catch (err) {
+    console.error(`[ACP Manager] ${method} process FAILED to start:`, err);
+    throw err;
+  }
   clientCache.set(cacheKey, client);
   return client;
-}
-
-/**
- * Molecule helper: Drop a specific client from cache 
- */
-export function dropClient(method: ACPConnectionMethod) {
-    clientCache.delete(method);
 }
 
 /**

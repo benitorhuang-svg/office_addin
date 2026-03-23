@@ -9,7 +9,7 @@ export const ModelManager = {
     const mode = getStoredModelMode();
 
     if (provider?.includes("gemini")) {
-      if (mode === 'auto') {
+      if (mode === "auto") {
         return ["Auto (Gemini 2.5)", "Auto (Gemini 1.5)"];
       } else {
         return ["Gemini 2.0 Flash", "Gemini 1.5 Pro", "Gemini 1.5 Flash"];
@@ -23,5 +23,5 @@ export const ModelManager = {
 
   getDefaultModel(models: string[]): string {
     return models[0] || "GPT-4o mini";
-  }
+  },
 };

@@ -1,4 +1,4 @@
-import { approveAll } from "@github/copilot-sdk";
+import { approveAll, SessionConfig } from "@github/copilot-sdk";
 import config from '../../../../config/env.js';
 import { ACPSessionConfig, ACPOptions, ACPProviderConfig } from "../../atoms/types.js";
 import { CORE_SDK_CONFIG } from "../../atoms/core-config.js";
@@ -23,7 +23,7 @@ export const buildAzureByokOptions = (cfg: ACPSessionConfig): ACPOptions => {
     sessionOptions: {
       model: azureDeployment || cfg.model,
       streaming: cfg.streaming,
-      provider: provider as any,
+      provider: provider as SessionConfig['provider'],
       onPermissionRequest: approveAll,
     },
   };

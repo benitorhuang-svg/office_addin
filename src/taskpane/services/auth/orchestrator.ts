@@ -1,7 +1,15 @@
 /* global window, HTMLElement */
 
 import { AuthMode } from "../../types";
-import { clearStoredToken, getStoredToken, getStoredGeminiToken } from "../storage";
+import {
+  clearStoredToken,
+  getStoredToken,
+  getStoredGeminiToken,
+  getAuthProvider,
+  getStoredAzureConfig,
+  hasStoredAuthState,
+  setStoredAzureConfig,
+} from "../storage";
 import { AuthUIBridge, AuthUIContext } from "./ui-bridge";
 import { GitHubProvider } from "./github-provider";
 import { GeminiProvider } from "./gemini-provider";
@@ -32,12 +40,31 @@ export class AuthOrchestrator {
 
     console.log(`[Auth] Initializing in mode: ${mode}`);
 
-    if (getStoredToken() || getStoredGeminiToken()) {
-      const type = getStoredGeminiToken() ? "Gemini" : "GitHub";
-      this.ui.showSuccess(type, `Stored ${type} token is active.`);
+    if (hasStoredAuthState()) {
+      const provider = getAuthProvider();
+      const azure = getStoredAzureConfig();
+
+      if (provider === "preview") {
+        this.ui.showSuccess("Preview", "Preview mode active.");
+      } else if (provider === "copilot_cli") {
+        this.ui.showSuccess("CLI", "GitHub CLI session restored.");
+      } else if (provider === "gemini_cli") {
+        this.ui.showSuccess("Gemini CLI", "Gemini CLI session restored.");
+      } else if (provider === "azure_openai" || provider === "azure_byok") {
+        const hasAzureConfig = azure.key || azure.endpoint || azure.deployment;
+        this.ui.showSuccess("Azure", hasAzureConfig ? "Azure OpenAI configuration restored." : "Azure OpenAI mode active.");
+      } else if (getStoredGeminiToken()) {
+        this.ui.showSuccess("Gemini", "Stored Gemini token is active.");
+      } else if (getStoredToken()) {
+        this.ui.showSuccess("GitHub", "Stored GitHub token is active.");
+      } else {
+        this.ui.showSuccess("Session", "Stored session restored.");
+      }
+
       this.onAuthStateChanged?.();
       return;
     }
+
     this.ui.showOnboarding();
   }
 
@@ -63,19 +90,34 @@ export class AuthOrchestrator {
   }
 
   public bindButtons(btns: { [key: string]: HTMLElement | null }) {
-    btns.welcomeConnectBtn?.addEventListener("click", () =>
-      this.github.handlePATConnect("pat-input")
-    );
+    btns.welcomeConnectBtn?.addEventListener("click", () => {
+      const ok = this.github.handlePATConnect("pat-input");
+      if (ok) this.onAuthStateChanged?.();
+    });
     btns.geminiConnectBtn?.addEventListener("click", async () => {
-      await this.gemini.handleConnect("gemini-input");
-      this.onAuthStateChanged?.();
+      const ok = await this.gemini.handleConnect("gemini-input");
+      if (ok) this.onAuthStateChanged?.();
     });
     btns.geminiCliConnectBtn?.addEventListener("click", async () => {
-      await this.gemini.handleCliConnect();
-      this.onAuthStateChanged?.();
+      const ok = await this.gemini.handleCliConnect();
+      if (ok) this.onAuthStateChanged?.();
     });
     btns.geminiApiBtn?.addEventListener("click", async () => {
-      await this.gemini.handleConnect("gemini-input");
+      const ok = await this.gemini.handleConnect("gemini-input");
+      if (ok) this.onAuthStateChanged?.();
+    });
+    btns.azureConnectBtn?.addEventListener("click", () => {
+      const key = (document.getElementById("azure-key-input") as HTMLInputElement | null)?.value.trim();
+      const endpoint = (document.getElementById("azure-endpoint-input") as HTMLInputElement | null)?.value.trim();
+      const deployment = (document.getElementById("azure-deployment-input") as HTMLInputElement | null)?.value.trim();
+
+      if (!key && !endpoint && !deployment) {
+        this.ui.setStatus("Please enter Azure OpenAI credentials.");
+        return;
+      }
+
+      setStoredAzureConfig(key || "", endpoint || "", deployment || "");
+      this.ui.showSuccess("Azure", "Azure OpenAI configuration saved.");
       this.onAuthStateChanged?.();
     });
     btns.cliConnectBtn?.addEventListener("click", async () => {
@@ -114,6 +156,7 @@ export function createAuthController(ctx: AuthUIContext, callbacks?: AuthControl
     logout: () => orch.handleLogout(),
     getAccessToken: () => orch.getAccessToken(),
     getGeminiToken: () => orch.getGeminiToken(),
+    getAuthProvider: () => (require("../storage").getAuthProvider() || "none"), // Implementation
     bindButtons: (btns: Record<string, HTMLElement | null>) => orch.bindButtons(btns),
     handleUnauthorized: () => orch.handleLogout(),
   };

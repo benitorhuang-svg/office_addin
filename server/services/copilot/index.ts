@@ -4,6 +4,4 @@
 
 export * from './types.js';
 export * from './adaptiveConfig.js';
-export * from './geminiProvider.js';
-export * from './githubModelsProvider.js';
 export * from './sdkProvider.js';

@@ -28,10 +28,11 @@
     "watch": "webpack --mode development --watch",
     "start:server": "tsx watch server/index.ts",
     "test": "node --import tsx node_modules/mocha/bin/mocha.js \"server/tests/**/*.ts\" --timeout 5000",
-    "dev": "node scripts/dev.mjs"
+    "dev": "node scripts/dev-win.mjs",
+    "dev:original": "node scripts/dev.mjs"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.1.32",
+    "@github/copilot-sdk": "^0.2.0",
     "core-js": "^3.36.0",
     "marked": "^17.0.5",
     "regenerator-runtime": "^0.14.1"

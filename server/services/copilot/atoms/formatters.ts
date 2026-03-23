@@ -1,12 +1,14 @@
-import { AssistantMessageEvent } from "@github/copilot-sdk";
-
 /** 
  * Atom: Extract text from AssistantMessageEvent 
  */
-export function extractResponseText(event: AssistantMessageEvent | undefined): string {
+export function extractResponseText(event: Record<string, unknown>): string {
   if (!event) return '';
-  if (event.data?.content) return event.data.content;
-  return '';
+  // Handle various Copilot SDK response shapes (direct result or data-wrapped)
+  const content = event.result?.content || event.data?.content || event.data?.text || event.content;
+  if (content) return content;
+  
+  // Fallback for raw string or other shapes
+  return typeof event === 'string' ? event : '';
 }
 
 /**

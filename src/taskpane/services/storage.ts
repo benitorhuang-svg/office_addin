@@ -1,5 +1,3 @@
- 
-
 /**
  * Frontend Storage Service
  *
@@ -15,14 +13,14 @@
  */
 
 export type FrontendAuthProvider =
-  | 'gemini_cli'
-  | 'copilot_cli'
-  | 'azure_byok'
-  | 'azure_openai'
-  | 'remote_cli'
-  | 'gemini_api'
-  | 'github_pat'
-  | 'preview';
+  | "gemini_cli"
+  | "copilot_cli"
+  | "azure_byok"
+  | "azure_openai"
+  | "remote_cli"
+  | "gemini_api"
+  | "github_pat"
+  | "preview";
 
 const TOKEN_KEY = "github_token";
 const GEMINI_TOKEN_KEY = "gemini_token";
@@ -47,6 +45,9 @@ export function clearStoredToken() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(GEMINI_TOKEN_KEY);
   window.localStorage.removeItem(AUTH_PROVIDER_KEY);
+  window.localStorage.removeItem(AZURE_KEY);
+  window.localStorage.removeItem(AZURE_ENDPOINT);
+  window.localStorage.removeItem(AZURE_DEPLOYMENT);
 }
 
 export function getStoredGeminiToken() {
@@ -62,6 +63,17 @@ export function getAuthProvider(): string | null {
   return window.localStorage.getItem(AUTH_PROVIDER_KEY);
 }
 
+export function hasStoredAuthState(): boolean {
+  return !!(
+    getStoredToken() ||
+    getStoredGeminiToken() ||
+    getAuthProvider() ||
+    getStoredAzureConfig().key ||
+    getStoredAzureConfig().endpoint ||
+    getStoredAzureConfig().deployment
+  );
+}
+
 export function setAuthProvider(provider: FrontendAuthProvider) {
   window.localStorage.setItem(AUTH_PROVIDER_KEY, provider);
 }
@@ -74,11 +86,11 @@ export function setStoredModel(model: string) {
   window.localStorage.setItem(MODEL_KEY, model);
 }
 
-export function getStoredModelMode(): 'auto' | 'manual' {
-  return (window.localStorage.getItem(MODEL_MODE_KEY) as 'auto' | 'manual') || 'auto';
+export function getStoredModelMode(): "auto" | "manual" {
+  return (window.localStorage.getItem(MODEL_MODE_KEY) as "auto" | "manual") || "auto";
 }
 
-export function setStoredModelMode(mode: 'auto' | 'manual') {
+export function setStoredModelMode(mode: "auto" | "manual") {
   window.localStorage.setItem(MODEL_MODE_KEY, mode);
 }
 

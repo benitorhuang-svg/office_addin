@@ -8,7 +8,9 @@ export interface HistoryContainerProps {
  * Organism: Chat History Container
  * Manages the message list and initial welcome state.
  */
-export function createHistoryContainer({ authProvider: _authProvider }: HistoryContainerProps): HTMLElement {
+export function createHistoryContainer({
+  authProvider: _authProvider,
+}: HistoryContainerProps): HTMLElement {
   const container = document.createElement("div");
   container.id = "chat-history";
   container.className = "org-history-container";

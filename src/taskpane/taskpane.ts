@@ -65,6 +65,7 @@ class TaskpaneController {
         createHeader({
           title: "office_Agent",
           authProvider: provider,
+          onClearChat: () => this.handleClearChat(),
         })
       );
     }
@@ -95,7 +96,7 @@ class TaskpaneController {
     }
   }
 
-  private handleModeChange(mode: 'auto' | 'manual') {
+  private handleModeChange(mode: "auto" | "manual") {
     setStoredModelMode(mode);
     this.renderAndRebind();
     showToast(`Model mode changed to ${mode}`, "info");
@@ -123,15 +124,18 @@ class TaskpaneController {
     this.renderAtomicDesign();
     this.initElements();
 
-    this.authController = createAuthController({
-      authStatusEl: document.getElementById("auth-status"),
-      applyStatusEl: this.els.applyStatus,
-      historyEl: this.els.historyEl,
-    }, {
-      onAuthStateChanged: () => {
-        this.renderAndRebind();
+    this.authController = createAuthController(
+      {
+        authStatusEl: document.getElementById("auth-status"),
+        applyStatusEl: this.els.applyStatus,
+        historyEl: this.els.historyEl,
+      },
+      {
+        onAuthStateChanged: () => {
+          this.renderAndRebind();
+        },
       }
-    });
+    );
 
     this.bindAuthButtons();
     await this.authController.checkInitialAuth();
@@ -140,14 +144,43 @@ class TaskpaneController {
     this.renderAndRebind();
 
     // Initial Static UI settings
-    const currentPreset = getStoredPreset() || "generic";
+    const currentPreset = getStoredPreset() || "general";
     setPresetDescription(this.els.presetDescription, currentPreset, this.writingPresets);
 
     // Initial Flow: focus and cleanup loading
     this.els.promptEl?.focus();
     window.scrollTo(0, 0);
+    this.initResizer();
     hideLoadingScreen();
     startHealthCheck();
+  }
+
+  private initResizer() {
+    const resizer = document.createElement("div");
+    resizer.className = "layout-resizer";
+    document.body.appendChild(resizer);
+
+    let isResizing = false;
+    resizer.addEventListener("mousedown", (e) => {
+      isResizing = true;
+      e.preventDefault();
+      document.body.classList.add("is-resizing");
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isResizing) return;
+      // In a right-docked taskpane, dragging 'left' means increasing width
+      // Word taskpanes are usually around 300-400px. 
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 280 && newWidth < 800) {
+        document.body.style.width = `${newWidth}px`;
+      }
+    });
+
+    window.addEventListener("mouseup", () => {
+      isResizing = false;
+      document.body.classList.remove("is-resizing");
+    });
   }
 
   private renderAndRebind() {
@@ -175,7 +208,7 @@ class TaskpaneController {
 
   private async handleSendMessage() {
     const promptValue = (this.els.promptEl as HTMLTextAreaElement)?.value.trim();
-    if (!promptValue) return;
+    if (!promptValue || !this.authController) return;
 
     const ctx: ChatContext = {
       historyEl: this.els.historyEl,
@@ -187,7 +220,8 @@ class TaskpaneController {
     };
 
     try {
-      const selectedModel = (this.els.modelSelect as HTMLSelectElement)?.value || this.availableModels[0];
+      const selectedModel =
+        (this.els.modelSelect as HTMLSelectElement)?.value || this.availableModels[0];
       const selectedPreset = getSelectedPreset(
         this.els.presetSelect as HTMLSelectElement,
         this.writingPresets

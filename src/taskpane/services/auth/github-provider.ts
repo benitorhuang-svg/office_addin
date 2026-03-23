@@ -1,4 +1,3 @@
- 
 /* global document, HTMLInputElement, console */
 import { setStoredToken } from "../storage";
 import { AuthUIBridge } from "./ui-bridge";

@@ -8,7 +8,7 @@ import { parseAssistantResponse } from '../../services/promptBuilder.js';
  * Manages the high-level request/response cycle for AI tasks.
  */
 export const handleCopilotRequest = async (req: Request, res: Response) => {
-  const { prompt, officeContext, model, stream, authProvider } = req.body;
+  const { prompt, officeContext, model, stream, authProvider, presetId } = req.body;
   const geminiKey = (req.headers['x-gemini-key'] as string) || config.GEMINI_API_KEY;
 
   try {
@@ -17,7 +17,12 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
       });
+
+      // Send initial spacer and padding to open the stream and bypass buffering
+      res.write('data: {"text": ""}\n\n');
+      res.write(': ' + ' '.repeat(2048) + '\n\n'); // SSE comment padding
 
       const onChunk = (chunk: string) => {
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
@@ -27,6 +32,7 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         prompt,
         officeContext,
         model,
+        presetId,
         stream: true,
         authProvider,
         geminiKey
@@ -40,6 +46,7 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         prompt,
         officeContext,
         model,
+        presetId,
         stream: false,
         authProvider,
         geminiKey
@@ -56,7 +63,7 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       });
     }
   } catch (err: unknown) {
-    const error = err as any; // Cast for access but handle correctly
+    const error = err as Error & { status?: number; detail?: string }; // Cast for access but handle correctly
     console.error(`[Copilot Handler Error]`, error);
     if (!res.headersSent) {
       return res.status(error.status || 500).json({ 

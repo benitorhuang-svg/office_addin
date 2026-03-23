@@ -1,6 +1,0 @@
-{
-  "prompt": "Hello! Please respond with a short greeting in Traditional Chinese.",
-  "model": "gemini-3-flash",
-  "authProvider": "gemini_cli",
-  "stream": false
-}

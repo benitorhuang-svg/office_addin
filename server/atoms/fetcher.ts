@@ -2,8 +2,7 @@
  * Atom: Fetcher
  * Polyfill-ready fetch wrapper for Node 18+ environment.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FetchFunction = (input: any, init?: any) => Promise<any>;
+type FetchFunction = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export async function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   if (typeof globalThis.fetch === 'function') {

@@ -19,12 +19,46 @@ apiRouter.post('/gemini/validate', async (req, res) => {
     const { apiKey } = req.body;
     await GeminiRestService.validate(apiKey);
     res.json({ status: 200, detail: 'Gemini Key is valid' });
-  } catch (err: any) {
-    res.status(err.status || 401).json({ status: err.status, detail: err.detail });
+  } catch (err: unknown) {
+    const error = err as { status?: number; detail?: string };
+    res.status(error.status || 401).json({ status: error.status, detail: error.detail });
   }
 });
 
-// Endpoint 3: Core Copilot (Handled by Atomized Handler)
+// Endpoint 2.5: Start Gemini CLI (for frontend trigger)
+apiRouter.post('/gemini/start-cli', async (req, res) => {
+  try {
+    // This endpoint is called by the frontend to trigger Gemini CLI startup
+    // The actual CLI is started on-demand by the SDK, so we just acknowledge
+    console.log('[API] Gemini CLI startup requested by frontend');
+    res.json({ status: 200, detail: 'Gemini CLI startup acknowledged' });
+  } catch (_err: unknown) {
+    res.status(500).json({ status: 500, detail: 'Failed to acknowledge CLI startup' });
+  }
+});
+
+// Endpoint 3: Health Check for SDK and ACP connections
+apiRouter.get('/health', async (req, res) => {
+  try {
+    const { ModernSDKOrchestrator } = await import('../services/copilot/organisms/sdk-orchestrator-v2.js');
+    const health = await ModernSDKOrchestrator.healthCheck();
+    
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      clients: health,
+      uptime: process.uptime()
+    });
+  } catch (err: unknown) {
+    res.status(500).json({ 
+      status: 'error', 
+      detail: err instanceof Error ? err.message : String(err),
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Endpoint 4: Core Copilot (Handled by Atomized Handler)
 apiRouter.post('/copilot', handleCopilotRequest);
 
 export default apiRouter;

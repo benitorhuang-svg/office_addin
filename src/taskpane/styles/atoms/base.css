@@ -48,6 +48,15 @@
     box-shadow: 0 6px 16px rgba(138, 43, 226, 0.25);
 }
 
+.btn-premium.azure {
+    background: linear-gradient(135deg, #0078D4 0%, #005A9E 100%);
+    color: #FFFFFF;
+}
+
+.btn-premium.azure:hover {
+    box-shadow: 0 6px 16px rgba(0, 120, 212, 0.28);
+}
+
 /* --- Premium CLI Auth Button --- */
 .btn-premium.cli-auth {
     background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
@@ -202,6 +211,10 @@
 .auth-badge.gemini { 
     background: linear-gradient(135deg, #F3E8FF, #E8D5FF); 
     color: #7C3AED; 
+}
+.auth-badge.azure {
+    background: linear-gradient(135deg, #EAF3FF, #D9E8FF);
+    color: #0078D4;
 }
 
 /* --- Atoms - Preset Pill Select --- */

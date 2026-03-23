@@ -5,7 +5,7 @@ import { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
  * Molecule: Copilot CLI Option Builder
  */
 export const buildCopilotCliOptions = (cfg: ACPSessionConfig): ACPOptions => ({
-  clientOptions: { cliPath: 'copilot' },
+  clientOptions: { cliPath: undefined },
   sessionOptions: {
     model: cfg.model,
     streaming: cfg.streaming,

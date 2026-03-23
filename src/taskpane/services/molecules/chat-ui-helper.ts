@@ -1,4 +1,5 @@
 /* global HTMLElement */
+import { marked } from "marked";
 import { appendMessage, showTypingIndicator, removeTypingIndicator } from "../ui";
 import { ChatContext } from "../../types";
 
@@ -40,12 +41,12 @@ export const ChatUiHelper = {
   finalize(ctx: ChatContext) {
     removeTypingIndicator();
     if (ctx.promptEl) {
-        ctx.promptEl.disabled = false;
-        ctx.promptEl.focus();
+      ctx.promptEl.disabled = false;
+      ctx.promptEl.focus();
     }
     if (ctx.sendBtn) {
-        ctx.sendBtn.disabled = false;
-        ctx.sendBtn.style.opacity = "1";
+      ctx.sendBtn.disabled = false;
+      ctx.sendBtn.style.opacity = "1";
     }
   },
 
@@ -53,8 +54,8 @@ export const ChatUiHelper = {
    * Updates an assistant bubble with new content during streaming.
    */
   updateAssistantBubble(
-    bubble: HTMLElement | null, 
-    content: string, 
+    bubble: HTMLElement | null,
+    content: string,
     parseMarkdown: (text: string) => string
   ) {
     const previewEl = bubble?.querySelector(".text-preview") as HTMLElement;
@@ -72,8 +73,13 @@ export const ChatUiHelper = {
    */
   completeAssistantBubble(bubble: HTMLElement | null, content: string) {
     if (bubble) {
-        bubble.dataset.fullText = content;
-        bubble.setAttribute("data-complete", "true");
+      const previewEl = bubble.querySelector(".text-preview") as HTMLElement;
+      if (previewEl) {
+        previewEl.classList.remove("skeleton");
+        previewEl.innerHTML = marked.parse(content || "") as string;
+      }
+      bubble.dataset.fullText = content;
+      bubble.setAttribute("data-complete", "true");
     }
   },
 
@@ -81,8 +87,8 @@ export const ChatUiHelper = {
    * Renders action buttons (e.g., Replace Selection, Insert) in the bubble.
    */
   renderActions(
-    bubble: HTMLElement | null, 
-    actions: { type: string; value: string }[], 
+    bubble: HTMLElement | null,
+    actions: { type: string; value: string }[],
     onAction: (type: string, value: string) => void
   ) {
     if (!bubble || !actions || actions.length === 0) return;
@@ -97,15 +103,18 @@ export const ChatUiHelper = {
     actions.forEach((action) => {
       const btn = document.createElement("button");
       btn.className = "action-pill-btn";
-      
-      const label = action.type === 'replace' ? '💡 替換選取文字' : '➕ 插入至文件';
+
+      const label = action.type === "replace" ? "💡 替換選取文字" : "➕ 插入至文件";
       btn.innerHTML = `<span>${label}</span>`;
-      
+
       btn.onclick = () => {
         btn.disabled = true;
         btn.style.opacity = "0.5";
         onAction(action.type, action.value);
-        setTimeout(() => { btn.disabled = false; btn.style.opacity = "1"; }, 1000);
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.style.opacity = "1";
+        }, 1000);
       };
 
       actionContainer.appendChild(btn);
@@ -113,7 +122,7 @@ export const ChatUiHelper = {
 
     const previewEl = bubble.querySelector(".text-preview");
     if (previewEl) {
-        previewEl.after(actionContainer);
+      previewEl.after(actionContainer);
     }
   },
 
@@ -127,5 +136,5 @@ export const ChatUiHelper = {
       previewEl.textContent = errorText;
       previewEl.style.color = "#DC3545";
     }
-  }
+  },
 };

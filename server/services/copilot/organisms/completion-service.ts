@@ -1,27 +1,27 @@
 import config from '../../../config/env.js';
-import * as sdkProvider from '../sdkProvider.js';
+import { OfficeContext } from '../atoms/types.js';
 import { GeminiRestService } from './gemini-rest-service.js';
 import { GitHubModelsService } from './github-models-service.js';
 import { buildWordPrompt } from '../../promptBuilder.js';
 
 export interface CompletionRequest {
   prompt: string;
-  officeContext: any;
+  officeContext: OfficeContext;
   model?: string;
+  presetId?: string;
   stream?: boolean;
   authProvider?: string;
   geminiKey?: string;
 }
 
 /**
- * Organism: Completion Service
- * High-level service that decides between native SDK, GitHub Models, or direct Gemini API.
- * Orchestrates Prompt Building -> Provider Selection -> Execution.
+ * Organism: Modern Completion Service
+ * Updated to use ModernSDKOrchestrator with enhanced error handling and performance
  */
 export const CompletionService = {
   async execute(req: CompletionRequest, onChunk?: (chunk: string) => void): Promise<string | void> {
     const resolvedModel = req.model || config.COPILOT_MODEL;
-    const { system, user } = buildWordPrompt(req.prompt, req.officeContext, resolvedModel, 'generic');
+    const { system, user } = buildWordPrompt(req.prompt, req.officeContext, resolvedModel, req.presetId || 'general');
 
     try {
       // Branch 1: GitHub Models API (Direct REST)
@@ -42,11 +42,12 @@ export const CompletionService = {
         }
       }
 
-      // Branch 3: Official Copilot SDK (CLI-based / BYOK)
+      // Branch 3: Modern Copilot SDK (CLI-based / BYOK) with enhanced orchestrator
       const isExplicitGeminiCli = req.authProvider === 'gemini_cli';
       const patToken = config.getServerPatToken();
+      const { sendPromptViaCopilotSdk } = await import('../sdkProvider.js');
 
-      return await sdkProvider.sendPromptViaCopilotSdk(
+      return await sendPromptViaCopilotSdk(
         user, 
         patToken, 
         onChunk, 
@@ -56,7 +57,7 @@ export const CompletionService = {
         isExplicitGeminiCli ? 'gemini_cli' : undefined
       );
     } catch (err) {
-      console.error('[CompletionService Error]', err);
+      console.error('[Modern CompletionService Error]', err);
       throw err;
     }
   }
