@@ -164,8 +164,22 @@ export class ModernSDKOrchestrator {
     while (retryCount <= maxRetries) {
       try {
         const { clientOptions, sessionOptions } = resolveACPOptions(acpConfig);
-        const client = await this.getClient(method, { clientOptions });
-        const { session, sessionId } = await this.createSession(client, sessionOptions, onChunk);
+        const client = new CopilotClient(clientOptions);
+        
+        // Use the onEvent hook inside createSession to monitor Gemini activity without breaking types
+        const augmentedOptions = {
+          ...sessionOptions,
+          onEvent: (event: any) => {
+            if (method === 'gemini_cli') {
+              console.log(`[SDK V2 Gemini Debug] Event: ${event.type}`);
+              if (event.type === 'session.error') {
+                console.error(`[SDK V2 Gemini Error]`, event.data);
+              }
+            }
+          }
+        };
+
+        const { session, sessionId } = await this.createSession(client, augmentedOptions, onChunk);
 
         // Manual turn management with Inactivity Watchdog
         // This bypasses the unreliable session.idle event and its 60s timeout

@@ -275,3 +275,39 @@
 .typing-dot:nth-child(1) { animation-delay: 0s; }
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* --- Atoms - Model Selector --- */
+.atom-model-select {
+    appearance: none;
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-full);
+    padding: 6px 32px 6px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s var(--ease-spring);
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%235F6368' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    width: fit-content;
+    min-width: 180px;
+    max-width: calc(100% - 56px); /* Critical: reserve space for logout button */
+    white-space: nowrap;
+    text-overflow: clip; 
+    display: inline-flex;
+    align-items: center;
+}
+
+.atom-model-select:hover {
+    background-color: var(--border-light);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+}
+
+.atom-model-select:focus {
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.15);
+}

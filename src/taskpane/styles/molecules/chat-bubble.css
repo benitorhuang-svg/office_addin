@@ -50,11 +50,11 @@
     max-width: 92%;
     overflow: visible;
     min-height: auto;
-    margin-left: 4px;
+    margin-left: 12px;
 }
 
 .text-preview {
-    padding: 15px 20px;
+    padding: 18px 24px 18px 28px;
     font-size: 14px;
     color: #1A1A1A !important;
     line-height: 1.6;

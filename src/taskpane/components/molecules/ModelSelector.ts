@@ -18,6 +18,7 @@ export function createModelSelector({
 
   const select = document.createElement("select");
   select.id = id;
+  select.className = "atom-model-select";
   select.setAttribute("aria-label", "Select model");
 
   const preferredModel = selectedModel || models[0] || "GPT-5 mini";

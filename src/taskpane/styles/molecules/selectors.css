@@ -9,16 +9,21 @@
     outline: none;
     cursor: pointer;
     appearance: none;
-    padding: 6px 32px 6px 16px;
+    padding: 6px 44px 6px 16px;
     border-radius: var(--radius-full);
     background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%235F6368' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 12px center;
-    max-width: 140px;
-    text-overflow: ellipsis;
+    background-position: right 18px center;
+    min-width: 250px;
+    max-width: none !important;
+    margin-right: 12px;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.2s;
+    width: auto;
 }
 
-.selector-pill-mini select:hover { background-color: var(--border-light); color: var(--text-primary); }
+.selector-pill-mini select:hover {
+    background-color: var(--border-light);
+    color: var(--text-primary);
+}
