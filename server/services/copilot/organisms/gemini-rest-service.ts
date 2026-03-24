@@ -15,9 +15,15 @@ export const GeminiRestService = {
     const modelId = model.replace(/^models\//, '');
     const url = `${config.GEMINI_REST_URL}?key=${apiKey}`;
 
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'Authorization': `Bearer ${apiKey}`,
+    };
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         model: modelId,
         messages: [
@@ -44,9 +50,15 @@ export const GeminiRestService = {
     const modelId = model.replace(/^models\//, '');
     const url = `${config.GEMINI_REST_URL}?key=${apiKey}`;
 
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'Authorization': `Bearer ${apiKey}`,
+    };
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         model: modelId,
         messages: [
@@ -60,8 +72,31 @@ export const GeminiRestService = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as ChatCompletionResponse;
-      throw { status: response.status, detail: errorData?.error?.message || 'Gemini SSE Error' };
+      // Log and attempt graceful fallback to non-streaming call when provider returns SSE-related errors
+      const raw = await response.text().catch(() => '');
+      let errorMsg = 'Gemini SSE Error';
+      try {
+        const errorData = JSON.parse(raw) as ChatCompletionResponse;
+        errorMsg = errorData?.error?.message || raw || errorMsg;
+      } catch {
+        errorMsg = raw || errorMsg;
+      }
+      console.warn('[Gemini REST] SSE error', response.status, errorMsg);
+
+      // Known provider-side SSE failures (400/provider_error) — fallback to non-streaming send
+      if (response.status === 400 || String(errorMsg).toLowerCase().includes('provider_error')) {
+        try {
+          const nonStreamResult = await this.send(apiKey, model, payload);
+          // yield the whole result as a single chunk to keep the frontend working
+          yield nonStreamResult;
+          return;
+        } catch (err) {
+          const e = err as { status?: number; detail?: string };
+          throw { status: e.status || response.status, detail: e.detail || errorMsg };
+        }
+      }
+
+      throw { status: response.status, detail: errorMsg };
     }
 
     const reader = response.body?.getReader();

@@ -40,7 +40,7 @@ export function createOnboardingOrganism(): HTMLElement {
   });
   const geminiInput = createInput({ id: "gemini-input", type: "password", placeholder: "Paste Gemini API Key here..." });
   const geminiConnectBtn = createButton({ 
-    id: "gemini-connect-btn", 
+    id: "gemini-api-connect-btn", 
     label: "Connect via API Key", 
     className: "w-full bg-blue-600 text-white hover:bg-blue-700" 
   });

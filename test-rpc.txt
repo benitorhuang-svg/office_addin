@@ -1,3 +1,0 @@
-Content-Length: 104
-
-{"jsonrpc":"2.0","id":1,"method":"session.create","params":{"sessionId":"test-session","model":"gemini-2.5-flash"}}

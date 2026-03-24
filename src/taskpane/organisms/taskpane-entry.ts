@@ -122,6 +122,27 @@ class TaskpaneController {
   }
 
   public async init() {
+    // If opened as an OAuth dialog (preview), render a minimal dialog showing current auth method
+    try {
+      const dialogUrl = new URL(window.location.href);
+      const oauthMode = dialogUrl.searchParams.get("oauth");
+      if (oauthMode) {
+        const authProvider = getAuthProvider() || "none";
+        document.body.innerHTML = "";
+        const wrap = document.createElement("div");
+        wrap.className = "p-6 text-center";
+        wrap.innerHTML = `
+          <h2 class="text-xl font-semibold mb-4">OAuth Preview</h2>
+          <p class="text-sm text-slate-600 mb-3">Mode: <strong>${oauthMode}</strong></p>
+          <p class="text-sm text-slate-700 mb-6">Current login method detected: <strong>${authProvider}</strong></p>
+          <p class="text-xs text-slate-500">This dialog is a preview used by the Office popup during development.</p>
+        `;
+        document.body.appendChild(wrap);
+        return; // do not initialize the full taskpane when acting as dialog
+      }
+    } catch (e) {
+      // ignore and continue normal init
+    }
     // Initial fetch of config to remove hardcoding
     let title = "office_Agent";
     try {

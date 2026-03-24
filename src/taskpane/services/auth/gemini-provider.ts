@@ -19,32 +19,31 @@ export class GeminiProvider {
       return false;
     }
 
-    this.ui.setStatus("Validating Gemini key...");
+    // Optimistic save: store token and return immediately, validate in background
+    setStoredGeminiToken(token);
+    const { setAuthProvider } = await import("../atoms/storage-provider");
+    setAuthProvider("gemini_api");
+    this.ui.showSuccess("Gemini", "Gemini key saved. Validation running in background.");
+    this.ui.notifyAssistant("Gemini authentication stored. Background validation started.");
 
-    try {
-      const { validateGeminiApiKey } = await import("../organisms/api-orchestrator");
-      const compilationOk = await validateGeminiApiKey(token);
-
-      if (compilationOk.ok) {
-        setStoredGeminiToken(token);
-        const { setAuthProvider } = await import("../atoms/storage-provider");
-        setAuthProvider("gemini_api");
-        this.ui.showSuccess("Gemini", "Connected to Gemini API via REST.");
-        this.ui.notifyAssistant("Gemini authentication complete.");
-        return true;
-      } else {
-        this.ui.setStatus(`Error: ${compilationOk.message || "Invalid key"}`);
-        return false;
+    // Background validation (does not block the UI)
+    (async () => {
+      try {
+        const { validateGeminiApiKey } = await import("../organisms/api-orchestrator");
+        const val = await validateGeminiApiKey(token);
+        if (!val.ok) {
+          this.ui.setStatus(`Gemini validation failed: ${val.message}`);
+        } else {
+          // brief positive status update
+          this.ui.setStatus("Gemini key validated.");
+        }
+      } catch (err) {
+        console.warn("Background Gemini validation failed", err);
+        // leave the saved token intact; user can retry validation later
       }
-    } catch (error) {
-      console.warn(error);
-      // Fallback if server is not reachable but user wants to save
-      setStoredGeminiToken(token);
-      const { setAuthProvider } = await import("../atoms/storage-provider");
-      setAuthProvider("gemini_api");
-      this.ui.showSuccess("Gemini", "Gemini key saved offline. (Validation server unreachable)");
-      return true;
-    }
+    })();
+
+    return true;
   }
 
   public async handleCliConnect() {
