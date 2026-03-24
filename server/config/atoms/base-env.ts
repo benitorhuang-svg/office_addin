@@ -49,4 +49,11 @@ export const BASE_ENV = {
   ])),
   PREVIEW_MODE_GUIDE_MD: firstDefinedValue(process.env.PREVIEW_MODE_GUIDE_MD, `您目前處於 **預覽模式**。<br>**本工具支援以下登入方式：**<br>1. **Google Gemini**：使用 CLI 或 API Key 。<br>2. **GitHub Copilot**：使用 CLI 、 透過OAuth 或 PAT 連線。<br>3. **Azure OpenAI**：使用自有憑證。<br>**如何開始使用？**<br>點擊右下角 **登出按鈕** 即可設定連線。`),
   DEFAULT_WORD_FONT_STYLE: firstDefinedValue(process.env.DEFAULT_WORD_FONT_STYLE, "font-family: '微軟正黑體', 'Microsoft JhengHei', 'Segoe UI', sans-serif; font-size: 11pt;"),
+
+  // Optimization & Resilience
+  RATE_LIMIT_RPM: process.env.RATE_LIMIT_RPM || '30',
+  RATE_LIMIT_ENABLED: process.env.RATE_LIMIT_ENABLED !== 'false',
+  IDLE_CLEANUP_MINUTES: process.env.IDLE_CLEANUP_MINUTES || '30',
+  FALLBACK_MODELS: process.env.FALLBACK_MODELS || '',
+  LOG_FORMAT: process.env.LOG_FORMAT || 'json',
 };

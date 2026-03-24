@@ -140,7 +140,7 @@ class TaskpaneController {
         document.body.appendChild(wrap);
         return; // do not initialize the full taskpane when acting as dialog
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore and continue normal init
     }
     // Initial fetch of config to remove hardcoding

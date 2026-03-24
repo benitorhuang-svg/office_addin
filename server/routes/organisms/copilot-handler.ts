@@ -3,15 +3,25 @@ import config from '../../config/env.js';
 import { CompletionService } from '../../services/copilot/organisms/completion-service.js';
 import { ResponseParser } from '../../services/copilot/molecules/response-parser.js';
 import { markStart, markEnd } from '../../atoms/latency-tracker.js';
+import { validateCopilotRequest } from '../atoms/request-validator.js';
+import { createRequestLog, logCompletion } from '../../atoms/request-logger.js';
 
 /**
  * Organism: Copilot Route Handler
  * Manages the high-level request/response cycle for AI tasks.
  */
 export const handleCopilotRequest = async (req: Request, res: Response) => {
-  const requestId = `req-${Date.now()}`;
+  // Validate request payload
+  const validation = validateCopilotRequest(req.body);
+  if (!validation.valid) {
+    return res.status(400).json({ error: 'validation_error', detail: validation.errors.join('; ') });
+  }
+
+  const reqLog = createRequestLog(req);
+  const requestId = reqLog.requestId;
   markStart(requestId);
   let firstTokenTracked = false;
+  let chunkCount = 0;
   console.log(`[API Handler DEBUG] STARTING /api/copilot handler (streaming: ${req.body.stream})`);
   const { prompt, officeContext, model, stream, authProvider, presetId } = req.body;
   const geminiKey = (req.headers['x-gemini-key'] as string) || config.GEMINI_API_KEY;
@@ -43,6 +53,7 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         }
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
         streamingRes.flush?.();
+        chunkCount++;
       };
 
       markStart(`${requestId}:first-token`);
@@ -57,7 +68,8 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       }, onChunk);
 
       res.write('data: [DONE]\n\n');
-      markEnd(requestId);
+      const streamLatency = markEnd(requestId);
+      logCompletion(reqLog, { latencyMs: streamLatency, status: 'ok', chunks: chunkCount });
       return res.end();
     } else {
       // Non-streaming
@@ -74,17 +86,20 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       // Functional Optimization: Parse Word-specific actions via Molecule
       const { cleanText, actions } = ResponseParser.parse(rawText);
 
+      const nonStreamLatency = markEnd(requestId);
+      logCompletion(reqLog, { latencyMs: nonStreamLatency, status: 'ok' });
       return res.json({ 
         text: cleanText, 
         actions,
         model: model || config.COPILOT_MODEL,
         timestamp: new Date().toISOString(),
-        latencyMs: markEnd(requestId)
+        latencyMs: nonStreamLatency
       });
     }
   } catch (err: unknown) {
-    const error = err as Error & { status?: number; detail?: string }; // Cast for access but handle correctly
+    const error = err as Error & { status?: number; detail?: string };
     console.error(`[Copilot Handler Error]`, error);
+    logCompletion(reqLog, { latencyMs: markEnd(requestId), status: 'error', error: error.message });
     if (!res.headersSent) {
       return res.status(error.status || 500).json({ 
         error: 'provider_error', 

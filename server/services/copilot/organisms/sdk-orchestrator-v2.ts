@@ -6,6 +6,7 @@ import { resolveMethodFromContext, resolveACPOptions } from '../molecules/option
 import { getOrCreateClient, stopAllClients } from '../molecules/client-manager.js';
 import { resolveInput as resolveInputFromQueue, clearAllPendingInputs } from '../molecules/pending-input-queue.js';
 import { generateSessionId, createSession, cleanupSession, cleanupAllSessions } from '../molecules/session-lifecycle.js';
+import { AdaptiveWatchdog } from '../molecules/adaptive-watchdog.js';
 
 /**
  * Organism V2: Modern SDK Orchestrator
@@ -73,8 +74,10 @@ export class ModernSDKOrchestrator {
         // This bypasses the unreliable session.idle event and its 60s timeout
         const result = await new Promise<string>((resolve, reject) => {
           let fullContent = '';
-          const INACTIVITY_MS = CORE_SDK_CONFIG.WATCHDOG_INACTIVITY_MS; 
+          const INACTIVITY_MS = AdaptiveWatchdog.getTimeout(modelName);
+          console.log(`[Watchdog] Using adaptive timeout: ${INACTIVITY_MS/1000}s for model "${modelName}"`);
           let inactivityWatcher: NodeJS.Timeout | null = null;
+          const promptStartTime = performance.now();
           
           const globalTimeout = setTimeout(() => {
             finish(new Error(`[Fatal Timeout] AI 總回應時間超過 ${CORE_SDK_CONFIG.GEN_TIMEOUT_MS / 1000} 秒`));
@@ -91,6 +94,8 @@ export class ModernSDKOrchestrator {
           const finish = (err?: Error) => {
             if (inactivityWatcher) clearTimeout(inactivityWatcher);
             clearTimeout(globalTimeout);
+            const latencyMs = Math.round(performance.now() - promptStartTime);
+            if (!err) AdaptiveWatchdog.recordLatency(modelName, latencyMs);
             cleanupSession(sessionId);
             session.disconnect().catch(() => {});
             if (err) reject(err);

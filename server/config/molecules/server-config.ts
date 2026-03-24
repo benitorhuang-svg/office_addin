@@ -42,6 +42,11 @@ export interface ServerConfig {
   isRemoteCliConfigured: () => boolean;
   isGeminiApiConfigured: () => boolean;
   AUTO_CONNECT_CLI: boolean;
+  RATE_LIMIT_RPM: number;
+  RATE_LIMIT_ENABLED: boolean;
+  IDLE_CLEANUP_MINUTES: number;
+  FALLBACK_MODELS: string;
+  LOG_FORMAT: string;
 }
 
 /**
@@ -128,6 +133,11 @@ const config: ServerConfig = {
   isRemoteCliConfigured: () => !!config.COPILOT_AGENT_PORT,
   isGeminiApiConfigured: () => !!config.GEMINI_API_KEY,
   get AUTO_CONNECT_CLI() { return process.env.AUTO_CONNECT_CLI === 'true' || process.env.NODE_ENV === 'development'; },
+  get RATE_LIMIT_RPM() { return Number(BASE_ENV.RATE_LIMIT_RPM); },
+  get RATE_LIMIT_ENABLED() { return BASE_ENV.RATE_LIMIT_ENABLED; },
+  get IDLE_CLEANUP_MINUTES() { return Number(BASE_ENV.IDLE_CLEANUP_MINUTES); },
+  get FALLBACK_MODELS() { return BASE_ENV.FALLBACK_MODELS; },
+  get LOG_FORMAT() { return BASE_ENV.LOG_FORMAT; },
 };
 
 export default config;

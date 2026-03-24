@@ -1,6 +1,7 @@
 import { CopilotClient, CopilotClientOptions } from "@github/copilot-sdk";
 import { ACPConnectionMethod } from '../atoms/types.js';
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
+import { IdleCleaner } from './idle-cleaner.js';
 
 /**
  * Modern Client Manager with Connection Pooling and Health Monitoring.
@@ -56,6 +57,7 @@ class ClientManager {
     const existing = this.clients.get(clientKey);
     if (existing && existing.healthy && (now - existing.created) < this.CLIENT_TTL) {
       existing.lastUsed = now;
+      IdleCleaner.touch(clientKey);
       return existing.client;
     }
 
@@ -99,8 +101,11 @@ class ClientManager {
           healthy: true
         });
 
+        IdleCleaner.touch(clientKey);
+
         if (!this.healthCheckTimer) {
           this.startHealthMonitoring();
+          IdleCleaner.startScanning((key) => this.cleanupClient(key));
         }
 
         return client;
@@ -158,6 +163,7 @@ class ClientManager {
         console.warn(`[Client Manager] Stop error for ${key}:`, error);
       }
       this.clients.delete(key);
+      IdleCleaner.remove(key);
     }
   }
 
@@ -166,6 +172,7 @@ class ClientManager {
       clearInterval(this.healthCheckTimer);
       this.healthCheckTimer = undefined;
     }
+    IdleCleaner.stopScanning();
     const promises = Array.from(this.clients.keys()).map(k => this.cleanupClient(k));
     await Promise.allSettled(promises);
   }

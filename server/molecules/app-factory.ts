@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import authRouter from '../routes/organisms/auth-router.js';
 import apiRouter from '../routes/organisms/api-router.js';
+import { createRateLimiter } from '../routes/molecules/rate-limiter.js';
 
 /**
  * Molecule: Express App Factory
@@ -25,6 +26,9 @@ export const AppFactory = {
     app.get('/', (req, res) => {
       res.json({ ok: true, version: 'Atomic-1.0', engine: 'Native Node' });
     });
+
+    // Rate limiting on AI endpoints
+    app.use('/api/copilot', createRateLimiter());
 
     // Mount Routes
     app.use('/auth', authRouter);

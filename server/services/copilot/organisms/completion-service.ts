@@ -4,6 +4,7 @@ import { emitChunks } from '../atoms/formatters.js';
 import { GeminiRestService } from './gemini-rest-service.js';
 import { GitHubModelsService } from './github-models-service.js';
 import { PromptOrchestrator } from './prompt-orchestrator.js';
+import { FallbackChain } from '../molecules/fallback-chain.js';
 
 export interface CompletionRequest {
   prompt: string;
@@ -83,6 +84,29 @@ export const CompletionService = {
       return streamedText;
     } catch (err: unknown) {
       console.error('[Modern CompletionService Error]', err);
+
+      // Attempt fallback chain if configured and this isn't already a fallback
+      const chain = FallbackChain.fromEnv();
+      if (chain) {
+        console.warn('[CompletionService] Primary model failed, attempting fallback chain...');
+        try {
+          const fallbackResult = await chain.execute(async (fallbackModel) => {
+            const { system: _s, user: u } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, fallbackModel, req.presetId || 'general');
+            // Use Copilot SDK for fallback models
+            const patToken = config.getServerPatToken();
+            const { sendPromptViaCopilotSdk } = await import('./sdk-provider.js');
+            const text = await sendPromptViaCopilotSdk(u, patToken, onChunk, false, fallbackModel);
+            return text;
+          });
+          if (fallbackResult.fallbackUsed) {
+            console.log(`[CompletionService] Fallback succeeded with model: ${fallbackResult.model}`);
+          }
+          return fallbackResult.result;
+        } catch (fallbackErr) {
+          console.error('[CompletionService] Fallback chain exhausted:', fallbackErr);
+        }
+      }
+
       throw err;
     }
   }
