@@ -25,12 +25,23 @@ function killProcessTree(pid) {
 function startProcess(command, args, label) {
   console.log(`[Dev Win] Starting ${label}...`);
   
-  const child = spawn(command, args, {
-    cwd: repoRoot,
-    stdio: 'inherit',
-    shell: true,
-    detached: false
-  });
+  // Windows specific command resolution
+  const isWin = process.platform === 'win32';
+  const cmd = (isWin && command === 'npm') ? 'npm.cmd' : command;
+  
+  const child = isWin 
+    ? spawn(`${cmd} ${args.map(a => `"${a}"`).join(' ')}`, {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        shell: true,
+        detached: false
+      })
+    : spawn(cmd, args, {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        shell: false,
+        detached: false
+      });
 
   child.on('error', (error) => {
     console.error(`[Dev Win] ${label} failed:`, error.message);

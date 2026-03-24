@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import assert from 'assert';
-import authRouter from '../routes/auth.js';
+import authRouter from '../../routes/organisms/auth-router.js';
 
 // Create a fresh express app for each test to avoid server startup
 function createApp() {

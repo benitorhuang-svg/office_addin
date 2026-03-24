@@ -3,11 +3,13 @@
 import { AuthMode } from "../atoms/types";
 import {
   clearStoredToken,
+  clearStoredGeminiToken,
   getStoredToken,
   getStoredGeminiToken,
   getAuthProvider,
   getStoredAzureConfig,
   hasStoredAuthState,
+  setAuthProvider,
   setStoredAzureConfig,
 } from "../atoms/storage-provider";
 import { AuthUIBridge, AuthUIContext } from "./ui-bridge";
@@ -41,8 +43,20 @@ export class AuthOrchestrator {
     console.log(`[Auth] Initializing in mode: ${mode}`);
 
     if (hasStoredAuthState()) {
-      const provider = getAuthProvider();
+      const storedGeminiToken = getStoredGeminiToken();
+      let provider = getAuthProvider();
       const azure = getStoredAzureConfig();
+
+      if (provider === "gemini_cli" && storedGeminiToken) {
+        clearStoredGeminiToken();
+      }
+
+      if (provider === "gemini_cli") {
+        provider = "gemini_cli";
+      } else if (provider === "gemini_api" && !storedGeminiToken) {
+        setAuthProvider("preview");
+        provider = "preview";
+      }
 
       if (provider === "preview") {
         this.ui.showSuccess("Preview", "Preview mode active.");
@@ -50,6 +64,8 @@ export class AuthOrchestrator {
         this.ui.showSuccess("CLI", "GitHub CLI session restored.");
       } else if (provider === "gemini_cli") {
         this.ui.showSuccess("Gemini CLI", "Gemini CLI session restored.");
+      } else if (provider === "gemini_api") {
+        this.ui.showSuccess("Gemini", "Gemini API session restored.");
       } else if (provider === "azure_openai" || provider === "azure_byok") {
         const hasAzureConfig = azure.key || azure.endpoint || azure.deployment;
         this.ui.showSuccess("Azure", hasAzureConfig ? "Azure OpenAI configuration restored." : "Azure OpenAI mode active.");
@@ -90,8 +106,8 @@ export class AuthOrchestrator {
   }
 
   public bindButtons(btns: { [key: string]: HTMLElement | null }) {
-    btns.welcomeConnectBtn?.addEventListener("click", () => {
-      const ok = this.github.handlePATConnect("pat-input");
+    btns.welcomeConnectBtn?.addEventListener("click", async () => {
+      const ok = await this.github.handlePATConnect("pat-input");
       if (ok) this.onAuthStateChanged?.();
     });
     btns.geminiConnectBtn?.addEventListener("click", async () => {
@@ -106,26 +122,48 @@ export class AuthOrchestrator {
       const ok = await this.gemini.handleConnect("gemini-input");
       if (ok) this.onAuthStateChanged?.();
     });
-    btns.azureConnectBtn?.addEventListener("click", () => {
+    btns.azureConnectBtn?.addEventListener("click", async () => {
       const key = (document.getElementById("azure-key-input") as HTMLInputElement | null)?.value.trim();
       const endpoint = (document.getElementById("azure-endpoint-input") as HTMLInputElement | null)?.value.trim();
       const deployment = (document.getElementById("azure-deployment-input") as HTMLInputElement | null)?.value.trim();
 
-      if (!key && !endpoint && !deployment) {
-        this.ui.setStatus("Please enter Azure OpenAI credentials.");
+      if (!key || !endpoint || !deployment) {
+        this.ui.setStatus("Please enter all Azure OpenAI credentials.");
         return;
       }
 
-      setStoredAzureConfig(key || "", endpoint || "", deployment || "");
-      this.ui.showSuccess("Azure", "Azure OpenAI configuration saved.");
-      this.onAuthStateChanged?.();
+      this.ui.setStatus("Validating Azure configuration via ACP...");
+      try {
+        const { validateACPToken } = await import("../organisms/api-orchestrator");
+        const val = await validateACPToken("azure", key, endpoint, deployment);
+        
+        if (val.ok) {
+          setStoredAzureConfig(key, endpoint, deployment);
+          this.ui.showSuccess("Azure", "Azure OpenAI validated and saved successfully.");
+          this.onAuthStateChanged?.();
+        } else {
+          this.ui.setStatus(`Azure Error: ${val.message}`);
+        }
+      } catch {
+        this.ui.setStatus("Failed to validate Azure credentials.");
+      }
     });
     btns.cliConnectBtn?.addEventListener("click", async () => {
-      this.ui.setStatus("Detecting GitHub CLI session...");
-      const s = await import("../atoms/storage-provider");
-      s.setAuthProvider("copilot_cli");
-      this.ui.showSuccess("CLI", "GitHub CLI session detected.");
-      this.onAuthStateChanged?.();
+      this.ui.setStatus("Detecting GitHub CLI session via ACP...");
+      try {
+        const { validateACPToken } = await import("../organisms/api-orchestrator");
+        const val = await validateACPToken("copilot", ""); // Send empty token to test local credentials
+        if (val.ok) {
+          const s = await import("../atoms/storage-provider");
+          s.setAuthProvider("copilot_cli");
+          this.ui.showSuccess("CLI", "GitHub CLI session perfectly detected!");
+          this.onAuthStateChanged?.();
+        } else {
+          this.ui.setStatus(`Error: Local CLI session is dead or missing. (${val.message})`);
+        }
+      } catch {
+        this.ui.setStatus("Failed to validate CLI session.");
+      }
     });
     btns.oauthConnectBtn?.addEventListener("click", () => {
       this.github.handleOAuthConnect();

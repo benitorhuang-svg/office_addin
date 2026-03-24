@@ -13,7 +13,7 @@ export function createHistoryContainer({
 }: HistoryContainerProps): HTMLElement {
   const container = document.createElement("div");
   container.id = "chat-history";
-  container.className = "org-history-container";
+  container.className = "flex-1 overflow-y-auto px-5 py-8 space-y-6 scroll-smooth";
   container.setAttribute("aria-live", "polite");
 
   // Initial Welcome State (Molecule)

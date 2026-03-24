@@ -1,6 +1,6 @@
 /* global Word */
 import { marked } from "marked";
-import { ChatOrchestrator } from "../chat-orchestrator";
+import { ChatOrchestrator } from "../organisms/chat-orchestrator";
 
 /**
  * Molecule: Word Integrator
@@ -41,7 +41,7 @@ export const WordIntegrator = {
     } else {
       // Fallback for real AI responses: Strip any remaining raw tags and insert
       const cleanContent = content.replace(/<[^>]*>?/gm, "");
-      const { insertTextIntoWord } = await import("../word-actions");
+      const { insertTextIntoWord } = await import("./word-actions");
       await insertTextIntoWord(cleanContent, true);
     }
   }

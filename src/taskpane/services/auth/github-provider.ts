@@ -1,5 +1,5 @@
 /* global document, HTMLInputElement, console */
-import { setStoredToken } from "../storage";
+import { setStoredToken } from "../atoms/storage-provider";
 import { AuthUIBridge } from "./ui-bridge";
 
 /**
@@ -21,20 +21,36 @@ export class GitHubProvider {
     return null;
   }
 
-  public completeAuth(token: string) {
-    setStoredToken(token || "");
-    this.ui.showSuccess("GitHub", "GitHub sign-in completed.");
-    this.ui.notifyAssistant("Welcome! GitHub authentication complete.");
+  public async completeAuth(token: string) {
+    this.ui.setStatus("Validating token via ACP...");
+    try {
+      const { validateACPToken } = await import("../organisms/api-orchestrator");
+      const val = await validateACPToken("copilot", token);
+      
+      if (val.ok) {
+        setStoredToken(token || "");
+        this.ui.showSuccess("GitHub", "GitHub sign-in completed and validated.");
+        this.ui.notifyAssistant("Welcome! GitHub authentication complete.");
+      } else {
+        this.ui.setStatus(`Error: ${val.message || "Invalid authentication token."}`);
+      }
+    } catch(e) {
+      console.warn("Validation fallback:", e);
+      setStoredToken(token || "");
+      this.ui.showSuccess("GitHub", "GitHub sign-in (Offline fallback).");
+    }
   }
 
-  public handlePATConnect(inputElId: string) {
+  public async handlePATConnect(inputElId: string) {
     const el = document.getElementById(inputElId) as HTMLInputElement;
     const token = el?.value?.trim();
-    if (token) {
-      this.completeAuth(token);
-      return true;
+    if (!token) {
+      this.ui.setStatus("Please enter a GitHub PAT or token.");
+      return false;
     }
-    return false;
+    
+    await this.completeAuth(token);
+    return true;
   }
 
   public handleOAuthConnect() {

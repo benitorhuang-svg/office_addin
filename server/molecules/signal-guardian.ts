@@ -1,4 +1,4 @@
-import { stopAllClients } from '../services/copilot/sdkProvider.js';
+import { stopAllClients } from '../services/copilot/organisms/sdk-provider.js';
 
 /**
  * Molecule: Signal Guardian

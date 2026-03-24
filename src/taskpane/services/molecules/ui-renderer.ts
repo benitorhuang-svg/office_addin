@@ -1,8 +1,8 @@
-import { WritingPreset } from "../types";
+import { WritingPreset } from "../atoms/types";
 
-import { createChatBubble } from "../components/molecules/ChatBubble";
-import { createTypingIndicator } from "../components/molecules/TypingIndicator";
-import { createWelcomeMessage } from "../components/molecules/WelcomeMessage";
+import { createChatBubble } from "../../components/molecules/ChatBubble";
+import { createTypingIndicator } from "../../components/molecules/TypingIndicator";
+import { createWelcomeMessage } from "../../components/molecules/WelcomeMessage";
 
 export function appendMessage(
   historyEl: HTMLElement | null,
@@ -52,6 +52,11 @@ export function setRuntimeModel(runtimeModel: HTMLElement | null, model?: string
 export function setApplyStatus(applyStatus: HTMLElement | null, text: string) {
   if (!applyStatus) return;
   applyStatus.textContent = text;
+  if (text) {
+    applyStatus.classList.remove("hidden");
+  } else {
+    applyStatus.classList.add("hidden");
+  }
 }
 
 export function setPresetDescription(
@@ -85,9 +90,9 @@ export function populateModelOptions(
 export function hideLoadingScreen() {
   const loadingScreen = document.getElementById("loading-screen");
   if (loadingScreen) {
-    loadingScreen.classList.add("fade-out");
+    loadingScreen.classList.add("opacity-0", "transition-opacity", "duration-500");
     setTimeout(() => {
-      loadingScreen.style.display = "none";
+      loadingScreen.remove();
     }, 500);
   }
 }
@@ -96,12 +101,20 @@ export function showMainApp() {
   const onboardingRoot = document.getElementById("onboarding-root");
   const appBody = document.getElementById("app-body");
 
-  if (onboardingRoot) onboardingRoot.style.display = "none";
+  // Hide onboarding
+  if (onboardingRoot) {
+    onboardingRoot.classList.add("opacity-0", "pointer-events-none");
+    setTimeout(() => { onboardingRoot.style.display = "none"; }, 700);
+  }
+  
+  // Show main app
   if (appBody) {
     appBody.style.display = "flex";
-    appBody.classList.add("fade-in");
+    requestAnimationFrame(() => {
+      appBody.classList.remove("opacity-0");
+      appBody.classList.add("opacity-100");
+    });
 
-    // Ensure the chat history starts at the top
     const historyEl = document.getElementById("chat-history");
     if (historyEl) historyEl.scrollTop = 0;
   }
@@ -111,42 +124,54 @@ export function showOnboarding() {
   const onboardingRoot = document.getElementById("onboarding-root");
   const appBody = document.getElementById("app-body");
 
-  if (onboardingRoot) onboardingRoot.style.display = "flex";
-  if (appBody) appBody.style.display = "none";
+  // Show onboarding
+  if (onboardingRoot) {
+    onboardingRoot.style.display = "flex";
+    requestAnimationFrame(() => {
+      onboardingRoot.classList.remove("opacity-0", "pointer-events-none");
+      onboardingRoot.classList.add("opacity-100", "pointer-events-auto");
+    });
+  }
+
+  // Hide main app
+  if (appBody) {
+    appBody.classList.add("opacity-0");
+    appBody.classList.remove("opacity-100");
+    setTimeout(() => { appBody.style.display = "none"; }, 700);
+  }
 }
 
 export function updateWelcomeForPatMode() {
-  const welcomeBtn = document.getElementById("welcome-connect-btn") as HTMLButtonElement | null;
   const skipLink = document.getElementById("skip-login-btn");
-  const subtitle = document.querySelector(".onboarding-subtitle") as HTMLElement | null;
-
-  if (welcomeBtn) {
-    welcomeBtn.textContent = "Start with Local PAT";
-  }
   if (skipLink) {
-    skipLink.textContent = "Enter Preview Mode";
-  }
-  if (subtitle) {
-    subtitle.textContent = "Server PAT detected. Local configuration is ready for use.";
+    skipLink.textContent = "Continue with Server PAT →";
   }
 }
 
 export function showToast(message: string, type: "info" | "success" | "error" = "info") {
   const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
+  // Modern Floating Toast
+  const bgColor = type === "success" ? "bg-emerald-600 shadow-emerald-500/20" : type === "error" ? "bg-red-600 shadow-red-500/20" : "bg-slate-900 shadow-slate-900/20";
+  
+  toast.className = `fixed top-6 left-1/2 -translate-x-1/2 z-[60] px-6 py-2.5 rounded-2xl text-white text-xs font-bold shadow-2xl transition-all duration-500 transform -translate-y-8 opacity-0 pointer-events-none ${bgColor}`;
   toast.textContent = message;
   document.body.appendChild(toast);
-  setTimeout(() => toast.classList.add("show"), 10);
+  
+  requestAnimationFrame(() => {
+    toast.classList.remove("-translate-y-8", "opacity-0");
+    toast.classList.add("translate-y-0", "opacity-100");
+  });
+
   setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+    toast.classList.add("-translate-y-8", "opacity-0");
+    setTimeout(() => toast.remove(), 500);
+  }, 3500);
 }
 
 export function startHealthCheck() {
   const check = async () => {
     try {
-      const { getConfig } = await import("./api");
+      const { getConfig } = await import("../organisms/api-orchestrator");
       await getConfig();
       document.body.classList.remove("server-offline");
     } catch {

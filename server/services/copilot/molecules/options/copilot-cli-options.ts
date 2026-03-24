@@ -1,17 +1,30 @@
 import { approveAll } from "@github/copilot-sdk";
+import { fileURLToPath } from 'node:url';
+import * as path from 'node:path';
 import config from '../../../../config/env.js';
 import { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '../../../../../');
+
 /**
- * Molecule: Copilot CLI Option Builder
+ * Molecule: Copilot CLI Option Builder resolved for version 0.2.0 compatibility.
  */
 export const buildCopilotCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
-  const modelsToken = config.getModelsToken();
+  const modelsToken = cfg.githubToken || config.getModelsToken();
   const apiBase = config.COPILOT_API_URL;
-
+  
   return {
     clientOptions: { 
-      cliPath: 'copilot',
+      // Windows: JS files are not executables! Use node.exe explicitly.
+      cliPath: process.execPath,
+      useStdio: true,
+      cliArgs: [
+        path.join(projectRoot, 'node_modules/@github/copilot/index.js')
+      ],
+
+
+
       env: {
         ...process.env,
         ...(apiBase ? {

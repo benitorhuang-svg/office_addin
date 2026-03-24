@@ -59,6 +59,10 @@ export function setStoredGeminiToken(token: string) {
   window.localStorage.setItem(AUTH_PROVIDER_KEY, "gemini_api");
 }
 
+export function clearStoredGeminiToken() {
+  window.localStorage.removeItem(GEMINI_TOKEN_KEY);
+}
+
 export function getAuthProvider(): string | null {
   return window.localStorage.getItem(AUTH_PROVIDER_KEY);
 }

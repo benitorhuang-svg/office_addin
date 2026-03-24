@@ -1,4 +1,4 @@
-import { CopilotClient, SessionConfig, CopilotSession, AssistantMessageEvent, CopilotClientOptions, defineTool, Tool } from "@github/copilot-sdk";
+import { CopilotClient, SessionConfig, CopilotSession, CopilotClientOptions, defineTool, Tool } from "@github/copilot-sdk";
 import config from '../../../config/molecules/server-config.js';
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
 import { ACPConnectionMethod, AzureInfo, ACPSessionConfig } from '../atoms/types.js';
@@ -22,12 +22,16 @@ export class ModernSDKOrchestrator {
   /** 
    * Global way to resolve a pending ask_user request 
    */
-  public static resolveInput(sessionId: string, answer: string) {
+  private static readonly MAX_PENDING_INPUTS = 100;
+
+  public static resolveInput(sessionId: string, answer: string): boolean {
     const resolve = this.pendingInputs.get(sessionId);
     if (resolve) {
       resolve(answer);
       this.pendingInputs.delete(sessionId);
+      return true;
     }
+    return false;
   }
 
   /**
@@ -66,6 +70,7 @@ export class ModernSDKOrchestrator {
   private static async createSession(
     client: CopilotClient, 
     sessionOptions: SessionConfig,
+    method: ACPConnectionMethod,
     onChunk?: (chunk: string) => void
   ): Promise<{ session: CopilotSession; sessionId: string }> {
     const sessionId = `session-${Date.now()}`;
@@ -103,12 +108,32 @@ export class ModernSDKOrchestrator {
               resolve({ answer: "User did not respond in time.", wasFreeform: true });
             }
           }, CORE_SDK_CONFIG.USER_INPUT_TIMEOUT_MS);
+
+          // Evict oldest entries if map exceeds max size
+          if (this.pendingInputs.size > this.MAX_PENDING_INPUTS) {
+            const oldest = this.pendingInputs.keys().next().value;
+            if (oldest) this.pendingInputs.delete(oldest);
+          }
         });
       }
     };
 
     console.log(`[SDK V2] Creating session with model: ${sessionOptions.model}, streaming: ${sessionOptions.streaming}`);
-    const session = await client.createSession(sessionOptionsWithHandler);
+    
+    // Use Promise.race to enforce a timeout on the SDK's JSON-RPC initialization handshake
+    // If the spawned CLI agent (e.g. gemini-cli) fails to respond, this prevents endless Node.js deadlocks.
+    const createSessionTask = client.createSession(sessionOptionsWithHandler);
+    const sessionTimeoutMs = method === 'gemini_cli'
+      ? CORE_SDK_CONFIG.GEMINI_CLIENT_START_TIMEOUT_MS
+      : CORE_SDK_CONFIG.CLIENT_START_TIMEOUT_MS;
+    const sessionTimeout = new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`Timeout waiting for Copilot SDK to initialize (JSON-RPC handshake failed after ${Math.round(sessionTimeoutMs / 1000)}s)`)),
+        sessionTimeoutMs
+      );
+    });
+
+    const session = await Promise.race([createSessionTask, sessionTimeout]);
     
     if (onChunk && sessionOptions.streaming) {
       // Modern event subscription pattern
@@ -148,10 +173,12 @@ export class ModernSDKOrchestrator {
     isExplicitCli: boolean = false,
     modelName: string = config.COPILOT_MODEL,
     azureInfo?: AzureInfo,
-    methodOverride?: ACPConnectionMethod
+    methodOverride?: ACPConnectionMethod,
+    geminiKey?: string
   ): Promise<string> {
+    console.log(`[SDK V2 DEBUG] Entering sendPrompt. Prompt length: ${prompt.length}, isExplicitCli: ${isExplicitCli}, methodOverride: ${methodOverride}`);
     const method = methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli);
-    console.log(`[SDK V2] Using method: ${method}, model: ${modelName}, streaming: ${!!onChunk}`);
+    console.log(`[SDK V2 DEBUG] Resolved method: ${method}, model: ${modelName}, streaming: ${!!onChunk}`);
 
     const acpConfig: ACPSessionConfig = {
       method,
@@ -159,6 +186,7 @@ export class ModernSDKOrchestrator {
       streaming: !!onChunk,
       azure: azureInfo,
       remotePort: config.COPILOT_AGENT_PORT || undefined,
+      geminiKey
     };
 
     let retryCount = 0;
@@ -167,22 +195,23 @@ export class ModernSDKOrchestrator {
     while (retryCount <= maxRetries) {
       try {
         const { clientOptions, sessionOptions } = resolveACPOptions(acpConfig);
-        const client = new CopilotClient(clientOptions);
+        console.log(`[SDK V2 DEBUG] Options resolved. Requesting client from manager...`);
+        const client = await this.getClient(method, { clientOptions });
+        console.log(`[SDK V2 DEBUG] Client received (ready: ${client.getState()})`);
         
         // Use the onEvent hook inside createSession to monitor Gemini activity without breaking types
+
         const augmentedOptions = {
           ...sessionOptions,
-          onEvent: (event: { type: string; data?: any }) => {
-            if (method === 'gemini_cli') {
-              console.log(`[SDK V2 Gemini Debug] Event: ${event.type}`);
-              if (event.type === 'session.error') {
-                console.error(`[SDK V2 Gemini Error]`, event.data);
-              }
+          onEvent: (event: { type: string; data?: Record<string, unknown> }) => {
+            console.log(`[SDK V2 Event] ${method}: ${event.type}`);
+            if (event.type === 'session.error') {
+              console.error(`[SDK V2 Error]`, event.data);
             }
           }
         };
 
-        const { session, sessionId } = await this.createSession(client, augmentedOptions, onChunk);
+        const { session, sessionId } = await this.createSession(client, augmentedOptions, method, onChunk);
 
         // Manual turn management with Inactivity Watchdog
         // This bypasses the unreliable session.idle event and its 60s timeout
@@ -216,11 +245,33 @@ export class ModernSDKOrchestrator {
             else resolve(fullContent.trim() || extractResponseText({}));
           };
 
-          // Monitor text deltas
+          // Treat any session activity as a signal to keep the watchdog alive.
+          session.on((event: { type: string }) => {
+            if (event.type !== 'session.idle' && event.type !== 'session.error') {
+              ping();
+            }
+          });
+
+          // Monitor text deltas (streaming)
           session.on("assistant.message_delta", (event: { data?: { deltaContent?: string; content?: string } }) => {
             const delta = event.data?.deltaContent || event.data?.content || '';
             if (delta) {
               fullContent += delta;
+              ping(); // ACTIVITY DETECTED
+            }
+          });
+
+          // Capture final assistant.message (non-streaming fallback or final assembled response)
+          session.on("assistant.message", (event: { data?: { content?: string; messageId?: string } }) => {
+            const content = event.data?.content || '';
+            console.log(`[SDK V2] Final assistant.message received (${content.length} chars, Session: ${sessionId})`);
+            if (content) {
+              // If we already have streaming deltas, skip the final (it's a duplicate).
+              // If no deltas were received, use this as the full response.
+              if (!fullContent) {
+                fullContent = content;
+                if (onChunk) onChunk(content);
+              }
               ping(); // ACTIVITY DETECTED
             }
           });
@@ -238,18 +289,30 @@ export class ModernSDKOrchestrator {
             }
           });
 
-          session.on("session.error", (err) => {
-            const errMsg = String(err);
+          session.on("session.error", (event: { data?: { message?: string; code?: string }; message?: string } | Error) => {
+            // Extract error message from SDK event object or Error instance
+            let errMsg: string;
+            if (event instanceof Error) {
+              errMsg = event.message;
+            } else {
+              errMsg = event?.data?.message || event?.message || JSON.stringify(event);
+            }
+            console.error(`[SDK V2] Session error (${sessionId}):`, errMsg);
+
             if (errMsg.includes("60000ms") && (errMsg.includes("session.idle") || errMsg.includes("idle"))) {
               console.warn(`[Watchdog] 忽略 SDK 內部的 60s Idle 超時報錯，依賴活動監視器繼續...`);
               return; // IGNORE THIS SPECIFIC ERROR
             }
-            finish(err instanceof Error ? err : new Error(errMsg));
+            finish(new Error(errMsg));
           });
 
           console.log(`[SDK V2] Launching turn with Watchdog (Session: ${sessionId})`);
           ping(); // Start the first timer
-          session.send({ prompt }).catch(err => finish(err instanceof Error ? err : new Error(String(err))));
+          session.send({ prompt })
+            .then((messageId) => {
+              console.log(`[SDK V2] Prompt accepted (Session: ${sessionId}, Message: ${messageId})`);
+            })
+            .catch(err => finish(err instanceof Error ? err : new Error(String(err))));
         });
 
         return result;
@@ -284,13 +347,17 @@ export class ModernSDKOrchestrator {
   public static async cleanup(): Promise<void> {
     console.log('[SDK V2] Cleaning up all sessions...');
     
-    for (const [_sessionId, sessionData] of this.sessions.entries()) {
+    for (const [sessionId, sessionData] of this.sessions.entries()) {
       try {
         sessionData.cleanup();
         await sessionData.session.disconnect();
-      } catch {}
+      } catch (e) {
+        console.warn(`[SDK V2] Cleanup error for ${sessionId}:`, e);
+      }
+      this.sessions.delete(sessionId);
     }
     this.sessions.clear();
+    this.pendingInputs.clear();
 
     await stopAllClients();
   }

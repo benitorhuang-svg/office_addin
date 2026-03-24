@@ -8,8 +8,8 @@ export const FALLBACK_PRESETS: WritingPreset[] = [
   {
     id: "general",
     label: "一般寫作",
-    description: "通用寫作與編輯，會根據主題延伸發想，不只重述。",
-    system: "Use a clear, concise tone, avoid merely repeating the user's wording, and expand the theme with original angles and usable copy.",
+    description: "通用寫作與編輯，優先直接回答問題，避免不必要延伸。",
+    system: "Answer the user's request directly and clearly. Be concise by default. Do not add appendices, sample code, PoC snippets, speculative parameters, or extra scenarios unless the user explicitly asks for them.",
   },
   {
     id: "meeting-notes",

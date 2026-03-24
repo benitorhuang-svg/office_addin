@@ -1,4 +1,11 @@
-import { BASE_ENV, firstDefinedValue } from './atoms/base-env.js';
+import { BASE_ENV, firstDefinedValue } from '../atoms/base-env.js';
+
+export interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+}
 
 export interface ServerConfig {
   PORT: string | number;
@@ -26,7 +33,7 @@ export interface ServerConfig {
   DEFAULT_TEMPERATURE: number;
   MAX_TOKENS: number;
   APP_TITLE: string;
-  FALLBACK_PRESETS: any[];
+  FALLBACK_PRESETS: Preset[];
   PREVIEW_MODE_GUIDE_MD: string;
   DEFAULT_WORD_FONT_STYLE: string;
   getServerPatToken: () => string;
@@ -34,6 +41,7 @@ export interface ServerConfig {
   isAzureConfigured: () => boolean;
   isRemoteCliConfigured: () => boolean;
   isGeminiApiConfigured: () => boolean;
+  AUTO_CONNECT_CLI: boolean;
 }
 
 /**
@@ -104,6 +112,7 @@ const config: ServerConfig = {
   isAzureConfigured: () => !!(config.AZURE_OPENAI_API_KEY && config.AZURE_OPENAI_ENDPOINT),
   isRemoteCliConfigured: () => !!config.COPILOT_AGENT_PORT,
   isGeminiApiConfigured: () => !!config.GEMINI_API_KEY,
+  get AUTO_CONNECT_CLI() { return process.env.AUTO_CONNECT_CLI === 'true' || process.env.NODE_ENV === 'development'; },
 };
 
 export default config;

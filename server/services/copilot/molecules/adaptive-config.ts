@@ -38,7 +38,7 @@ export function describeACPMethod(method: ACPConnectionMethod): { label: string;
   const descriptions: Record<ACPConnectionMethod, { label: string; description: string }> = {
     gemini_cli: {
       label: 'Gemini CLI (ACP)',
-      description: '透過 Gemini CLI 與 --experimental-acp 進行串接，支援任何 ACP 相容 Agent',
+      description: '透過 Gemini CLI 與 --acp 進行串接，支援任何 ACP 相容 Agent',
     },
     copilot_cli: {
       label: 'GitHub Copilot CLI',

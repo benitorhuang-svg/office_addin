@@ -1,5 +1,6 @@
 import config from '../../../config/molecules/server-config.js';
 import { OfficeContext } from '../atoms/types.js';
+import { emitChunks } from '../atoms/formatters.js';
 import { GeminiRestService } from './gemini-rest-service.js';
 import { GitHubModelsService } from './github-models-service.js';
 import { PromptOrchestrator } from './prompt-orchestrator.js';
@@ -47,15 +48,39 @@ export const CompletionService = {
       const patToken = config.getServerPatToken();
       const { sendPromptViaCopilotSdk } = await import('./sdk-provider.js');
 
-      return await sendPromptViaCopilotSdk(
+      const streamedText = await sendPromptViaCopilotSdk(
         user, 
         patToken, 
         onChunk, 
         isExplicitGeminiCli, 
         resolvedModel,
         undefined, // azure info
-        isExplicitGeminiCli ? 'gemini_cli' : undefined
+        isExplicitGeminiCli ? 'gemini_cli' : undefined,
+        req.geminiKey
       );
+
+      // Gemini CLI can occasionally finish the SSE path without any user-visible text.
+      // Fallback to a non-streaming request so the UI gets a concrete answer instead of an empty bubble.
+      if (isExplicitGeminiCli && req.stream && !String(streamedText || '').trim()) {
+        console.warn('[Modern CompletionService] Empty Gemini CLI streaming result. Retrying once with non-streaming fallback.');
+        const fallbackText = await sendPromptViaCopilotSdk(
+          user,
+          patToken,
+          undefined,
+          true,
+          resolvedModel,
+          undefined,
+          'gemini_cli',
+          req.geminiKey
+        );
+
+        if (fallbackText && onChunk) {
+          await emitChunks(fallbackText, onChunk);
+        }
+        return fallbackText;
+      }
+
+      return streamedText;
     } catch (err: unknown) {
       console.error('[Modern CompletionService Error]', err);
       throw err;

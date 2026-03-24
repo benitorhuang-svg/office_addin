@@ -15,8 +15,9 @@ const authRouter: Router = express.Router();
  */
 authRouter.get('/session/:id', (req: Request, res: Response) => {
   const id = req.params.id;
-  if (!id) return res.status(400).json({ error: 'missing id' });
+  if (!id || typeof id !== 'string') return res.status(400).json({ error: 'missing id' });
   const token = SESSION_STORE.get(id) || '';
+
   res.json({ token });
 });
 

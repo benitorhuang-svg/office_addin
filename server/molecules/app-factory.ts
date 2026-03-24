@@ -12,14 +12,14 @@ export const AppFactory = {
   create() {
     const app = express();
     
-    app.use(cors({ origin: true, credentials: true }));
-    app.use(bodyParser.json());
-
-    // Request Logging
+    // Request Logging (First!)
     app.use((req, res, next) => {
       console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
       next();
     });
+
+    app.use(cors({ origin: true, credentials: true }));
+    app.use(bodyParser.json());
 
     // Health
     app.get('/', (req, res) => {

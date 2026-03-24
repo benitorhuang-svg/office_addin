@@ -1,9 +1,8 @@
 import { marked } from "marked";
-import { CopilotResponse, ChatContext, AuthController } from "../atoms/types";
+import { CopilotResponse, ChatContext, AuthController, ServerConfig } from "../atoms/types";
 import { sendToCopilot } from "./api-orchestrator";
 import { getWordContext, applyOfficeActions } from "../molecules/word-actions";
 import { appendMessage, removeTypingIndicator } from "../molecules/ui-renderer";
-import { PROFESSIONAL_DRAFT_DIRECTIVE } from "../atoms/prompt-template";
 import { ChatUiHelper } from "../molecules/chat-ui-helper";
 import { WordIntegrator } from "../molecules/word-integrator";
 
@@ -12,7 +11,7 @@ import { WordIntegrator } from "../molecules/word-integrator";
  * Coordinates the full chat interaction flow between UI, Office context, and AI service.
  */
 export class ChatOrchestrator {
-  public static config: Partial<Record<string, string>> = {};
+  public static config: ServerConfig = {};
   private isGenerating = false;
 
   constructor() { }
@@ -33,8 +32,6 @@ export class ChatOrchestrator {
 
     // 1. Prepare UI (Molecule Delegation)
     ChatUiHelper.prepare(ctx, prompt);
-
-    const enhancedPrompt = PROFESSIONAL_DRAFT_DIRECTIVE(prompt);
 
     let finalContent = "";
     let copilotResponse: CopilotResponse | null = null;
@@ -70,18 +67,22 @@ export class ChatOrchestrator {
       }
 
       // 5. Gather Context
+      ChatUiHelper.updateAssistantBubble(assistantBubble, "Gathering Word context...", (txt) => txt);
       const accessToken = authController.getAccessToken();
       const geminiToken = authController.getGeminiToken();
+      const authProvider = authController.getAuthProvider();
       const officeContext = await getWordContext();
 
+      ChatUiHelper.updateAssistantBubble(assistantBubble, "Sending request to copilot server...", (txt) => txt);
       // 6. Interact with API (The Organism)
       let streamBuffer = "";
       copilotResponse = await sendToCopilot(
-        enhancedPrompt,
+        prompt,
         accessToken,
         officeContext,
         model,
         presetId,
+        authProvider,
         geminiToken,
         (chunk) => {
           if (!receivedFirstChunk) {
@@ -108,6 +109,9 @@ export class ChatOrchestrator {
 
       // 7. Post-process response
       finalContent = (copilotResponse?.text?.trim() || streamBuffer.trim());
+      if (!finalContent) {
+        throw new Error("No response received from the agent.");
+      }
       ChatUiHelper.completeAssistantBubble(assistantBubble, finalContent);
 
       // Functional Optimization: Render Action Buttons (Replace/Insert)

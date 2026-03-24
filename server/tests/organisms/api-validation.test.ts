@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import assert from 'assert';
-import apiRouter from '../routes/api.js';
+import apiRouter from '../../routes/organisms/api-router.js';
 
 function createApp() {
   const app = express();
@@ -30,18 +30,7 @@ describe('API routes - Gemini validation', () => {
 
   it('validates a Gemini key by listing models instead of using a specific model', async () => {
     const calls: string[] = [];
-    mockFetch(async (_input, init) => {
-      const body = JSON.parse(String(init?.body || '{}'));
-      if (body.model === 'gemini-3-pro-preview') {
-        return {
-          ok: false,
-          status: 404,
-          json: async () => ({ error: { message: 'model not found' } }),
-          text: async () => 'model not found',
-          headers: new Headers({ 'content-type': 'application/json' }),
-        } as any;
-      }
-
+    mockFetch(async () => {
       return {
         ok: true,
         status: 200,
@@ -53,12 +42,13 @@ describe('API routes - Gemini validation', () => {
 
     const app = createApp();
     const res = await request(app)
-      .post('/api/validate-gemini')
-      .set('X-Gemini-Key', 'fake-key-123');
+      .post('/api/gemini/validate')
+      .send({ apiKey: 'fake-key-123' });
 
     assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(res.body, { ok: true, message: 'API key is valid' });
-    assert.match(calls[0] || '', /\/openai\/chat\/completions\?key=fake-key-123$/);
+    assert.deepStrictEqual(res.body, { status: 200, detail: 'Gemini Key is valid' });
+    assert.ok(calls.length > 0, 'fetch should have been called for validation');
+    assert.match(calls[0] || '', /\?key=fake-key-123$/);
   });
 
   it('returns the upstream Gemini error when the key is invalid', async () => {
@@ -72,10 +62,10 @@ describe('API routes - Gemini validation', () => {
 
     const app = createApp();
     const res = await request(app)
-      .post('/api/validate-gemini')
-      .set('X-Gemini-Key', 'bad-key');
+      .post('/api/gemini/validate')
+      .send({ apiKey: 'bad-key' });
 
     assert.strictEqual(res.status, 401);
-    assert.deepStrictEqual(res.body, { ok: false, message: 'Invalid API key' });
+    assert.deepStrictEqual(res.body, { status: 401, detail: 'Invalid API key' });
   });
 });

@@ -19,4 +19,5 @@ class SessionStore {
   }
 }
 
-export const SESSION_STORE = new SessionStore();
+export const SESSION_STORE: SessionStore = new SessionStore();
+

@@ -9,8 +9,8 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       "node_modules/**",
-      "*.js",
-      "*.mjs",
+      "**/*.js",
+      "**/*.mjs",
       "scripts/**",
       "server/examples/**",
       "webpack.config.js",

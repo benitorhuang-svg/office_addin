@@ -1,6 +1,6 @@
 /* global window, document, HTMLSelectElement */
 
-import { WritingPreset } from "../types";
+import { WritingPreset } from "./types";
 
 export const FALLBACK_PRESETS: WritingPreset[] = [
   {

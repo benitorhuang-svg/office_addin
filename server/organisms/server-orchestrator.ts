@@ -2,8 +2,8 @@ import http from 'node:http';
 import https from 'node:https';
 import * as devCerts from 'office-addin-dev-certs';
 
-import config from '../config/env.js';
-import { warmUpClient } from '../services/copilot/sdkProvider.js';
+import config from '../config/molecules/server-config.js';
+import { warmUpClient } from '../services/copilot/organisms/sdk-provider.js';
 import { AppFactory } from '../molecules/app-factory.js';
 import { SignalGuardian } from '../molecules/signal-guardian.js';
 
@@ -65,9 +65,6 @@ export const ServerOrchestrator = {
         // Background Warmup
         process.nextTick(() => {
           warmUpClient('copilot_cli').catch(() => {});
-          if (config.GEMINI_API_KEY) {
-            warmUpClient('gemini_cli').catch(() => {});
-          }
         });
         
         return server;

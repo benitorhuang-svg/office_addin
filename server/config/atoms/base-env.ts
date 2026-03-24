@@ -18,7 +18,7 @@ export const BASE_ENV = {
   COPILOT_AGENT_PORT: process.env.COPILOT_AGENT_PORT || '',
   
   GEMINI_CLI_PATH: process.env.GEMINI_CLI_PATH || 'gemini',
-  GEMINI_CLI_ARGS: process.env.GEMINI_CLI_ARGS || '--experimental-acp',
+  GEMINI_CLI_ARGS: process.env.GEMINI_CLI_ARGS || '--acp',
   GEMINI_CLI_PORT: process.env.GEMINI_CLI_PORT || '8080',
 
   COPILOT_API_URL: process.env.COPILOT_API_URL || '',
@@ -32,8 +32,8 @@ export const BASE_ENV = {
   AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || '2024-10-21',
   AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || '',
 
-  GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || '',
-  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '',
+  get GITHUB_CLIENT_ID() { return process.env.GITHUB_CLIENT_ID || ''; },
+  get GITHUB_CLIENT_SECRET() { return process.env.GITHUB_CLIENT_SECRET || ''; },
 
   GITHUB_MODELS_URL: process.env.GITHUB_MODELS_URL || 'https://models.github.ai/inference/chat/completions',
   GEMINI_REST_URL: process.env.GEMINI_REST_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',

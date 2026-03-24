@@ -1,7 +1,12 @@
 import { approveAll, SessionConfig } from "@github/copilot-sdk";
+import { fileURLToPath } from 'node:url';
 import config from '../../../../config/env.js';
+import * as path from 'node:path';
 import { ACPSessionConfig, ACPOptions, ACPProviderConfig } from "../../atoms/types.js";
 import { CORE_SDK_CONFIG } from "../../atoms/core-config.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '../../../../../');
 
 /**
  * Molecule: Azure OpenAI BYOK Option Builder
@@ -19,7 +24,15 @@ export const buildAzureByokOptions = (cfg: ACPSessionConfig): ACPOptions => {
   };
 
   return {
-    clientOptions: { cliPath: 'copilot' },
+    clientOptions: { 
+      // Windows: JS files are not executables! Use node.exe explicitly.
+      cliPath: process.execPath,
+      useStdio: true,
+      cliArgs: [
+        path.join(projectRoot, 'scripts/acp-adaptive-shim.cjs'),
+        path.join(projectRoot, 'node_modules/@github/copilot/index.js')
+      ], 
+    },
     sessionOptions: {
       model: azureDeployment || cfg.model,
       streaming: cfg.streaming,

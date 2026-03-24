@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@source "../../../src";
+
+/* Custom Theme Overrides (Tailwind v4 style) */
+@theme {
+  --color-brand-primary: #0066cc;
+  --color-brand-secondary: #0052a3;
+  --color-accent: #6c5ce7;
+  --background-glass: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(255, 255, 255, 0.2);
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased overflow-x-hidden;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl transition-all duration-300 transform active:scale-95 hover:bg-blue-700 hover:shadow-lg focus:ring-4 focus:ring-blue-300;
+  }
+}

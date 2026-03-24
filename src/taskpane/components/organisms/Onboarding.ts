@@ -4,79 +4,78 @@
 import { createButton } from "../atoms/Button";
 import { createInput } from "../atoms/Input";
 import { createAccordion } from "../molecules/Accordion";
-import { createDivider } from "../atoms/Divider";
+
 
 export function createOnboardingOrganism(): HTMLElement {
   const container = document.createElement("div");
-  container.className = "org-onboarding";
+  container.className = "min-h-full flex items-center justify-center p-6 animate-in fade-in duration-700";
 
   const formContainer = document.createElement("div");
-  formContainer.className = "onboarding-form-container";
+  formContainer.className = "w-full max-w-sm glass-card p-8 space-y-8";
 
-  // Status Message (For errors/success)
+  // 1. Branding Header
+  const branding = document.createElement("div");
+  branding.className = "text-center space-y-2";
+  branding.innerHTML = `
+    <h1 class="text-3xl font-bold font-outfit bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">office_Agent</h1>
+    <p class="text-slate-500 text-sm">Empowering your Word experience with AI</p>
+  `;
+  formContainer.appendChild(branding);
 
-  // 2. Status Message (For errors/success)
+  // 2. Status Message
   const statusMsg = document.createElement("div");
   statusMsg.id = "apply-status";
-  statusMsg.className = "status-msg";
+  statusMsg.className = "hidden text-xs font-medium text-center py-2 px-3 rounded-lg bg-red-50 text-red-600 animate-pulse";
   formContainer.appendChild(statusMsg);
 
-  // 3. Skip/Preview Button (Modern floating-ish style)
-  const skipBtn = createButton({
-    id: "skip-login-btn",
-    label: "進入預覽模式 →",
-    className: "skip-link premium-soft",
-  });
-  const skipWrapper = document.createElement("div");
-  skipWrapper.className = "onboarding-skip-wrapper";
-  skipWrapper.appendChild(skipBtn);
-  formContainer.appendChild(skipWrapper);
-
-  // 4. Accordion Group
-  const accordions: HTMLElement[] = [];
+  // 3. Accordion Group
   const accordionGroup = document.createElement("div");
-  accordionGroup.className = "onboarding-accordion-group";
+  accordionGroup.className = "space-y-4";
 
   // -- Google Gemini Group
-  const geminiCliBtn = createButton({ id: "gemini-cli-connect-btn", label: "Gemini CLI", className: "btn-premium gemini" });
-  const geminiInput = createInput({ id: "gemini-input", type: "password", placeholder: "Gemini API Key" });
-  const geminiConnectBtn = createButton({ id: "gemini-connect-btn", label: "Gemini API", className: "btn-premium gemini" });
-  
-  
+  const geminiCliBtn = createButton({ 
+    id: "gemini-cli-connect-btn", 
+    label: "Connect via local CLI", 
+    className: "w-full bg-slate-900 text-white hover:bg-black" 
+  });
+  const geminiInput = createInput({ id: "gemini-input", type: "password", placeholder: "Paste Gemini API Key here..." });
+  const geminiConnectBtn = createButton({ 
+    id: "gemini-connect-btn", 
+    label: "Connect via API Key", 
+    className: "w-full bg-blue-600 text-white hover:bg-blue-700" 
+  });
   
   const geminiContent = document.createElement("div");
-  geminiContent.className = "onboarding-auth-group";
-  geminiContent.appendChild(createDivider({ label: "方法 1: 本機 CLI 連線" }));
+  geminiContent.className = "space-y-4 pt-2";
   geminiContent.appendChild(geminiCliBtn);
-  geminiContent.appendChild(createDivider({ label: "方法 2: API Key 連線" }));
-  geminiContent.appendChild(geminiConnectBtn);
+  const geminiOr = document.createElement("div");
+  geminiOr.className = "flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest before:flex-1 before:h-[1px] before:bg-slate-100 after:flex-1 after:h-[1px] after:bg-slate-100";
+  geminiOr.textContent = "OR";
+  geminiContent.appendChild(geminiOr);
   geminiContent.appendChild(geminiInput);
+  geminiContent.appendChild(geminiConnectBtn);
 
   // -- GitHub Copilot Group
-  const cliBtn = createButton({ id: "cli-connect-btn", label: "Copilot CLI", className: "btn-premium cli-auth" });
-  const oauthBtn = createButton({ id: "oauth-login-btn", label: "GitHub OAuth", className: "btn-premium github" });
-  const githubBtn = createButton({ id: "pat-connect-btn", label: "GitHub PAT", className: "btn-premium github" });
+  const cliBtn = createButton({ id: "cli-connect-btn", label: "Connect via Copilot CLI", className: "w-full bg-slate-900 text-white hover:bg-black" });
+  const oauthBtn = createButton({ id: "oauth-login-btn", label: "Sign in with GitHub OAuth", className: "w-full border border-slate-200 text-slate-700 hover:bg-slate-50" });
+  const githubBtn = createButton({ id: "pat-connect-btn", label: "Connect via Personal Access Token", className: "w-full bg-blue-600 text-white hover:bg-blue-700" });
   const githubInput = createInput({ id: "pat-input", type: "password", placeholder: "ghp_xxxxxxxxxxxx" });
 
   const githubContent = document.createElement("div");
-  githubContent.className = "onboarding-auth-group";
-  
-  githubContent.appendChild(createDivider({ label: "方法 1: Copilot CLI" }));
+  githubContent.className = "space-y-4 pt-2";
   githubContent.appendChild(cliBtn);
-  githubContent.appendChild(createDivider({ label: "方法 2: GitHub OAuth" }));
   githubContent.appendChild(oauthBtn);
-  githubContent.appendChild(createDivider({ label: "方法 3: GitHub PAT 連線" }));
-  githubContent.appendChild(githubBtn);
   githubContent.appendChild(githubInput);
+  githubContent.appendChild(githubBtn);
 
   // -- Azure OpenAI Group
   const azureKey = createInput({ id: "azure-key-input", type: "password", placeholder: "Azure OpenAI API Key" });
-  const azureEndpoint = createInput({ id: "azure-endpoint-input", type: "text", placeholder: "https://your-resource.openai.azure.com/" });
-  const azureDeploy = createInput({ id: "azure-deployment-input", type: "text", placeholder: "azure-deployment-name" });
-  const azureBtn = createButton({ id: "azure-connect-btn", label: "Connect Azure OpenAI", className: "btn-premium azure" });
+  const azureEndpoint = createInput({ id: "azure-endpoint-input", type: "text", placeholder: "Resource Endpoint URL" });
+  const azureDeploy = createInput({ id: "azure-deployment-input", type: "text", placeholder: "Deployment Name" });
+  const azureBtn = createButton({ id: "azure-connect-btn", label: "Connect Azure OpenAI", className: "w-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100" });
   
   const azureContent = document.createElement("div");
-  azureContent.className = "onboarding-auth-group";
+  azureContent.className = "space-y-3 pt-2";
   azureContent.appendChild(azureKey);
   azureContent.appendChild(azureEndpoint);
   azureContent.appendChild(azureDeploy);
@@ -91,21 +90,35 @@ export function createOnboardingOrganism(): HTMLElement {
   
   const handleToggle = (activeAcc: HTMLElement) => {
     allAcc.forEach(acc => {
-      if (acc !== activeAcc) acc.classList.remove("open");
+      if (acc !== activeAcc && acc.classList.contains("is-open")) {
+        // Trigger the click programmatically or use the logic in Accordion.ts
+        // Since we handle toggle inside Accordion, we just force-close others here
+        const body = acc.lastElementChild as HTMLElement;
+        acc.classList.remove("is-open");
+        body.classList.add("max-h-0", "opacity-0", "py-0");
+        body.classList.remove("max-h-[500px]", "opacity-100", "py-4");
+      }
     });
   };
 
-  accGemini.addEventListener("click", () => handleToggle(accGemini));
-  accGH.addEventListener("click", () => handleToggle(accGH));
-  accAzure.addEventListener("click", () => handleToggle(accAzure));
+  accGemini.firstElementChild?.addEventListener("click", () => handleToggle(accGemini));
+  accGH.firstElementChild?.addEventListener("click", () => handleToggle(accGH));
+  accAzure.firstElementChild?.addEventListener("click", () => handleToggle(accAzure));
 
   allAcc.forEach(acc => {
     accordionGroup.appendChild(acc);
-    accordions.push(acc);
   });
 
   formContainer.appendChild(accordionGroup);
-  container.appendChild(formContainer);
 
+  // 4. Skip/Preview Button
+  const skipBtn = createButton({
+    id: "skip-login-btn",
+    label: "Continue to Preview Mode →",
+    className: "w-full text-slate-400 hover:text-slate-600 text-xs font-medium uppercase tracking-widest",
+  });
+  formContainer.appendChild(skipBtn);
+
+  container.appendChild(formContainer);
   return container;
 }

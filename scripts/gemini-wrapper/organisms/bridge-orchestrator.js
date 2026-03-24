@@ -12,7 +12,8 @@ const { log } = require('../atoms/logger');
 const state = require('../molecules/state');
 
 // Counter for generating unique CLI-side request IDs
-let cliIdCounter = 10000;
+const INITIALIZE_REQUEST_ID = 10001;
+let cliIdCounter = INITIALIZE_REQUEST_ID;
 function nextCliId() { return ++cliIdCounter; }
 
 class BridgeOrchestrator {
@@ -32,7 +33,7 @@ class BridgeOrchestrator {
         this.cli.send('initialize', {
             protocolVersion: 1,
             clientCapabilities: { fs: { roots: [process.cwd().replace(/\\/g, '/')] } }
-        }, 10001);
+        }, INITIALIZE_REQUEST_ID);
 
         log('Wrapper Bridge initialized and listening.');
     }
@@ -154,7 +155,7 @@ class BridgeOrchestrator {
         }
 
         // 2. Initialization complete → flush queued requests
-        if (id === 10001 && result) {
+        if (id === INITIALIZE_REQUEST_ID && result && result.protocolVersion) {
             state.acp = 'READY';
             log(`[BRIDGE] CLI READY (v${result.protocolVersion || '?'}). Flushing ${state.pendingRequests.length} requests.`);
             while (state.pendingRequests.length) {

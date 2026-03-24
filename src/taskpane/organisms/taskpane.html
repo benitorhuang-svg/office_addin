@@ -11,34 +11,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="taskpane.css" />
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
 
     <!-- Global Loading Screen -->
-    <div id="loading-screen" class="org-loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo-wrapper">
-                <img src="../../assets/logo-premium.png" alt="Logo" class="loading-logo-img" />
+    <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div class="text-center">
+            <div class="relative w-24 h-24 mx-auto mb-6">
+                <div class="absolute inset-0 border-4 border-blue-50/50 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <div class="loading-spinner"></div>
-            <p class="loading-text">Connecting to office_Agent...</p>
+            <h2 class="text-2xl font-bold font-outfit text-slate-800 mb-2">office_Agent</h2>
+            <p class="text-slate-500 animate-pulse">Initializing Workspace...</p>
         </div>
     </div>
 
-    <!-- Onboarding Organism Placeholder -->
-    <div id="onboarding-root"></div>
+    <!-- Onboarding Layer (Sibling of app-body so it can be shown/hidden independently) -->
+    <div id="onboarding-root" class="fixed inset-0 z-40 overflow-y-auto bg-slate-50 transition-all duration-700" style="display:none;"></div>
 
-    <main id="app-body" class="taskpane-body" style="display:none;">
-        <div id="header-root"></div>
+    <main id="app-body" class="flex flex-col h-screen overflow-hidden opacity-0 transition-opacity duration-700" style="display:none;">
+        <div id="header-root" class="shrink-0"></div>
         
-        <section class="org-chat-view">
-            <div id="history-root" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"></div>
-            <div id="prompt-root"></div>
+        <section class="flex-1 flex flex-col overflow-hidden relative">
+            <div id="history-root" class="flex-1 flex flex-col overflow-hidden"></div>
+            <div id="prompt-root" class="shrink-0"></div>
         </section>
 
         <!-- Hidden container for API response text -->
-        <div id="response" style="display:none;"></div>
+        <div id="response" class="hidden"></div>
     </main>
 
 </body>

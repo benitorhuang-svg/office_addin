@@ -8,8 +8,14 @@ import { ResponseParser } from '../../services/copilot/molecules/response-parser
  * Manages the high-level request/response cycle for AI tasks.
  */
 export const handleCopilotRequest = async (req: Request, res: Response) => {
+  console.log(`[API Handler DEBUG] STARTING /api/copilot handler (streaming: ${req.body.stream})`);
   const { prompt, officeContext, model, stream, authProvider, presetId } = req.body;
   const geminiKey = (req.headers['x-gemini-key'] as string) || config.GEMINI_API_KEY;
+  const streamingRes = res as Response & {
+    flush?: () => void;
+    flushHeaders?: () => void;
+    socket?: { setNoDelay?: (noDelay: boolean) => void };
+  };
 
   try {
     if (stream) {
@@ -19,6 +25,8 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         'Connection': 'keep-alive',
         'X-Accel-Buffering': 'no',
       });
+      streamingRes.flushHeaders?.();
+      streamingRes.socket?.setNoDelay?.(true);
 
       // Send initial spacer and padding to open the stream and bypass buffering
       res.write('data: {"text": ""}\n\n');
@@ -26,6 +34,7 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
 
       const onChunk = (chunk: string) => {
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+        streamingRes.flush?.();
       };
 
       await CompletionService.execute({

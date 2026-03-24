@@ -1,3 +1,4 @@
+import "../styles/tailwind.css";
 import { createAuthController } from "../services/molecules/auth-aggregator";
 import {
   setApplyStatus,
@@ -15,6 +16,7 @@ import {
   getStoredPreset,
   setStoredPreset,
   getAuthProvider,
+  hasStoredAuthState,
 } from "../services/atoms/storage-provider";
 import { FALLBACK_PRESETS, getSelectedPreset } from "../services/atoms/preset-manager";
 import { ChatOrchestrator } from "../services/organisms/chat-orchestrator";
@@ -84,7 +86,6 @@ class TaskpaneController {
       promptRoot.appendChild(
         createPromptGroup({
           onSend: () => this.handleSendMessage(),
-          onClearChat: () => this.handleClearChat(),
           availableModels: this.availableModels,
           selectedModel: getStoredModel() || ModelManager.getDefaultModel(this.availableModels),
           modelMode: getStoredModelMode(),
@@ -152,6 +153,31 @@ class TaskpaneController {
 
     // Re-render and re-bind to sync UI with state
     this.renderAndRebind();
+
+    // Auto-connect CLI for development if enabled and not already authenticated
+    if (ChatOrchestrator.config?.AUTO_CONNECT_CLI && !hasStoredAuthState()) {
+      console.log("[Dev] Auto-connect CLI flag is ON. Preparing connection...");
+      setTimeout(() => {
+        const copilotCliBtn = document.getElementById("cli-connect-btn");
+        const targetBtn = copilotCliBtn;
+        
+        if (targetBtn) {
+          console.log(`[Dev] Auto-triggering connection via ${targetBtn.id}...`);
+          
+          // Expand the relevant accordion to show progress
+          const accordionItem = targetBtn.closest(".accordion-item");
+          const header = accordionItem?.querySelector(".accordion-header") as HTMLElement;
+          if (header && !accordionItem?.classList.contains("is-open")) {
+            header.click();
+          }
+          
+          // Allow time for accordion animation then trigger connection
+          setTimeout(() => targetBtn.click(), 400);
+        } else {
+          console.warn("[Dev] CLI connect buttons not found in current view.");
+        }
+      }, 500); 
+    }
 
     // Initial Static UI settings
     const currentPreset = getStoredPreset() || "general";

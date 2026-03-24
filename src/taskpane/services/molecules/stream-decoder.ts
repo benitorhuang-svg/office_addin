@@ -24,14 +24,32 @@ export const STREAM_DECODER = {
         const cleaned = line.trim();
         if (!cleaned || cleaned === "data: [DONE]") continue;
         if (cleaned.startsWith("data: ")) {
+          let json;
           try {
-            const json = JSON.parse(cleaned.substring(6));
-            if (json.text) onText(json.text);
-            if (json.error) throw new Error(json.detail || json.error);
+            json = JSON.parse(cleaned.substring(6));
           } catch (e) {
             console.warn("[Stream Decoder] JSON parse error", e);
             continue;
           }
+          
+          if (json.text) onText(json.text);
+          if (json.error) {
+            throw new Error(json.detail || json.error);
+          }
+        }
+      }
+    }
+
+    // Process any remaining buffered data after stream ends
+    if (buffer.trim()) {
+      const remaining = buffer.trim();
+      if (remaining.startsWith("data: ") && remaining !== "data: [DONE]") {
+        try {
+          const json = JSON.parse(remaining.substring(6));
+          if (json.text) onText(json.text);
+          if (json.error) throw new Error(json.detail || json.error);
+        } catch (e) {
+          console.warn("[Stream Decoder] Final buffer parse error", e);
         }
       }
     }

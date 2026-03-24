@@ -7,6 +7,10 @@ import config from '../../../config/env.js';
 export const CORE_SDK_CONFIG = {
   // Global internal SDK timeout for session.sendAndWait
   GEN_TIMEOUT_MS: 300000, // 5 minutes (300 seconds)
+
+  // CLI startup timeout. Gemini on Windows may need longer to bootstrap.
+  CLIENT_START_TIMEOUT_MS: Number(process.env.CLIENT_START_TIMEOUT_MS || 30000),
+  GEMINI_CLIENT_START_TIMEOUT_MS: Number(process.env.GEMINI_CLIENT_START_TIMEOUT_MS || 45000),
   
   // Default CLI method if nothing else matches
   DEFAULT_METHOD: 'copilot_cli' as const,
@@ -18,7 +22,7 @@ export const CORE_SDK_CONFIG = {
   AZURE_API_VERSION: config.AZURE_OPENAI_API_VERSION || '2024-10-21',
 
   // Watchdog & Timeout behaviors (Configurable via ENV)
-  WATCHDOG_INACTIVITY_MS: Number(process.env.WATCHDOG_INACTIVITY_MS || 12000), 
+  WATCHDOG_INACTIVITY_MS: Number(process.env.WATCHDOG_INACTIVITY_MS || 45000), 
   USER_INPUT_TIMEOUT_MS: Number(process.env.USER_INPUT_TIMEOUT_MS || 180000),
 
   // Localized Strategy & Tool messages

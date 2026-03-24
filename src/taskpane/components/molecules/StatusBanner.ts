@@ -12,41 +12,59 @@ export interface StatusBannerProps {
  */
 export function createStatusBanner({ online, provider, onClearChat }: StatusBannerProps): HTMLElement {
   const banner = document.createElement("div");
-  banner.className = "header-status";
+  banner.className = "flex items-center justify-between w-full px-5 py-4 bg-white/40 backdrop-blur-xl border-b border-white/20";
 
+  // Left side: Branding & Status
+  const left = document.createElement("div");
+  left.className = "flex items-center gap-3";
+  
   const dot = createStatusDot({ online });
+  left.appendChild(dot);
 
-  const methodSpan = document.createElement("span");
-  methodSpan.className = "status-method";
-
+  const brand = document.createElement("div");
+  brand.className = "flex flex-col";
+  
+  const title = document.createElement("h2");
+  title.className = "text-sm font-bold font-outfit text-slate-900 tracking-tight leading-none mb-1";
+  title.textContent = "office_Agent";
+  
+  const statusInfo = document.createElement("p");
+  statusInfo.className = "text-[9px] uppercase tracking-widest font-bold text-slate-400";
+  
   if (provider) {
     let labelName = provider.replace(/_/g, " ").toUpperCase();
-    if (provider === "github_pat") labelName = "GITHUB CO-PILOT";
-    if (provider === "copilot_cli") labelName = "LOCAL GITHUB CLI";
-    if (provider === "gemini_cli") labelName = "LOCAL GEMINI CLI";
-    if (provider === "gemini_api") labelName = "GEMINI API KEY";
-    if (provider === "preview") labelName = "PREVIEW MODE";
-
-    methodSpan.innerHTML = `<span style="opacity: 0.8">目前連線方式:</span> <span style="font-weight: 700; color: var(--primary-color)">${labelName}</span>`;
+    if (provider === "github_pat") labelName = "GITHUB COPILOT";
+    else if (provider === "copilot_cli") labelName = "LOCAL CLI";
+    else if (provider === "gemini_cli") labelName = "GEMINI CLI";
+    else if (provider === "gemini_api") labelName = "GEMINI API";
+    else if (provider === "preview") labelName = "PREVIEW ONLY";
+    statusInfo.textContent = labelName;
   } else {
-    methodSpan.textContent = online ? "Connected - Secure Session" : "Searching for Server...";
+    statusInfo.textContent = online ? "CONNECTED" : "OFFLINE";
   }
+  
+  brand.appendChild(title);
+  brand.appendChild(statusInfo);
+  left.appendChild(brand);
+  banner.appendChild(left);
 
-  banner.appendChild(dot);
-  banner.appendChild(methodSpan);
+  // Right side: Actions
+  const actions = document.createElement("div");
+  actions.className = "flex items-center gap-2";
 
-  // New Chat / Clear history button (as requested)
   const clearBtn = document.createElement("button");
   clearBtn.id = "clear-chat-btn";
-  clearBtn.className = "header-new-chat-btn";
-  clearBtn.title = "啟動新對話 (+)";
+  clearBtn.className = "p-2 rounded-xl text-slate-500 hover:bg-white/50 hover:text-blue-600 transition-all duration-300 transform active:scale-90";
+  clearBtn.title = "Start New Chat";
   clearBtn.innerHTML = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5v14M5 12h14"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
     </svg>
   `;
   if (onClearChat) clearBtn.onclick = onClearChat;
-  banner.appendChild(clearBtn);
+  actions.appendChild(clearBtn);
+  banner.appendChild(actions);
 
   return banner;
 }

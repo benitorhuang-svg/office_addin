@@ -8,40 +8,51 @@ export interface WelcomeMessageProps {
  */
 export function createWelcomeMessage(props?: WelcomeMessageProps): HTMLElement {
   const container = document.createElement("div");
-  container.className = "welcome-message-container";
+  container.className = "max-w-md mx-auto py-12 px-4 text-center space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000";
 
-  const header = document.createElement("h2");
-  header.className = "welcome-header";
-  header.innerHTML = `<span>我是您的專屬</span> <span style="color: var(--primary-color)">office_Agent</span>`;
+  const header = document.createElement("div");
+  header.className = "space-y-3";
+  header.innerHTML = `
+    <h2 class="text-3xl font-bold font-outfit text-slate-900 tracking-tight">
+      Meet <span class="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">office_Agent</span>
+    </h2>
+    <p class="text-slate-500 text-sm max-w-[280px] mx-auto leading-relaxed italic">
+      Your specialized AI workspace assistant, crafted for Word.
+    </p>
+  `;
   container.appendChild(header);
 
-  const footer = document.createElement("p");
-  footer.className = "welcome-footer";
-  const provider = props?.authProvider
-    ? `目前連線模式：${props.authProvider}`
-    : `您可以自由編輯文件區(拖曳左側邊框)。如需使用其他模型，切換至 Copilot 或 Gemini 連線，請點擊右下角 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> 登出按鈕。`;
-  footer.innerHTML = provider;
-  container.appendChild(footer);
-
   const capabilities = document.createElement("div");
-  capabilities.className = "welcome-capabilities";
+  capabilities.className = "grid grid-cols-2 gap-3 w-full";
 
   const items = [
-    { icon: "📝", text: "撰寫內容" },
-    { icon: "💡", text: "提案建議" },
-    { icon: "📊", text: "建立表格" },
-    { icon: "🎨", text: "格式美化" },
+    { icon: "✨", text: "Smart Writing", desc: "Crafting polished content instantly." },
+    { icon: "💡", text: "Creative Ideas", desc: "Unlocking new perspectives." },
+    { icon: "📊", text: "Tabular Data", desc: "Generating structured insights." },
+    { icon: "🎨", text: "Style Sync", desc: "Keeping your brand consistent." },
   ];
 
   items.forEach((item) => {
     const el = document.createElement("div");
-    el.className = "capability-item";
-    el.innerHTML = `<span style="font-size: 24px;">${item.icon}</span><span>${item.text}</span>`;
+    el.className = "glass-card p-4 text-left hover:scale-[1.02] transition-transform duration-300";
+    el.innerHTML = `
+      <div class="text-2xl mb-2">${item.icon}</div>
+      <div class="text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">${item.text}</div>
+      <div class="text-[10px] text-slate-400 leading-tight">${item.desc}</div>
+    `;
     capabilities.appendChild(el);
   });
-
   container.appendChild(capabilities);
 
+  const footer = document.createElement("div");
+  footer.className = "text-[10px] text-slate-400/60 font-medium px-4 leading-relaxed";
+  
+  const provider = props?.authProvider
+    ? `Currently connected via ${props.authProvider.toUpperCase()}`
+    : `Experience the future of document collaboration. Connect your preferred AI model to unlock full capabilities.`;
+  
+  footer.textContent = provider;
+  container.appendChild(footer);
 
   return container;
 }

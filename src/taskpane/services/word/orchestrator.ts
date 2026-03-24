@@ -1,5 +1,5 @@
 /* global Word */
-import { OfficeAction } from "../../types";
+import { OfficeAction } from "../atoms/types";
 import { insertTextIntoWord } from "./streaming";
 import { convertImageUrlToBase64 } from "./utils";
 

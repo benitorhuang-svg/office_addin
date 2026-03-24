@@ -88,6 +88,7 @@ export type ServerConfig = {
   FALLBACK_PRESETS?: WritingPreset[];
   PREVIEW_MODE_GUIDE_MD?: string;
   DEFAULT_WORD_FONT_STYLE?: string;
+  AUTO_CONNECT_CLI?: boolean;
 };
 
 /* global HTMLElement, HTMLTextAreaElement, HTMLButtonElement */

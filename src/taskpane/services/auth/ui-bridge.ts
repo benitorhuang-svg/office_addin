@@ -1,6 +1,6 @@
 /* global HTMLElement, console */
 
-import { setApplyStatus, setAuthStatus, showMainApp, showOnboarding, appendMessage } from "../ui";
+import { setApplyStatus, setAuthStatus, showMainApp, showOnboarding, appendMessage } from "../molecules/ui-renderer";
 
 export interface AuthUIContext {
   authStatusEl: HTMLElement | null;

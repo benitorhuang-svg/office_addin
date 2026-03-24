@@ -59,9 +59,13 @@ export const ChatUiHelper = {
     parseMarkdown: (text: string) => string
   ) {
     const previewEl = bubble?.querySelector(".text-preview") as HTMLElement;
+    const footerEl = bubble?.querySelector(".bubble-footer") as HTMLElement;
     if (previewEl) {
       previewEl.classList.remove("skeleton");
       previewEl.innerHTML = parseMarkdown(content);
+    }
+    if (footerEl) {
+      footerEl.style.display = content.trim() ? "flex" : "none";
     }
     if (bubble) {
       bubble.dataset.fullText = content;
@@ -74,9 +78,13 @@ export const ChatUiHelper = {
   completeAssistantBubble(bubble: HTMLElement | null, content: string) {
     if (bubble) {
       const previewEl = bubble.querySelector(".text-preview") as HTMLElement;
+      const footerEl = bubble.querySelector(".bubble-footer") as HTMLElement;
       if (previewEl) {
         previewEl.classList.remove("skeleton");
         previewEl.innerHTML = marked.parse(content || "") as string;
+      }
+      if (footerEl) {
+        footerEl.style.display = content.trim() ? "flex" : "none";
       }
       bubble.dataset.fullText = content;
       bubble.setAttribute("data-complete", "true");
@@ -210,10 +218,14 @@ export const ChatUiHelper = {
    */
   renderError(bubble: HTMLElement | null, errorText: string) {
     const previewEl = bubble?.querySelector(".text-preview") as HTMLElement;
+    const footerEl = bubble?.querySelector(".bubble-footer") as HTMLElement;
     if (previewEl) {
       previewEl.classList.remove("skeleton");
       previewEl.textContent = errorText;
       previewEl.style.color = "#DC3545";
+    }
+    if (footerEl) {
+      footerEl.style.display = "none";
     }
   },
 };

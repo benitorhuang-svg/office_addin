@@ -1,5 +1,5 @@
 /* global Word */
-import { OfficeContextPayload } from "../../types";
+import { OfficeContextPayload } from "../atoms/types";
 
 /**
  * Atomic function to extract context from the Word document.

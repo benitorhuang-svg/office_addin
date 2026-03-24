@@ -18,17 +18,40 @@ module.exports = async (env, options) => {
     devtool: "source-map",
     entry: {
       polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
-      taskpane: ["./src/taskpane/organisms/taskpane-entry.ts", "./src/taskpane/organisms/taskpane.html"],
+      taskpane: ["./src/taskpane/organisms/taskpane-entry.ts"],
       commands: "./src/commands/molecules/office-commands.ts",
     },
     output: {
       clean: true,
     },
     resolve: {
-      extensions: [".ts", ".html", ".js"],
+      extensions: [".ts", ".html", ".js", ".css"],
     },
     module: {
       rules: [
+        {
+          test: /\.css$/i,
+          use: [
+            "style-loader",
+            {
+              loader: "css-loader",
+              options: {
+                importLoaders: 1,
+              },
+            },
+            {
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    require("@tailwindcss/postcss"),
+                    require("autoprefixer"),
+                  ],
+                },
+              },
+            },
+          ],
+        },
         {
           test: /\.ts$/,
           exclude: /node_modules/,
@@ -61,10 +84,6 @@ module.exports = async (env, options) => {
           {
             from: "assets/*",
             to: "assets/[name][ext][query]",
-          },
-          {
-            from: "src/taskpane/styles",
-            to: "styles",
           },
           {
             from: "manifest*.xml",
@@ -100,6 +119,11 @@ module.exports = async (env, options) => {
           onProxyRes: (proxyRes) => {
             proxyRes.headers['x-accel-buffering'] = 'no';
             proxyRes.headers['cache-control'] = 'no-cache';
+          },
+          onProxyReq: (proxyReq, req, res) => {
+            if (req.method === 'POST' || req.method === 'OPTIONS') {
+              console.log(`[HPM] Request received on proxy: ${req.method} ${req.url}`);
+            }
           },
           onError: (err, req, res) => {
             console.log('[Proxy Error]', err.message);

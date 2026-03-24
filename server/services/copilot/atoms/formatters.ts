@@ -1,10 +1,17 @@
 /** 
  * Atom: Extract text from AssistantMessageEvent 
  */
+interface CopilotEventLike {
+  result?: { content?: string };
+  data?: { content?: string; text?: string };
+  content?: string;
+}
+
 export function extractResponseText(event: Record<string, unknown>): string {
   if (!event) return '';
   // Handle various Copilot SDK response shapes (direct result or data-wrapped)
-  const content = event.result?.content || event.data?.content || event.data?.text || event.content;
+  const e = event as unknown as CopilotEventLike;
+  const content = e.result?.content || e.data?.content || e.data?.text || e.content;
   if (content) return content;
   
   // Fallback for raw string or other shapes

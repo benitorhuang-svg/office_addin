@@ -6,7 +6,8 @@
 export const API_CLIENT_CONFIG = {
   // Synchronize with server-side 300s timeout
   TIMEOUT_MS: 300000,
-  LOCAL_PORTS: [3000, 4000],
+  // Prefer direct backend first. Going through webpack proxy can buffer SSE.
+  LOCAL_PORTS: [4000, 3000],
 };
 
 export async function fetchWithTimeout(
@@ -32,10 +33,17 @@ export async function fetchWithTimeout(
  */
 export async function findActiveServer(): Promise<number> {
   for (const port of API_CLIENT_CONFIG.LOCAL_PORTS) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 1500); // 1.5s timeout for probing
     try {
-      const res = await fetch(`https://localhost:${port}/api/config`, { method: "HEAD" });
+      const res = await fetch(`https://localhost:${port}/api/config`, { 
+        method: "HEAD",
+        signal: controller.signal
+      });
+      clearTimeout(id);
       if (res.ok) return port;
     } catch {
+      clearTimeout(id);
       continue;
     }
   }

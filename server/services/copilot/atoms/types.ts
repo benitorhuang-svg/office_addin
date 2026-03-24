@@ -51,6 +51,8 @@ export interface ACPSessionConfig {
   streaming: boolean;
   azure?: AzureInfo;
   remotePort?: string;
+  geminiKey?: string;
+  githubToken?: string;
 }
 
 export interface ACPHealthResult {
