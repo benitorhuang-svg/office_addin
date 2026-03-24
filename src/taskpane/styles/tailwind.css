@@ -26,4 +26,86 @@
   .btn-primary {
     @apply px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl transition-all duration-300 transform active:scale-95 hover:bg-blue-700 hover:shadow-lg focus:ring-4 focus:ring-blue-300;
   }
+
+  /* Action pill buttons used in chat bubbles */
+  .action-pill-btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-xs font-semibold rounded-xl
+           bg-slate-100 text-slate-600 border border-slate-200
+           hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200
+           transition-all duration-200 cursor-pointer
+           disabled:opacity-50 disabled:cursor-not-allowed
+           active:scale-95;
+  }
+
+  /* Skeleton loading animation */
+  .skeleton {
+    @apply animate-pulse bg-slate-100 rounded-lg;
+    min-height: 3rem;
+  }
+
+  /* Chat bubble prose improvements for CJK readability */
+  .text-preview {
+    line-height: 1.85;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  .text-preview p {
+    @apply mb-3;
+  }
+  .text-preview p:last-child {
+    @apply mb-0;
+  }
+  .text-preview h1, .text-preview h2, .text-preview h3 {
+    @apply font-bold text-slate-900 mt-4 mb-2;
+  }
+  .text-preview h1 { @apply text-lg; }
+  .text-preview h2 { @apply text-base; }
+  .text-preview h3 { @apply text-sm; }
+  .text-preview ul, .text-preview ol {
+    @apply pl-5 mb-3 space-y-1;
+  }
+  .text-preview li {
+    @apply text-sm text-slate-700;
+  }
+  .text-preview code {
+    @apply px-1.5 py-0.5 bg-slate-100 text-slate-800 rounded text-xs font-mono;
+  }
+  .text-preview pre {
+    @apply p-3 bg-slate-900 text-slate-100 rounded-xl text-xs overflow-x-auto mb-3;
+  }
+  .text-preview pre code {
+    @apply bg-transparent text-inherit p-0 rounded-none;
+  }
+  .text-preview blockquote {
+    @apply pl-4 border-l-4 border-blue-300 text-slate-600 italic my-3;
+  }
+  .text-preview strong {
+    @apply font-bold text-slate-900;
+  }
+  .text-preview a {
+    @apply text-blue-600 underline hover:text-blue-800;
+  }
+  .text-preview table {
+    @apply w-full border-collapse mb-3 text-sm;
+  }
+  .text-preview th {
+    @apply bg-slate-100 text-left px-3 py-2 border border-slate-200 font-semibold text-slate-700;
+  }
+  .text-preview td {
+    @apply px-3 py-2 border border-slate-200 text-slate-600;
+  }
+
+  /* Ask-user interactive card */
+  .ask-user-container {
+    @apply mt-3 p-4 border border-blue-200 rounded-xl bg-blue-50/50;
+  }
+  .ask-user-premium-card {
+    @apply mt-3 p-4 border border-blue-200 rounded-xl bg-blue-50/30 space-y-3;
+  }
+  .ask-user-question {
+    @apply font-semibold text-sm text-slate-800;
+  }
+  .ask-user-controls {
+    @apply space-y-2;
+  }
 }

@@ -22,6 +22,27 @@ class ClientManager {
   private static readonly HEALTH_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
   private static healthCheckTimer?: NodeJS.Timeout;
 
+  private static normalizeCacheKeyPart(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeCacheKeyPart(item));
+    }
+
+    if (!value || typeof value !== 'object') {
+      return typeof value === 'function' ? '[function]' : value;
+    }
+
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((normalized, key) => {
+        normalized[key] = this.normalizeCacheKeyPart((value as Record<string, unknown>)[key]);
+        return normalized;
+      }, {});
+  }
+
+  private static buildClientKey(method: ACPConnectionMethod, options: CopilotClientOptions): string {
+    return `${method}-${JSON.stringify(this.normalizeCacheKeyPart(options))}`;
+  }
+
   /**
    * Get or create a client with connection pooling
    */
@@ -29,16 +50,14 @@ class ClientManager {
     method: ACPConnectionMethod,
     options: CopilotClientOptions
   ): Promise<CopilotClient> {
-    const clientKey = `${method}-${JSON.stringify(options)}`;
-    const _now = Date.now();
+    const clientKey = this.buildClientKey(method, options);
+    const now = Date.now();
 
-    /* Disable caching for debug
     const existing = this.clients.get(clientKey);
     if (existing && existing.healthy && (now - existing.created) < this.CLIENT_TTL) {
       existing.lastUsed = now;
       return existing.client;
     }
-    */
 
     // Check if a client is already being created for this key
     const pendingPromise = this.pendingClients.get(clientKey);
@@ -47,11 +66,9 @@ class ClientManager {
       return pendingPromise;
     }
 
-    /* Clean up old client if exists
     if (existing) {
       await this.cleanupClient(clientKey);
     }
-    */
 
     // Create a new promise for the client creation
     const createClientPromise = (async () => {

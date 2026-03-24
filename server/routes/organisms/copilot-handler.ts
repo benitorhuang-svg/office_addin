@@ -2,12 +2,16 @@ import { Request, Response } from 'express';
 import config from '../../config/env.js';
 import { CompletionService } from '../../services/copilot/organisms/completion-service.js';
 import { ResponseParser } from '../../services/copilot/molecules/response-parser.js';
+import { markStart, markEnd } from '../../atoms/latency-tracker.js';
 
 /**
  * Organism: Copilot Route Handler
  * Manages the high-level request/response cycle for AI tasks.
  */
 export const handleCopilotRequest = async (req: Request, res: Response) => {
+  const requestId = `req-${Date.now()}`;
+  markStart(requestId);
+  let firstTokenTracked = false;
   console.log(`[API Handler DEBUG] STARTING /api/copilot handler (streaming: ${req.body.stream})`);
   const { prompt, officeContext, model, stream, authProvider, presetId } = req.body;
   const geminiKey = (req.headers['x-gemini-key'] as string) || config.GEMINI_API_KEY;
@@ -33,10 +37,15 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       res.write(': ' + ' '.repeat(2048) + '\n\n'); // SSE comment padding
 
       const onChunk = (chunk: string) => {
+        if (!firstTokenTracked) {
+          markEnd(`${requestId}:first-token`);
+          firstTokenTracked = true;
+        }
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
         streamingRes.flush?.();
       };
 
+      markStart(`${requestId}:first-token`);
       await CompletionService.execute({
         prompt,
         officeContext,
@@ -48,6 +57,7 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       }, onChunk);
 
       res.write('data: [DONE]\n\n');
+      markEnd(requestId);
       return res.end();
     } else {
       // Non-streaming
@@ -68,7 +78,8 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         text: cleanText, 
         actions,
         model: model || config.COPILOT_MODEL,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        latencyMs: markEnd(requestId)
       });
     }
   } catch (err: unknown) {

@@ -1,11 +1,13 @@
 import http from 'node:http';
 import https from 'node:https';
-import * as devCerts from 'office-addin-dev-certs';
 
 import config from '../config/molecules/server-config.js';
 import { warmUpClient } from '../services/copilot/organisms/sdk-provider.js';
 import { AppFactory } from '../molecules/app-factory.js';
+import { resolveHttpsServerOptions } from '../molecules/https-server-options.js';
+import { registerServerCleanup } from '../molecules/server-cleanup.js';
 import { SignalGuardian } from '../molecules/signal-guardian.js';
+import { markStart, markEnd } from '../atoms/latency-tracker.js';
 
 /**
  * Organism: Enhanced Server Orchestrator
@@ -13,20 +15,11 @@ import { SignalGuardian } from '../molecules/signal-guardian.js';
  */
 export const ServerOrchestrator = {
   async start() {
+    markStart('server-startup');
     const app = AppFactory.create();
     SignalGuardian.register();
 
-    let options: https.ServerOptions = {};
-    let isHttps = true;
-
-    try {
-      const certs = await devCerts.getHttpsServerOptions();
-      options = { ca: certs.ca, key: certs.key, cert: certs.cert };
-      console.log('[Setup] SSL: Success');
-    } catch (err: unknown) {
-      console.warn('[Setup] SSL: Falling back to HTTP', err instanceof Error ? err.message : String(err));
-      isHttps = false;
-    }
+    const { isHttps, options } = await resolveHttpsServerOptions();
 
     const targetPort = Number(config.PORT) || 4000;
     
@@ -41,33 +34,17 @@ export const ServerOrchestrator = {
       });
       
       console.log(`[Setup] Server: ${isHttps ? 'https' : 'http'}://localhost:${targetPort}`);
+      markEnd('server-startup');
 
+      registerServerCleanup(server);
 
-        // Enhanced cleanup handling
-        const cleanup = async () => {
-          console.log('[Setup] Performing server cleanup...');
-          try {
-            const { ModernSDKOrchestrator } = await import('../services/copilot/organisms/sdk-orchestrator-v2.js');
-            await ModernSDKOrchestrator.cleanup();
-          } catch (error) {
-            console.warn('[Setup] Error during SDK cleanup:', error);
-          }
-          
-          server.close(() => {
-            console.log('[Setup] Server closed');
-            process.exit(0);
-          });
-        };
-
-        process.on('SIGTERM', cleanup);
-        process.on('SIGINT', cleanup);
-
-        // Background Warmup
-        process.nextTick(() => {
-          warmUpClient('copilot_cli').catch(() => {});
+      if (config.AUTO_CONNECT_CLI && !config.isRemoteCliConfigured()) {
+        setImmediate(() => {
+          void warmUpClient('copilot_cli');
         });
-        
-        return server;
+      }
+      
+      return server;
     } catch (error: unknown) {
 
       console.error('[Setup] Server failed to start:', error);

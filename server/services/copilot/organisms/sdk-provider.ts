@@ -13,6 +13,9 @@ export * from '../atoms/core-config.js';
 // Molecules (Functional building blocks)
 export { getOrCreateClient, stopAllClients } from '../molecules/client-manager.js';
 export { resolveMethodFromContext, resolveACPOptions } from '../molecules/option-resolver.js';
+export { getSessionTools } from '../molecules/tool-registry.js';
+export { resolveInput, waitForUserInput, clearAllPendingInputs } from '../molecules/pending-input-queue.js';
+export { generateSessionId, createSession, cleanupSession, cleanupAllSessions } from '../molecules/session-lifecycle.js';
 
 // Organisms (End-to-end services)
 import { ModernSDKOrchestrator } from './sdk-orchestrator-v2.js';

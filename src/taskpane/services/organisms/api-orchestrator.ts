@@ -3,7 +3,8 @@
  * Orchestrates backend communication using Atoms and Molecules.
  */
 
-import { fetchWithTimeout, findActiveServer } from "../atoms/api-client";
+import { fetchWithTimeout } from "../atoms/api-client";
+import { resolveLocalApiUrl } from "../molecules/local-server-resolver";
 import { STREAM_DECODER } from "../molecules/stream-decoder";
 import { CopilotResponse, OfficeContextPayload, ServerConfig } from "../atoms/types";
 
@@ -21,8 +22,7 @@ export async function sendToCopilot(
   geminiToken: string | null,
   onChunk?: (chunk: string) => void
 ): Promise<CopilotResponse> {
-  const activePort = await findActiveServer();
-  const url = `https://localhost:${activePort}/api/copilot`;
+  const url = await resolveLocalApiUrl("/api/copilot");
 
   const payload = {
     prompt,
@@ -73,8 +73,8 @@ export async function sendToCopilot(
  * Organism: Fetches server configuration (model list, etc.)
  */
 export async function getConfig(): Promise<ServerConfig> {
-  const port = await findActiveServer();
-  const res = await fetch(`https://localhost:${port}/api/config`);
+  const url = await resolveLocalApiUrl("/api/config");
+  const res = await fetch(url);
   return (await res.json()) as ServerConfig;
 }
 
@@ -88,8 +88,8 @@ export async function validateACPToken(
   deployment?: string
 ): Promise<{ ok: boolean; message?: string }> {
   try {
-    const activePort = await findActiveServer();
-    const res = await fetchWithTimeout(`https://localhost:${activePort}/api/acp/validate`, {
+    const url = await resolveLocalApiUrl("/api/acp/validate");
+    const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ method, token, endpoint, deployment }),
@@ -107,8 +107,8 @@ export async function validateGeminiApiKey(
   token: string
 ): Promise<{ ok: boolean; message?: string }> {
   try {
-    const activePort = await findActiveServer();
-    const res = await fetchWithTimeout(`https://localhost:${activePort}/api/gemini/validate`, {
+    const url = await resolveLocalApiUrl("/api/gemini/validate");
+    const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ apiKey: token }),

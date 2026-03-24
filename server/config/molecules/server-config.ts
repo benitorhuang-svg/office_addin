@@ -47,7 +47,13 @@ export interface ServerConfig {
 /**
  * Organism/Molecule: Config Orchestrator
  * Integrates raw atoms (BASE_ENV) and provides logic-based helpers.
+ * Derived list values are cached on first access to avoid repeated parsing.
  */
+
+let _cachedModelsGithub: string[] | null = null;
+let _cachedModelsGemini: string[] | null = null;
+let _cachedFallbackPresets: Preset[] | null = null;
+
 const config: ServerConfig = {
   get PORT() { return BASE_ENV.PORT; },
   get COPILOT_AGENT_PORT() { return BASE_ENV.COPILOT_AGENT_PORT; },
@@ -59,14 +65,20 @@ const config: ServerConfig = {
   get COPILOT_MODEL() { return BASE_ENV.COPILOT_MODEL; },
 
   get AVAILABLE_MODELS_GITHUB() {
-    return (process.env.AVAILABLE_MODELS_GITHUB || 'GPT-5.4,GPT-5.4 mini,GPT-5.2 Pro,Claude 4.8 Opus,Claude 4.8 Sonnet')
-      .split(',')
-      .map(m => m.trim());
+    if (!_cachedModelsGithub) {
+      _cachedModelsGithub = (process.env.AVAILABLE_MODELS_GITHUB || 'GPT-5.4,GPT-5.4 mini,GPT-5.2 Pro,Claude 4.8 Opus,Claude 4.8 Sonnet')
+        .split(',')
+        .map(m => m.trim());
+    }
+    return _cachedModelsGithub;
   },
   get AVAILABLE_MODELS_GEMINI() {
-    return (process.env.AVAILABLE_MODELS_GEMINI || 'gemini-3.1-pro,gemini-3.1-flash,gemini-3.1-flash-lite,gemini-2.5-pro,gemini-2.5-flash')
-      .split(',')
-      .map(m => m.trim());
+    if (!_cachedModelsGemini) {
+      _cachedModelsGemini = (process.env.AVAILABLE_MODELS_GEMINI || 'gemini-3.1-pro,gemini-3.1-flash,gemini-3.1-flash-lite,gemini-2.5-pro,gemini-2.5-flash')
+        .split(',')
+        .map(m => m.trim());
+    }
+    return _cachedModelsGemini;
   },
   get AVAILABLE_MODELS() {
     return [...this.AVAILABLE_MODELS_GITHUB, ...this.AVAILABLE_MODELS_GEMINI];
@@ -87,8 +99,11 @@ const config: ServerConfig = {
   get MAX_TOKENS() { return Number(BASE_ENV.MAX_TOKENS); },
   get APP_TITLE() { return BASE_ENV.APP_TITLE; },
   get FALLBACK_PRESETS() { 
-    try { return JSON.parse(BASE_ENV.FALLBACK_PRESETS_JSON); } 
-    catch { return []; }
+    if (!_cachedFallbackPresets) {
+      try { _cachedFallbackPresets = JSON.parse(BASE_ENV.FALLBACK_PRESETS_JSON); } 
+      catch { _cachedFallbackPresets = []; }
+    }
+    return _cachedFallbackPresets!;
   },
   get PREVIEW_MODE_GUIDE_MD() { return BASE_ENV.PREVIEW_MODE_GUIDE_MD; },
   get DEFAULT_WORD_FONT_STYLE() { return BASE_ENV.DEFAULT_WORD_FONT_STYLE; },

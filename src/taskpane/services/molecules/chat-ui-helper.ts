@@ -102,11 +102,7 @@ export const ChatUiHelper = {
     if (!bubble || !actions || actions.length === 0) return;
 
     const actionContainer = document.createElement("div");
-    actionContainer.className = "bubble-actions-container";
-    actionContainer.style.marginTop = "12px";
-    actionContainer.style.display = "flex";
-    actionContainer.style.gap = "8px";
-    actionContainer.style.flexWrap = "wrap";
+    actionContainer.className = "flex flex-wrap gap-2 mt-3";
 
     actions.forEach((action) => {
       const btn = document.createElement("button");
@@ -117,11 +113,9 @@ export const ChatUiHelper = {
 
       btn.onclick = () => {
         btn.disabled = true;
-        btn.style.opacity = "0.5";
         onAction(action.type, action.value);
         setTimeout(() => {
           btn.disabled = false;
-          btn.style.opacity = "1";
         }, 1000);
       };
 
@@ -146,34 +140,25 @@ export const ChatUiHelper = {
 
     const askContainer = document.createElement("div");
     askContainer.id = `ask-user-${sessionId}`;
-    askContainer.className = "ask-user-container";
-    askContainer.style.marginTop = "10px";
-    askContainer.style.padding = "10px";
-    askContainer.style.border = "1px solid #0078D4";
-    askContainer.style.borderRadius = "8px";
-    askContainer.style.backgroundColor = "rgba(0, 120, 212, 0.05)";
+    askContainer.className = "ask-user-premium-card";
 
     const qEl = document.createElement("div");
+    qEl.className = "ask-user-question";
     qEl.textContent = `🤔 ${question}`;
-    qEl.style.fontWeight = "bold";
-    qEl.style.marginBottom = "8px";
     askContainer.appendChild(qEl);
+
+    const controls = document.createElement("div");
+    controls.className = "ask-user-controls";
 
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "請輸入您的回覆...";
-    input.style.width = "100%";
-    input.style.padding = "8px";
-    input.style.marginBottom = "8px";
-    input.style.borderRadius = "4px";
-    input.style.border = "1px solid #ccc";
-    askContainer.appendChild(input);
+    input.className = "w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white";
+    controls.appendChild(input);
 
     const btn = document.createElement("button");
     btn.textContent = "傳送回覆";
-    btn.className = "action-pill-btn";
-    btn.style.backgroundColor = "#0078D4";
-    btn.style.color = "white";
+    btn.className = "action-pill-btn bg-blue-600 text-white hover:bg-blue-700 border-blue-600";
     
     btn.onclick = async () => {
       const answer = input.value.trim();
@@ -184,15 +169,16 @@ export const ChatUiHelper = {
       btn.textContent = "處理中...";
 
       try {
-        const port = await (await import("../atoms/api-client")).findActiveServer();
-        const res = await fetch(`https://localhost:${port}/api/copilot/response`, {
+        const { resolveLocalApiUrl } = await import("../molecules/local-server-resolver");
+        const url = await resolveLocalApiUrl("/api/copilot/response");
+        const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId, answer }),
         });
         
         if (res.ok) {
-          askContainer.innerHTML = `<div style="color: #28A745; font-size: 0.9em;">✅ 已送出：${answer}</div>`;
+          askContainer.innerHTML = `<div class="text-green-600 text-sm font-medium">✅ 已送出：${answer}</div>`;
           setTimeout(() => askContainer.remove(), 2000);
         } else {
           throw new Error("Failed to send response");
@@ -205,7 +191,8 @@ export const ChatUiHelper = {
       }
     };
 
-    askContainer.appendChild(btn);
+    controls.appendChild(btn);
+    askContainer.appendChild(controls);
 
     const previewEl = bubble.querySelector(".text-preview");
     if (previewEl) {
@@ -222,7 +209,7 @@ export const ChatUiHelper = {
     if (previewEl) {
       previewEl.classList.remove("skeleton");
       previewEl.textContent = errorText;
-      previewEl.style.color = "#DC3545";
+      previewEl.classList.add("text-red-500");
     }
     if (footerEl) {
       footerEl.style.display = "none";

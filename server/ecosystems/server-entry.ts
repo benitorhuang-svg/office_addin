@@ -1,3 +1,6 @@
+// Suppress experimental/deprecation warnings from child processes (e.g. Copilot CLI)
+process.env.NODE_NO_WARNINGS = '1';
+
 import { ServerOrchestrator } from '../organisms/server-orchestrator.js';
 
 /**

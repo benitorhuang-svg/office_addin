@@ -10,13 +10,13 @@ export interface ChatBubbleProps {
 
 export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTMLElement {
   const container = document.createElement("div");
-  container.className = `flex flex-col w-full max-w-[85%] space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500 ${
-    role === "user" ? "ml-auto items-end text-right" : "mr-auto items-start text-left"
+  container.className = `mol-chat-bubble ${role === "assistant" ? "assistant-card" : ""} flex flex-col w-full space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500 ${
+    role === "user" ? "max-w-[85%] ml-auto items-end text-right" : "items-start text-left"
   }`;
 
-  // 1. Label/Icon Row (Premium identification)
+  // 1. Label/Icon Row
   const header = document.createElement("div");
-  header.className = `flex items-center gap-2 px-1 ${role === "user" ? "flex-row-reverse" : "flex-row"}`;
+  header.className = `flex items-center gap-1.5 px-1 ${role === "user" ? "flex-row-reverse" : "flex-row"}`;
   
   const icon = document.createElement("div");
   icon.className = `w-5 h-5 flex items-center justify-center rounded-lg ${
@@ -39,39 +39,46 @@ export function createChatBubble({ role, text, onApply }: ChatBubbleProps): HTML
   
   if (role === "assistant") {
     container.dataset.fullText = text;
-    content.className = "w-full glass-card p-4 space-y-4 shadow-sm hover:shadow-md transition-shadow duration-300";
+    content.className = "w-full glass-card p-5 space-y-3 shadow-sm hover:shadow-md transition-shadow duration-300";
     
     // Preview area (Markdown enabled)
     const preview = document.createElement("div");
-    preview.className = "text-preview text-sm leading-relaxed text-slate-800 prose prose-slate max-w-none prose-sm";
-    preview.textContent = text || "Thinking...";
+    preview.className = "text-preview text-sm text-slate-800";
+    if (!text || !text.trim()) {
+      preview.classList.add("skeleton");
+      preview.textContent = "";
+    } else {
+      preview.textContent = text;
+    }
     content.appendChild(preview);
 
     const footer = document.createElement("div");
-    footer.className = "bubble-footer flex items-center gap-2 pt-2 border-t border-slate-100";
+    footer.className = "bubble-footer flex items-center gap-2 pt-3 border-t border-slate-100";
     footer.style.display = text.trim() ? "flex" : "none";
     
     const applyBtn = createButton({
       label: "Apply to Word",
-      className: "px-3 py-1.5 text-[10px] bg-blue-600 text-white hover:bg-blue-700",
+      className: "px-4 py-2 text-xs bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-500/10",
     });
     if (onApply) applyBtn.onclick = onApply;
 
     const copyBtn = createButton({
       label: "Copy",
-      className: "px-3 py-1.5 text-[10px] bg-slate-100 text-slate-600 hover:bg-slate-200",
+      className: "px-4 py-2 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200",
     });
     copyBtn.onclick = () => {
       const raw = container.dataset.fullText || text;
       const clean = raw.replace(/<[^>]*>?/gm, '').replace(/\**/g, '');
       navigator.clipboard.writeText(clean);
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
     };
 
     footer.appendChild(applyBtn);
     footer.appendChild(copyBtn);
     content.appendChild(footer);
   } else {
-    content.className = "px-4 py-2.5 bg-blue-600 text-white text-sm rounded-2xl rounded-tr-none shadow-sm inline-block";
+    content.className = "px-4 py-2.5 bg-blue-600 text-white text-sm rounded-2xl rounded-tr-none shadow-sm inline-block max-w-full break-words";
     content.textContent = text;
   }
 

@@ -34,6 +34,7 @@ export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
       cliPath: process.execPath,
       useStdio: true,
       cliArgs: [
+        '--no-warnings',
         wrapperEntry
       ],
 

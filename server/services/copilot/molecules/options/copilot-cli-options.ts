@@ -20,6 +20,7 @@ export const buildCopilotCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
       cliPath: process.execPath,
       useStdio: true,
       cliArgs: [
+        '--no-warnings',
         path.join(projectRoot, 'node_modules/@github/copilot/index.js')
       ],
 
@@ -27,6 +28,7 @@ export const buildCopilotCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
 
       env: {
         ...process.env,
+        NODE_NO_WARNINGS: '1',
         ...(apiBase ? {
           COPILOT_API_URL: apiBase,
           GITHUB_API_URL: apiBase,
