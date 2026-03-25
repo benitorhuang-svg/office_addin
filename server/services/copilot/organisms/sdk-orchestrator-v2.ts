@@ -32,8 +32,10 @@ export class ModernSDKOrchestrator {
     modelName: string = config.COPILOT_MODEL,
     azureInfo?: AzureInfo,
     methodOverride?: ACPConnectionMethod,
-    geminiKey?: string
+    geminiKey?: string,
+    signal?: AbortSignal
   ): Promise<string> {
+    if (signal?.aborted) return '';
     console.log(`[SDK V2 DEBUG] Entering sendPrompt. Prompt length: ${prompt.length}, isExplicitCli: ${isExplicitCli}, methodOverride: ${methodOverride}`);
     const method = methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli);
     console.log(`[SDK V2 DEBUG] Resolved method: ${method}, model: ${modelName}, streaming: ${!!onChunk}`);
@@ -79,6 +81,12 @@ export class ModernSDKOrchestrator {
           let inactivityWatcher: NodeJS.Timeout | null = null;
           const promptStartTime = performance.now();
           
+          const onAbort = () => {
+            console.log(`[SDK V2] Abortion signal received for session ${sessionId}`);
+            finish(new Error('Aborted by client'));
+          };
+          if (signal) signal.addEventListener('abort', onAbort);
+
           const globalTimeout = setTimeout(() => {
             finish(new Error(`[Fatal Timeout] AI 總回應時間超過 ${CORE_SDK_CONFIG.GEN_TIMEOUT_MS / 1000} 秒`));
           }, CORE_SDK_CONFIG.GEN_TIMEOUT_MS);
@@ -92,6 +100,7 @@ export class ModernSDKOrchestrator {
           };
 
           const finish = (err?: Error) => {
+            if (signal) signal.removeEventListener('abort', onAbort);
             if (inactivityWatcher) clearTimeout(inactivityWatcher);
             clearTimeout(globalTimeout);
             const latencyMs = Math.round(performance.now() - promptStartTime);
@@ -179,11 +188,14 @@ export class ModernSDKOrchestrator {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`[SDK V2] Attempt ${retryCount}/${maxRetries + 1} failed:`, errorMessage);
 
-        // Force cleanup and restart client for next attempt
+        // Force granular cleanup for ONLY the erroring client parameters
         try {
-          // Access the underlying client-manager via our static method (assuming we updated it)
-          await stopAllClients(); 
-        } catch {}
+          const { clientOptions: retryOptions } = resolveACPOptions(acpConfig);
+          const { removeClientByParams } = await import('../molecules/client-manager.js');
+          await removeClientByParams(method, retryOptions); 
+        } catch (cleanupErr) {
+          console.warn(`[SDK V2 Cleanup Error]`, cleanupErr);
+        }
 
         if (retryCount > maxRetries) {
           const fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (方式：${method})。\n\n錯誤詳情：${errorMessage}`;
@@ -191,7 +203,9 @@ export class ModernSDKOrchestrator {
           return fallbackText;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+        const delay = Math.min(500 * Math.pow(2, retryCount), 5000); 
+        console.log(`[SDK V2] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
 

@@ -125,6 +125,8 @@ class ClientManager {
     this.healthCheckTimer = setInterval(async () => {
       await this.performHealthCheck();
     }, this.HEALTH_CHECK_INTERVAL);
+    // Optimization: unref() prevents the timer from keeping the Node process alive
+    this.healthCheckTimer.unref();
   }
 
   private static async performHealthCheck(): Promise<void> {
@@ -167,6 +169,11 @@ class ClientManager {
     }
   }
 
+  public static async cleanupByParams(method: ACPConnectionMethod, options: CopilotClientOptions): Promise<void> {
+    const key = this.buildClientKey(method, options);
+    await this.cleanupClient(key);
+  }
+
   public static async cleanupAll(): Promise<void> {
     if (this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer);
@@ -183,4 +190,6 @@ class ClientManager {
  */
 export const getOrCreateClient = ClientManager.getClient.bind(ClientManager);
 export const stopAllClients = ClientManager.cleanupAll.bind(ClientManager);
+export const removeClientByParams = ClientManager.cleanupByParams.bind(ClientManager);
+export const removeClient = ClientManager.cleanupClient.bind(ClientManager);
 export { ClientManager };

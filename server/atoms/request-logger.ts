@@ -5,6 +5,7 @@
 
 import { Request } from 'express';
 import crypto from 'node:crypto';
+import { getClientIp } from './client-ip.js';
 
 export interface RequestLog {
   requestId: string;
@@ -16,10 +17,7 @@ export interface RequestLog {
 }
 
 export function createRequestLog(req: Request): RequestLog {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = typeof forwarded === 'string'
-    ? forwarded.split(',')[0].trim()
-    : (req.ip || req.socket.remoteAddress || 'unknown');
+  const ip = getClientIp(req);
 
   return {
     requestId: crypto.randomUUID(),

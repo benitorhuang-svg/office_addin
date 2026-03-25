@@ -20,11 +20,13 @@ class CLIAdapter {
     spawn() {
         log(`Launching CLI: node ${geminiScript} --acp -y`);
         
+        const { GEMINI_API_KEY: _key, ...cleanEnv } = process.env;
+        
         this.child = spawn(process.execPath, [geminiScript, '--acp', '-y'], {
             stdio: ['pipe', 'pipe', 'pipe'],
             cwd: repoRoot,
             env: { 
-                ...process.env, 
+                ...cleanEnv, 
                 NODE_ENV: 'production',
                 GEMINI_CLI_LOG_LEVEL: 'error'
             }

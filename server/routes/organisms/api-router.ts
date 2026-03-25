@@ -2,10 +2,13 @@ import { Router } from 'express';
 import config from '../../config/env.js';
 import { GeminiRestService } from '../../services/copilot/organisms/gemini-rest-service.js';
 import { handleCopilotRequest } from './copilot-handler.js';
+import { resolveACPOptions } from '../../services/copilot/molecules/option-resolver.js';
+import { getOrCreateClient } from '../../services/copilot/molecules/client-manager.js';
+import { ModernSDKOrchestrator } from '../../services/copilot/organisms/sdk-orchestrator-v2.js';
 
 const apiRouter = Router();
 
-// Endpoint 1: Config (Atomized in API Router)
+// Endpoint: Get Server Configuration
 apiRouter.get('/config', (req, res) => {
   console.log(`[API] Serving config, AUTO_CONNECT_CLI: ${config.AUTO_CONNECT_CLI}`);
   res.json({
@@ -19,7 +22,7 @@ apiRouter.get('/config', (req, res) => {
   });
 });
 
-// Endpoint 2: Validate Gemini Key (Direct delegation)
+// Endpoint: Validate Gemini Direct API Key
 apiRouter.post('/gemini/validate', async (req, res) => {
   try {
     const { apiKey } = req.body;
@@ -40,8 +43,6 @@ apiRouter.post('/acp/validate', async (req, res) => {
     // We map 'method' string from frontend to the proper ACPConnectionMethod inside the backend
     const acpMethod = method === "azure" ? "azure_byok" : (method === "gemini" ? "gemini_cli" : "copilot_cli");
     console.log(`[API] Validating ${method} via ${acpMethod}...`);
-    const { resolveACPOptions } = await import('../../services/copilot/molecules/option-resolver.js');
-    const { getOrCreateClient } = await import('../../services/copilot/molecules/client-manager.js');
     
     // Natively build Copilot Client Options with the injected tokens for the specific ACP agent
     const { clientOptions } = resolveACPOptions({
@@ -56,37 +57,31 @@ apiRouter.post('/acp/validate', async (req, res) => {
     // Spawn and start the client to explicitly validate credentials via ACP JSON-RPC handshake
     const client = await getOrCreateClient(acpMethod, clientOptions);
     
-    // Explicit health check with timeout to avoid permanent hangs (matches SDK session creation timeout)
-    const pingTask = client.ping('health-check');
-    const pingTimeout = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("ACP Handshake Timeout: Agent did not respond to ping.")), 15000);
-    });
+    // Explicit health check with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     
-    await Promise.race([pingTask, pingTimeout]);
-    
-    res.json({ status: 200, detail: `${method} session is valid via ACP` });
+    try {
+      await client.ping('health-check');
+      res.json({ status: 200, detail: `${method} session is valid via ACP` });
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError') {
+        throw new Error("ACP Handshake Timeout: Agent did not respond to ping within 15s");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (err: unknown) {
     console.error(`[ACP Token Validation Error]`, err);
-    res.status(401).json({ status: 401, detail: `Invalid credentials or ACP failure` });
+    res.status(401).json({ status: 401, detail: err instanceof Error ? err.message : `Invalid credentials or ACP failure` });
   }
 });
 
-// Endpoint 2.5: Start Gemini CLI (for frontend trigger)
-apiRouter.post('/gemini/start-cli', async (req, res) => {
-  try {
-    // This endpoint is called by the frontend to trigger Gemini CLI startup
-    // The actual CLI is started on-demand by the SDK, so we just acknowledge
-    console.log('[API] Gemini CLI startup requested by frontend');
-    res.json({ status: 200, detail: 'Gemini CLI startup acknowledged' });
-  } catch (_err: unknown) {
-    res.status(500).json({ status: 500, detail: 'Failed to acknowledge CLI startup' });
-  }
-});
 
-// Endpoint 3: Health Check for SDK and ACP connections
+// Endpoint: Health Checks & Connection Status
 apiRouter.get('/health', async (req, res) => {
   try {
-    const { ModernSDKOrchestrator } = await import('../../services/copilot/organisms/sdk-orchestrator-v2.js');
     const health = await ModernSDKOrchestrator.healthCheck();
     
     res.json({
@@ -104,14 +99,13 @@ apiRouter.get('/health', async (req, res) => {
   }
 });
 
-// Endpoint 5: Respond to AI Question (Resolves pendings in SDK Orchestrator)
+// Endpoint: Handle Human-in-the-loop (Ask User) Response
 apiRouter.post('/copilot/response', async (req, res) => {
   try {
     const { sessionId, answer } = req.body;
     if (!sessionId || typeof sessionId !== 'string') {
       return res.status(400).json({ status: 400, detail: 'Missing or invalid sessionId' });
     }
-    const { ModernSDKOrchestrator } = await import('../../services/copilot/organisms/sdk-orchestrator-v2.js');
     
     const resolved = ModernSDKOrchestrator.resolveInput(sessionId, answer);
     if (!resolved) {
@@ -123,7 +117,7 @@ apiRouter.post('/copilot/response', async (req, res) => {
   }
 });
 
-// Endpoint 4: Core Copilot (Handled by Atomized Handler)
+// Endpoint: Main Copilot Generation (Streaming supported)
 apiRouter.post('/copilot', handleCopilotRequest);
 
 export default apiRouter;

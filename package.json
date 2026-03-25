@@ -31,17 +31,8 @@
     "dev:original": "node scripts/dev.mjs"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.2.0",
-    "@tailwindcss/postcss": "^4.2.2",
-    "autoprefixer": "^10.4.27",
     "core-js": "^3.49.0",
-    "css-loader": "^7.1.4",
-    "esbuild": "^0.27.4",
     "marked": "^17.0.5",
-    "postcss": "^8.5.8",
-    "postcss-loader": "^8.2.1",
-    "regenerator-runtime": "^0.14.1",
-    "style-loader": "^4.0.0",
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
@@ -63,6 +54,14 @@
     "@types/office-js": "^1.0.584",
     "@types/office-runtime": "^1.0.36",
     "@types/supertest": "^7.2.0",
+    "@github/copilot-sdk": "^0.2.0",
+    "@tailwindcss/postcss": "^4.2.2",
+    "autoprefixer": "^10.4.27",
+    "css-loader": "^7.1.4",
+    "esbuild": "^0.27.4",
+    "postcss": "^8.5.8",
+    "postcss-loader": "^8.2.1",
+    "style-loader": "^4.0.0",
     "babel-loader": "^10.1.1",
     "body-parser": "^2.2.2",
     "concurrently": "^9.2.1",
@@ -99,8 +98,8 @@
   },
   "prettier": "office-addin-prettier-config",
   "browserslist": [
-    "last 2 versions",
-    "ie 11"
+    "last 2 Chrome versions",
+    "last 2 Edge versions"
   ],
   "overrides": {
     "tmp": "0.2.5"

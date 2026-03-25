@@ -146,9 +146,16 @@ class BridgeOrchestrator {
 
         // 1. Error forwarding
         if (error) {
-            log(`[BRIDGE] CLI Error: ${JSON.stringify(error)}`);
+            let userError = error;
+            if (typeof error.message === 'string' && error.message.includes('API key is missing')) {
+                userError = {
+                    ...error,
+                    message: `${error.message} (建議：請在終端機執行 'gemini auth' 重新登入本機 Google 帳號)`
+                };
+            }
+            log(`[BRIDGE] CLI Error: ${JSON.stringify(userError)}`);
             if (id && state.idMap.has(id)) {
-                this.sdk.send({ jsonrpc: "2.0", id: state.idMap.get(id), error });
+                this.sdk.send({ jsonrpc: "2.0", id: state.idMap.get(id), error: userError });
                 state.idMap.delete(id);
             }
             return;

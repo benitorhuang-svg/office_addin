@@ -52,48 +52,56 @@ class TaskpaneController {
     const provider = getAuthProvider();
     this.availableModels = ModelManager.getAvailableModels(provider);
 
-    // 1. Render Onboarding
+    // 1. Render Onboarding (Only if needed)
     const onboardingRoot = document.getElementById("onboarding-root");
-    if (onboardingRoot) {
-      onboardingRoot.innerHTML = "";
+    if (onboardingRoot && onboardingRoot.innerHTML === "") {
       onboardingRoot.appendChild(createOnboardingOrganism());
     }
 
-    // 2. Render Header
+    // 2. Render Header (Only if provider changed or title mismatch)
     const headerRoot = document.getElementById("header-root");
     if (headerRoot) {
-      headerRoot.innerHTML = "";
-      headerRoot.appendChild(
-        createHeader({
-          title: title,
-          authProvider: provider,
-          onClearChat: () => this.handleClearChat(),
-        })
-      );
+      if (headerRoot.innerHTML === "" || headerRoot.dataset.provider !== provider) {
+        headerRoot.innerHTML = "";
+        headerRoot.dataset.provider = provider || "";
+        headerRoot.appendChild(
+          createHeader({
+            title: title,
+            authProvider: provider,
+            onClearChat: () => this.handleClearChat(),
+          })
+        );
+      }
     }
 
-    // 3. Render History
+    // 3. Render History (Only if empty)
     const historyRoot = document.getElementById("history-root");
-    if (historyRoot) {
-      historyRoot.innerHTML = "";
+    if (historyRoot && historyRoot.innerHTML === "") {
       historyRoot.appendChild(createHistoryContainer({ authProvider: provider }));
     }
 
-    // 4. Render Prompt Controls
+    // 4. Render/Update Prompt Controls
     const promptRoot = document.getElementById("prompt-root");
     if (promptRoot) {
-      promptRoot.innerHTML = "";
-      promptRoot.appendChild(
-        createPromptGroup({
-          onSend: () => this.handleSendMessage(),
-          availableModels: this.availableModels,
-          selectedModel: getStoredModel() || ModelManager.getDefaultModel(this.availableModels),
-          modelMode: getStoredModelMode(),
-          onModelChange: (m) => this.handleModelChange(m),
-          onModeChange: (mode) => this.handleModeChange(mode),
-          onLogout: () => this.authController?.logout(),
-        })
-      );
+      if (promptRoot.innerHTML === "" || promptRoot.dataset.provider !== provider) {
+         promptRoot.innerHTML = "";
+         promptRoot.dataset.provider = provider || "";
+         promptRoot.appendChild(
+           createPromptGroup({
+             onSend: () => this.handleSendMessage(),
+             availableModels: this.availableModels,
+             selectedModel: getStoredModel() || ModelManager.getDefaultModel(this.availableModels),
+             modelMode: getStoredModelMode(),
+             onModelChange: (m) => this.handleModelChange(m),
+             onModeChange: (mode) => this.handleModeChange(mode),
+             onLogout: () => this.authController?.logout(),
+           })
+         );
+      } else {
+        // Targeted update of simple values
+        const modelSelect = document.getElementById("model-select") as HTMLSelectElement;
+        if (modelSelect) modelSelect.value = getStoredModel() || "";
+      }
     }
   }
 
@@ -240,10 +248,19 @@ class TaskpaneController {
     });
   }
 
+  private activeProvider: string | null = null;
+
   private renderAndRebind() {
-    this.renderAtomicDesign();
-    this.initElements();
-    this.bindAuthButtons();
+    const provider = getAuthProvider();
+    if (this.activeProvider !== provider) {
+      this.activeProvider = provider;
+      this.renderAtomicDesign();
+      this.initElements();
+      this.bindAuthButtons();
+    } else {
+      // Just sync simple values if provider didn't change
+      this.renderAtomicDesign();
+    }
   }
 
   private bindAuthButtons() {

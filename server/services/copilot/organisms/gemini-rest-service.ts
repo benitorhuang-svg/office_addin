@@ -11,7 +11,7 @@ export const GeminiRestService = {
   /**
    * Non-streaming call
    */
-  async send(apiKey: string, model: string, payload: PromptPayload): Promise<string> {
+  async send(apiKey: string, model: string, payload: PromptPayload & { signal?: AbortSignal }): Promise<string> {
     const modelId = model.replace(/^models\//, '');
     const url = `${config.GEMINI_REST_URL}?key=${apiKey}`;
 
@@ -24,6 +24,7 @@ export const GeminiRestService = {
     const response = await fetch(url, {
       method: 'POST',
       headers,
+      signal: payload.signal,
       body: JSON.stringify({
         model: modelId,
         messages: [
@@ -46,7 +47,7 @@ export const GeminiRestService = {
   /**
    * SSE Streaming Generator
    */
-  async *stream(apiKey: string, model: string, payload: PromptPayload): AsyncGenerator<string> {
+  async *stream(apiKey: string, model: string, payload: PromptPayload & { signal?: AbortSignal }): AsyncGenerator<string> {
     const modelId = model.replace(/^models\//, '');
     const url = `${config.GEMINI_REST_URL}?key=${apiKey}`;
 
@@ -59,6 +60,7 @@ export const GeminiRestService = {
     const response = await fetch(url, {
       method: 'POST',
       headers,
+      signal: payload.signal,
       body: JSON.stringify({
         model: modelId,
         messages: [
@@ -72,7 +74,6 @@ export const GeminiRestService = {
     });
 
     if (!response.ok) {
-      // Log and attempt graceful fallback to non-streaming call when provider returns SSE-related errors
       const raw = await response.text().catch(() => '');
       let errorMsg = 'Gemini SSE Error';
       try {
@@ -83,11 +84,9 @@ export const GeminiRestService = {
       }
       console.warn('[Gemini REST] SSE error', response.status, errorMsg);
 
-      // Known provider-side SSE failures (400/provider_error) — fallback to non-streaming send
       if (response.status === 400 || String(errorMsg).toLowerCase().includes('provider_error')) {
         try {
           const nonStreamResult = await this.send(apiKey, model, payload);
-          // yield the whole result as a single chunk to keep the frontend working
           yield nonStreamResult;
           return;
         } catch (err) {

@@ -13,6 +13,7 @@ import { WordIntegrator } from "../molecules/word-integrator";
 export class ChatOrchestrator {
   public static config: ServerConfig = {};
   private isGenerating = false;
+  private lastUpdateTs = 0;
 
   constructor() { }
 
@@ -93,18 +94,31 @@ export class ChatOrchestrator {
           if (chunk.startsWith("[ASK_USER]:")) {
             const parts = chunk.split(":");
             const sessionId = parts[1];
-            const issue = parts.slice(2).join(":"); // Rejoin everything else as the question
+            const issue = parts.slice(2).join(":"); 
             ChatUiHelper.renderAskUser(assistantBubble, sessionId, issue);
             return;
           }
 
           streamBuffer += chunk;
-          ChatUiHelper.updateAssistantBubble(
-            assistantBubble,
-            streamBuffer,
-            (txt: string) => marked.parse(txt) as string
-          );
+          
+          // Throttled UI Update: Only parse markdown every 100ms
+          const now = Date.now();
+          if (!this.lastUpdateTs || now - this.lastUpdateTs > 100) {
+            this.lastUpdateTs = now;
+            ChatUiHelper.updateAssistantBubble(
+              assistantBubble,
+              streamBuffer,
+              (txt: string) => marked.parse(txt) as string
+            );
+          }
         }
+      );
+      
+      // Ensure the final state is rendered
+      ChatUiHelper.updateAssistantBubble(
+        assistantBubble,
+        streamBuffer,
+        (txt: string) => marked.parse(txt) as string
       );
 
       // 7. Post-process response

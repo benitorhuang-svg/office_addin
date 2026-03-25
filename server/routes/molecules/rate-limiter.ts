@@ -13,12 +13,20 @@ interface WindowEntry {
 const store = new Map<string, WindowEntry>();
 
 const WINDOW_MS = 60_000; // 1 minute
+const CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
 
-function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-  return req.ip || req.socket.remoteAddress || 'unknown';
-}
+// Periodically clean up expired entries to prevent memory leak
+const cleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of store) {
+    if (now - entry.windowStart > WINDOW_MS * 2) {
+      store.delete(ip);
+    }
+  }
+}, CLEANUP_INTERVAL_MS);
+cleanupTimer.unref();
+
+import { getClientIp } from '../../atoms/client-ip.js';
 
 export function createRateLimiter(maxRequests?: number) {
   const limit = maxRequests ?? Number(process.env.RATE_LIMIT_RPM || '30');

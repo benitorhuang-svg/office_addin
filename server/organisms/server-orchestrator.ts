@@ -8,6 +8,8 @@ import { resolveHttpsServerOptions } from '../molecules/https-server-options.js'
 import { registerServerCleanup } from '../molecules/server-cleanup.js';
 import { SignalGuardian } from '../molecules/signal-guardian.js';
 import { markStart, markEnd } from '../atoms/latency-tracker.js';
+import { IdleCleaner } from '../services/copilot/molecules/idle-cleaner.js';
+import { stopAllClients, cleanupAllSessions } from '../services/copilot/organisms/sdk-provider.js';
 
 /**
  * Organism: Enhanced Server Orchestrator
@@ -43,6 +45,13 @@ export const ServerOrchestrator = {
           void warmUpClient('copilot_cli');
         });
       }
+
+      // Start background tasks
+      IdleCleaner.startScanning(async (key) => {
+        // key mapping logic or direct cleanup if key is sessionId
+        await cleanupAllSessions(); 
+        await stopAllClients();
+      });
       
       return server;
     } catch (error: unknown) {

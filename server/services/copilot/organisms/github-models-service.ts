@@ -5,13 +5,13 @@ import { SSE_PARSER } from '../molecules/sse-parser.js';
 
 /**
  * Organism: GitHub Models API Service (Inference).
- * Handles direct REST calls to GitHub's hosted models.
+ * Handles direct REST calls to GitHub's hosted models with AbortSignal support.
  */
 export const GitHubModelsService = {
   async send(
     token: string, 
     model: string, 
-    payload: PromptPayload, 
+    payload: PromptPayload & { signal?: AbortSignal }, 
     onChunk?: (chunk: string) => void
   ): Promise<string> {
     const url = config.GITHUB_MODELS_URL;
@@ -21,6 +21,7 @@ export const GitHubModelsService = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
+      signal: payload.signal,
       body: JSON.stringify({
         messages: [
           { role: 'system', content: payload.system },
@@ -46,8 +47,10 @@ export const GitHubModelsService = {
         try {
           const data = JSON.parse(jsonString) as ChatCompletionResponse;
           const delta = data.choices?.[0]?.delta?.content || '';
-          fullText += delta;
-          onChunk(delta);
+          if (delta) {
+            fullText += delta;
+            onChunk(delta);
+          }
         } catch { /* ignore */ }
       }
       return fullText;

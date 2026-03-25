@@ -15,9 +15,8 @@ async function getHttpsOptions() {
 module.exports = async (env, options) => {
   const dev = options.mode === "development";
   const config = {
-    devtool: "source-map",
+    devtool: dev ? "eval-cheap-module-source-map" : false,
     entry: {
-      polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
       taskpane: ["./src/taskpane/organisms/taskpane-entry.ts"],
       commands: "./src/commands/molecules/office-commands.ts",
     },
@@ -77,7 +76,7 @@ module.exports = async (env, options) => {
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: "./src/taskpane/organisms/taskpane.html",
-        chunks: ["polyfill", "taskpane"],
+        chunks: ["taskpane"],
       }),
       new CopyWebpackPlugin({
         patterns: [
@@ -101,7 +100,7 @@ module.exports = async (env, options) => {
       new HtmlWebpackPlugin({
         filename: "commands.html",
         template: "./src/commands/molecules/office-commands.html",
-        chunks: ["polyfill", "commands"],
+        chunks: ["commands"],
       }),
     ],
     devServer: {
@@ -126,7 +125,11 @@ module.exports = async (env, options) => {
             }
           },
           onError: (err, req, res) => {
-            console.log('[Proxy Error]', err.message);
+            console.error('[Proxy Error]', err.message);
+            if (res && !res.headersSent && typeof res.writeHead === 'function') {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Backend server unreachable' }));
+            }
           }
         }
       ],

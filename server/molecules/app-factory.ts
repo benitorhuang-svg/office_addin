@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import authRouter from '../routes/organisms/auth-router.js';
 import apiRouter from '../routes/organisms/api-router.js';
 import { createRateLimiter } from '../routes/molecules/rate-limiter.js';
@@ -19,8 +18,26 @@ export const AppFactory = {
       next();
     });
 
-    app.use(cors({ origin: true, credentials: true }));
-    app.use(bodyParser.json());
+    const ALLOWED_ORIGINS = ['https://localhost:3000'];
+    app.use(cors({ 
+      origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }, 
+      credentials: true 
+    }));
+    app.use(express.json({ limit: '1mb' }));
+    
+    // Security Guard: Prevent MIME sniffing, clickjacking, and XSS
+    app.use((req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'DENY');
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+      next();
+    });
 
     // Health
     app.get('/', (req, res) => {

@@ -16,8 +16,10 @@ interface ManagedSession {
 
 const activeSessions = new Map<string, ManagedSession>();
 
+import crypto from 'crypto';
+
 export function generateSessionId(): string {
-  return `session-${Date.now()}`;
+  return crypto.randomUUID();
 }
 
 export async function createSession(

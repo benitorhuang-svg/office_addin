@@ -41,11 +41,19 @@ export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
 
 
 
-      env: {
-        ...process.env,
-        NODE_NO_WARNINGS: process.env.NODE_NO_WARNINGS || '1',
-        GEMINI_API_KEY: cfg.geminiKey || config.GEMINI_API_KEY || process.env.GEMINI_API_KEY,
-      },
+      env: (() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { GEMINI_API_KEY: _inherited, ...cleanEnv } = process.env;
+        const explicitKey = cfg.geminiKey || config.GEMINI_API_KEY || '';
+        return {
+          ...cleanEnv,
+          NODE_NO_WARNINGS: process.env.NODE_NO_WARNINGS || '1',
+          // Only inject GEMINI_API_KEY if a real key was explicitly provided.
+          // When absent, Gemini CLI uses its native Google OAuth (~/.gemini/auth).
+          // An empty string tricks the CLI into API Key auth mode → instant failure.
+          ...(explicitKey ? { GEMINI_API_KEY: explicitKey } : {}),
+        };
+      })(),
       onListModels: async () => availableModels,
     },
     sessionOptions: {

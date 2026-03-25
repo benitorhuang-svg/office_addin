@@ -5,6 +5,7 @@ import { GeminiRestService } from './gemini-rest-service.js';
 import { GitHubModelsService } from './github-models-service.js';
 import { PromptOrchestrator } from './prompt-orchestrator.js';
 import { FallbackChain } from '../molecules/fallback-chain.js';
+import { sendPromptViaCopilotSdk } from './sdk-provider.js';
 
 export interface CompletionRequest {
   prompt: string;
@@ -21,7 +22,7 @@ export interface CompletionRequest {
  * Updated to use ModernSDKOrchestrator with enhanced error handling and performance
  */
 export const CompletionService = {
-  async execute(req: CompletionRequest, onChunk?: (chunk: string) => void): Promise<string | void> {
+  async execute(req: CompletionRequest, onChunk?: (chunk: string) => void, signal?: AbortSignal): Promise<string | void> {
     const resolvedModel = req.model || config.COPILOT_MODEL;
     const { system, user } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, resolvedModel, req.presetId || 'general');
 
@@ -47,7 +48,6 @@ export const CompletionService = {
       // Branch 3: Modern Copilot SDK (CLI-based / BYOK) with enhanced orchestrator
       const isExplicitGeminiCli = req.authProvider === 'gemini_cli';
       const patToken = config.getServerPatToken();
-      const { sendPromptViaCopilotSdk } = await import('./sdk-provider.js');
 
       const streamedText = await sendPromptViaCopilotSdk(
         user, 
@@ -57,7 +57,8 @@ export const CompletionService = {
         resolvedModel,
         undefined, // azure info
         isExplicitGeminiCli ? 'gemini_cli' : undefined,
-        req.geminiKey
+        req.geminiKey,
+        signal
       );
 
       // Gemini CLI can occasionally finish the SSE path without any user-visible text.
@@ -94,7 +95,6 @@ export const CompletionService = {
             const { system: _s, user: u } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, fallbackModel, req.presetId || 'general');
             // Use Copilot SDK for fallback models
             const patToken = config.getServerPatToken();
-            const { sendPromptViaCopilotSdk } = await import('./sdk-provider.js');
             const text = await sendPromptViaCopilotSdk(u, patToken, onChunk, false, fallbackModel);
             return text;
           });

@@ -1,8 +1,9 @@
 # 001 — 現有架構規格說明 (Current Architecture Specification)
 
-> **版本**: 1.0  
+> **版本**: 1.3  
 > **建立日期**: 2026-04-01  
-> **狀態**: ✅ 已完成  
+> **更新日期**: 2026-03-25  
+> **狀態**: ✅ 已完成 (連線機制驗證完畢)  
 > **分支**: `gemini`
 
 ---
@@ -198,20 +199,293 @@ Onboarding (organism)
   └→ Preview Mode (skip button)
 ```
 
-### 5.3 認證系統
+### 5.3 認證與連線系統 (Authentication & Connection System)
 
-支援 8 種前端認證模式：
+#### 5.3.1 認證架構概覽
 
-| 模式 | Provider | 說明 |
-|------|----------|------|
-| `copilot_cli` | GitHub | 本地 Copilot CLI agent 透過 ACP |
-| `copilot_pat` | GitHub | Personal Access Token |
-| `copilot_oauth` | GitHub | OAuth 授權（模擬） |
-| `gemini_api` | Google | Gemini API Key（樂觀儲存 + 背景驗證） |
-| `gemini_cli` | Google | 本地 Gemini CLI agent 透過 ACP |
-| `azure_byok` | Azure | Bring Your Own Key |
-| `github_models` | GitHub | GitHub Models 推論 API |
-| `preview` | — | 預覽模式（跳過驗證） |
+認證系統橫跨前後端四層：
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Layer 1: UI 入口（Onboarding Accordion）                            │
+│  src/taskpane/components/organisms/Onboarding.ts                    │
+│  ├→ Google Gemini 手風琴：Gemini CLI / Gemini API Key              │
+│  ├→ GitHub Copilot 手風琴：Copilot CLI / PAT / OAuth               │
+│  ├→ Azure OpenAI 手風琴：BYOK (Key + Endpoint + Deployment)        │
+│  └→ Preview Mode (跳過驗證)                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 2: Auth Orchestrator（前端協調器）                             │
+│  src/taskpane/services/auth/orchestrator.ts                         │
+│  ├→ AuthOrchestrator：統一管理所有 provider 的狀態切換               │
+│  ├→ GitHubProvider：PAT 輸入、OAuth Dialog、ACP 驗證               │
+│  ├→ GeminiProvider：API Key 樂觀儲存 + CLI ACP 驗證                │
+│  └→ AuthUIBridge：將 auth 事件轉為 UI 狀態更新                     │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 3: 驗證 API（後端路由）                                       │
+│  server/routes/organisms/api-router.ts                               │
+│  ├→ POST /api/acp/validate    — ACP JSON-RPC Ping 驗證              │
+│  ├→ POST /api/gemini/validate — Gemini REST API Key 驗證            │
+│  └→ GET  /auth/github         — GitHub OAuth 重導向 + callback      │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 4: SDK Client Lifecycle（後端服務）                            │
+│  server/services/copilot/molecules/client-manager.ts                 │
+│  ├→ getOrCreateClient()  — 連線池管理（30min TTL, 去重並行建立）     │
+│  ├→ ACP Handshake        — CopilotClient.start() + ping health-check│
+│  └→ cleanupAll()         — 信號守衛觸發的全域清理                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 5.3.2 支援的 8 種認證模式
+
+| # | 模式 | Provider | 認證方式 | 需要使用者輸入 | 後端驗證端點 |
+|---|------|----------|----------|----------------|--------------|
+| 1 | `copilot_cli` | GitHub | 本地 Copilot CLI Agent (ACP stdio) | ❌ 自動偵測 | `POST /api/acp/validate` |
+| 2 | `copilot_pat` | GitHub | Personal Access Token 手動輸入 | ✅ PAT Token | `POST /api/acp/validate` |
+| 3 | `copilot_oauth` | GitHub | OAuth 2.0 授權碼流程（目前模擬） | ✅ 授權按鈕 | `GET /auth/github` |
+| 4 | `gemini_api` | Google | Gemini REST API Key | ✅ API Key | `POST /api/gemini/validate` |
+| 5 | `gemini_cli` | Google | 本地 Gemini CLI Agent (ACP stdio) | ❌ 本機 Google OAuth | `POST /api/acp/validate` |
+| 6 | `azure_byok` | Azure | Azure OpenAI BYOK (Key+Endpoint+Deployment) | ✅ 三個欄位 | `POST /api/acp/validate` |
+| 7 | `github_models` | GitHub | GitHub Models 推論 API | ✅ PAT Token | `POST /api/acp/validate` |
+| 8 | `preview` | — | 跳過驗證（預覽模式） | ❌ | 無 |
+
+#### 5.3.3 登入連線流程詳解
+
+##### A. Copilot CLI 連線流程
+
+```mermaid
+sequenceDiagram
+    participant U as 使用者
+    participant UI as Onboarding UI
+    participant AO as AuthOrchestrator
+    participant API as POST /api/acp/validate
+    participant OR as OptionResolver
+    participant CM as ClientManager
+    participant CLI as copilot CLI Agent
+
+    U->>UI: 點擊 "GitHub CLI 連線"
+    UI->>AO: cliConnectBtn click
+    AO->>API: validateACPToken("copilot", "")
+    API->>OR: resolveACPOptions({method:"copilot_cli"})
+    OR-->>API: {clientOptions, sessionOptions}
+    API->>CM: getOrCreateClient("copilot_cli", opts)
+    CM->>CLI: spawn copilot --acp -y (stdio)
+    CLI-->>CM: ACP handshake complete
+    CM-->>API: CopilotClient (ready)
+    API->>CLI: client.ping("health-check") [15s timeout]
+    CLI-->>API: pong
+    API-->>AO: {status:200, detail:"copilot session is valid"}
+    AO->>AO: setAuthProvider("copilot_cli")
+    AO->>UI: showSuccess("CLI", "GitHub CLI session detected!")
+```
+
+**關鍵實作細節**：
+- CLI agent 透過 `@github/copilot-sdk` 的 `CopilotClient` 以 **stdio** 模式啟動
+- 本地端不需要任何 Token — 使用已登入的 `gh` CLI session
+- 開發模式 (`AUTO_CONNECT_CLI=true`) 會在載入後 500ms **自動觸發**此流程
+
+##### B. Gemini CLI 連線流程
+
+```mermaid
+sequenceDiagram
+    participant U as 使用者
+    participant UI as Onboarding UI
+    participant AO as AuthOrchestrator
+    participant GP as GeminiProvider
+    participant API as POST /api/acp/validate
+    participant OR as OptionResolver
+    participant CM as ClientManager
+    participant WR as gemini-wrapper-v2.js
+    participant CLI as gemini --acp -y
+
+    U->>UI: 點擊 "Gemini CLI 連線"
+    UI->>AO: geminiCliConnectBtn click
+    AO->>GP: handleCliConnect()
+    GP->>API: validateACPToken("gemini", "")
+    API->>OR: resolveACPOptions({method:"gemini_cli"})
+    OR-->>API: {clientOptions: {cliPath: node, cliArgs: [wrapper-v2.js]}}
+    API->>CM: getOrCreateClient("gemini_cli", opts)
+    CM->>WR: spawn node gemini-wrapper-v2.js (stdio)
+    WR->>CLI: spawn gemini --acp -y (child stdio)
+    CLI-->>WR: ACP v1 initialize → READY
+    WR-->>CM: ACP v2/v3 handshake bridged
+    CM-->>API: CopilotClient (ready)
+    API->>WR: client.ping("health-check")
+    WR-->>API: pong (protocolVersion: 3)
+    API-->>GP: {status:200, detail:"gemini session is valid"}
+    GP->>GP: clearStoredGeminiToken() + setAuthProvider("gemini_cli")
+    GP->>UI: showSuccess("Gemini CLI", "active")
+```
+
+**關鍵實作細節**：
+- Gemini CLI 使用的是**本機 Google OAuth 憑證** (`~/.gemini/auth`)，**不需要** `GEMINI_API_KEY`
+- 因為 Copilot SDK 使用 ACP v2/v3 而 Gemini CLI 使用 ACP v1，中間透過 **Bridge Wrapper** (`scripts/gemini-wrapper-v2.js`) 進行協定轉譯
+- Wrapper 將 SDK 的 `session.create` 轉為 CLI 的 `session/new`，串流 `session/update` 轉為 `assistant.message_delta`
+- `GEMINI_API_KEY` 環境變數會從子進程 env 中**排除**（空值會誤導 CLI 進入 API Key 認證模式）
+
+##### C. Gemini API Key 連線流程
+
+```mermaid
+sequenceDiagram
+    participant U as 使用者
+    participant UI as Onboarding UI
+    participant GP as GeminiProvider
+    participant LS as localStorage
+    participant API as POST /api/gemini/validate
+    participant GRS as GeminiRestService
+
+    U->>UI: 輸入 Gemini API Key + 點擊連線
+    UI->>GP: handleConnect("gemini-input")
+    GP->>LS: setStoredGeminiToken(key) [樂觀儲存]
+    GP->>LS: setAuthProvider("gemini_api")
+    GP->>UI: showSuccess("Gemini", "key saved, validating...")
+    Note over GP: 背景非阻塞驗證
+    GP->>API: validateGeminiApiKey(key)
+    API->>GRS: GeminiRestService.validate(apiKey)
+    GRS->>GRS: POST generativelanguage.googleapis.com/models
+    GRS-->>API: OK / 401
+    API-->>GP: {status:200} or {status:401}
+    GP->>UI: 更新驗證結果狀態
+```
+
+**關鍵實作細節**：
+- 採用**樂觀儲存**策略 — 先存 token + 切換 UI，背景驗證不阻塞使用者體驗
+- 驗證失敗時僅更新狀態文字，不清除已儲存的 key
+- API Key 透過 `X-Gemini-Key` header 傳至後端
+
+##### D. Azure OpenAI BYOK 連線流程
+
+```
+使用者輸入 (Key + Endpoint + Deployment)
+  → AuthOrchestrator.azureConnectBtn click
+    → validateACPToken("azure", key, endpoint, deployment)
+      → POST /api/acp/validate {method:"azure", token:key, endpoint, deployment}
+        → resolveACPOptions({method:"azure_byok", azure:{apiKey, endpoint, deployment}})
+          → Client: CopilotClient({provider:{type:"azure", baseUrl, apiKey, azure:{apiVersion}}})
+            → client.start() + client.ping()
+              → ✅ setStoredAzureConfig(key, endpoint, deployment)
+              → ✅ setAuthProvider("azure_byok")
+```
+
+##### E. GitHub OAuth 流程（模擬）
+
+```
+使用者點擊 "GitHub OAuth"
+  → GitHubProvider.handleOAuthConnect()
+    → Office.context.ui.displayDialogAsync(taskpane.html?oauth=github-preview)
+      → 對話框渲染預覽狀態
+      → 2 秒後自動關閉
+      → completeAuth("gho_simulated_oauth_token_for_preview")
+        → validateACPToken("copilot", fakeToken)
+          → setStoredToken(token) + showSuccess()
+```
+
+> ⚠️ OAuth 目前為**模擬流程**。真實 OAuth 需設定 `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET`，並經由 `GET /auth/github` → GitHub 授權頁 → `GET /auth/callback` 完成 code-for-token 交換。
+
+##### F. Preview Mode（預覽模式）
+
+```
+使用者點擊 "跳過登入"
+  → setAuthProvider("preview")
+    → showSuccess("Preview", "Preview mode active.")
+      → 進入主介面，但 AI 請求可能受限
+```
+
+#### 5.3.4 ACP 驗證協定 (POST /api/acp/validate)
+
+統一驗證端點，支援三種 `method`：`copilot` / `gemini` / `azure`
+
+```typescript
+// 前端呼叫
+validateACPToken(method, token?, endpoint?, deployment?)
+
+// 後端處理流程
+1. 接收 { method, token, endpoint, deployment }
+2. 映射 method → ACPConnectionMethod:
+   "azure"   → "azure_byok"
+   "gemini"  → "gemini_cli"
+   "copilot" → "copilot_cli"
+3. resolveACPOptions() → 建構 clientOptions + sessionOptions
+4. getOrCreateClient() → 從連線池取得或建立新 CopilotClient
+5. client.ping("health-check") [15 秒逾時]
+6. 成功 → {status:200, detail:"...session is valid via ACP"}
+7. 失敗 → {status:401, detail:"Invalid credentials or ACP failure"}
+```
+
+#### 5.3.5 Session 恢復機制
+
+應用程式啟動時的認證狀態恢復邏輯：
+
+```typescript
+// AuthOrchestrator.initialize()
+if (hasStoredAuthState()) {
+  // localStorage 中有已存的 provider
+  const provider = getAuthProvider();
+
+  // 特殊處理：gemini_cli 不需要保留 geminiToken
+  if (provider === "gemini_cli") clearStoredGeminiToken();
+
+  // 特殊處理：gemini_api 需要有效 key
+  if (provider === "gemini_api" && !getStoredGeminiToken()) {
+    setAuthProvider("preview");  // 降級為預覽模式
+  }
+
+  // 直接恢復 UI 狀態（不重新驗證）
+  showSuccess(provider);
+} else {
+  showOnboarding();  // 顯示登入畫面
+}
+```
+
+> 注意：Session 恢復時**不會重新驗證** token。這意味著過期的 token 會在首次 AI 請求時才被發現。
+
+#### 5.3.6 前端儲存結構 (localStorage)
+
+| Key | 儲存內容 | 寫入時機 |
+|-----|---------|---------|
+| `copilot_token` | GitHub PAT / OAuth token | PAT 輸入、OAuth callback |
+| `gemini_token` | Gemini API Key | API Key 輸入 |
+| `auth_provider` | 目前認證模式 (string) | 任何登入成功後 |
+| `azure_config` | `{key, endpoint, deployment}` JSON | Azure BYOK 驗證成功後 |
+| `active_model` | 目前選擇的 AI 模型 | 模型切換時 |
+| `model_mode` | `"auto"` / `"manual"` | 模式切換時 |
+| `selected_preset` | 寫作預設 ID | Preset 切換時 |
+
+#### 5.3.7 後端認證路由 (/auth)
+
+| 端點 | 方法 | 用途 | 關鍵實作 |
+|------|------|------|---------|
+| `/auth/github` | GET | OAuth 授權入口 | 重導向至 `github.com/login/oauth/authorize` |
+| `/auth/callback` | GET | OAuth callback | 交換 code → access_token，存入 SessionStore |
+| `/auth/session/:id` | GET | Token 輪詢 | 前端 polling 取回 OAuth token |
+
+**SessionStore** (`server/routes/molecules/session-store.ts`)：
+- 記憶體 Map，60 秒自動過期
+- 用於 OAuth 流程中瀏覽器 → taskpane 的 token 傳遞
+
+#### 5.3.8 多層級環境變數隔離 (Multi-layer Env Isolation)
+
+為確保 Gemini CLI 優先使用本機 OAuth 認證而非 API Key，系統實施了兩層強制隔離：
+
+1.  **第一層 (Server Level)**：在 `gemini-cli-options.ts` 中，構造子進程 `env` 時，顯式將 `GEMINI_API_KEY` 從 `process.env` 中解構並移除。
+2.  **第二層 (Bridge Level)**：在 `scripts/gemini-wrapper/organisms/cli-adapter.js` 中，再次對 `spawn` 環境執行過濾。
+
+> [!IMPORTANT]
+> 此機制是為了解決 `gemini-cli v0.34+` 的行為：只要 `GEMINI_API_KEY` 存在於環境變數中（即使是空字串），CLI 就會嘗試 API Key 認證模式而導致連線失敗。
+
+#### 5.3.9 SDK 補丁系統 (Atomic Patching System)
+
+系統前端啟動前會套用由 `scripts/patch-copilot-sdk.mjs` 管理的原子化補丁，修復 Windows 下的 stdio 阻塞、ESM 相容性、以及 Gemini 參數衝突等原生 SDK 缺陷。
+
+| 補丁名稱 | 修復目標 | 關鍵原理 |
+|----------|----------|----------|
+| `fix-spawn-windows` | Windows 路徑相容性 | 將 `spawn` 改為 Windows 相容模式，防止 stdio 阻塞。 |
+| `fix-gemini-unsupported-flags` | 參數相容性 | 移除 SDK 硬編碼的 `--experimental-acp` 等舊 flag。 |
+| `fix-exists-sync-check` | 啟動檢查 | 修復 Windows 下對 `cliPath` 存在性檢查失敗的問題。 |
+| `fix-mutual-exclusive-check` | 認證邏輯 | 允許在具備本地 CLI 憑證時也定義 API Key，防止內部過度校驗。 |
+
+#### 5.3.10 Bridge 轉譯深度詳解 (Protocol V3 ↔ V1)
+
+`gemini-wrapper-v2.js` 負責將 SDK 的 V2/V3 協定對映至 CLI 的 V1 協定，並處理串流轉換與權限自動核准。它維護了一個 `cliId` 與 `sdkId` 的映射表，確保非同步訊息能正確路由回對應的 Session。
 
 ### 5.4 聊天流程
 
@@ -244,17 +518,11 @@ Onboarding (organism)
 
 ## 6. 開發工具與腳本 (Dev Tooling)
 
-### 6.1 SDK 補丁系統
+### 6.1 自動化熱重載 (Hot Reloading)
 
-```
-scripts/patch-copilot-sdk.mjs
-  ├→ atoms/fix-exists-sync-check.mjs
-  ├→ atoms/fix-gemini-unsupported-flags.mjs
-  ├→ atoms/fix-import-meta-resolve.mjs
-  ├→ atoms/fix-jsonrpc-path.mjs
-  ├→ atoms/fix-mutual-exclusive-check.mjs
-  └→ atoms/fix-spawn-windows.mjs
-```
+- **後端**: 使用 `tsx watch` 監控 `server/` 目錄，變更後自動重啟。
+- **前端**: Webpack Dev Server 提供 HMR。
+- **Office**: Office.js 自動偵測伺服器重啟並維持連線。
 
 ### 6.2 建置配置
 
@@ -332,8 +600,16 @@ flowchart LR
 - [x] 互動式提問 (Rich UI Ask User) — 下拉選單 + 多選框
 - [x] 錯誤復原機制 (Retry Logic) — 氣泡內重新傳送按鈕
 - [x] 組件原子化 (Atomic Design Refinement)
+- [x] Gemini Bridge (ACP to NDJSON, 解決 API Key 衝突 Bug)
 - [x] Gemini REST API 整合（SSE 串流 + 非串流降級）
 - [x] GitHub Models REST 整合
+- [x] 官方 Copilot CLI 串聯 (Verified with gh auth login)
+- [x] 資源釋放機制 (AbortSignal 全鏈路中斷支持)
+- [x] 長文插入卡頓修復 (Word 串流批次交易化)
+- [x] 連線池精確清理 (Surgical cleanup during retry)
+- [x] 連線錯誤攔截機制 (提供 `gemini auth` 建議)
+- [x] 安全性加固 (Session UUID + Security Headers)
+- [x] 異步計時器優化 (`timer.unref()` 處理)
 - [x] 多 Office Host 支援 (Word/Excel/PowerPoint)
 - [x] 自動伺服器探索 (HTTPS/HTTP port 4000/3000)
 

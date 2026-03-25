@@ -43,8 +43,9 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       streamingRes.socket?.setNoDelay?.(true);
 
       // Send initial spacer and padding to open the stream and bypass buffering
+      // Initial padding: small enough to not delay, large enough to flush some transparent proxies
       res.write('data: {"text": ""}\n\n');
-      res.write(': ' + ' '.repeat(2048) + '\n\n'); // SSE comment padding
+      res.write(': ' + ' '.repeat(256) + '\n\n'); 
 
       const onChunk = (chunk: string) => {
         if (!firstTokenTracked) {
@@ -57,6 +58,15 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
       };
 
       markStart(`${requestId}:first-token`);
+      const abortController = new AbortController();
+      let isClientConnected = true;
+
+      req.on('close', () => {
+        isClientConnected = false;
+        abortController.abort();
+        console.log(`[API Handler] Client disconnected (ID: ${requestId}). Aborting upstream AI for efficiency.`);
+      });
+
       await CompletionService.execute({
         prompt,
         officeContext,
@@ -65,12 +75,19 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
         stream: true,
         authProvider,
         geminiKey
-      }, onChunk);
+      }, (chunk: string) => {
+        if (!isClientConnected) return; // Drop chunk if client is gone
+        onChunk(chunk);
+      }, abortController.signal);
 
-      res.write('data: [DONE]\n\n');
-      const streamLatency = markEnd(requestId);
-      logCompletion(reqLog, { latencyMs: streamLatency, status: 'ok', chunks: chunkCount });
-      return res.end();
+      if (isClientConnected) {
+        res.write('data: [DONE]\n\n');
+        const streamLatency = markEnd(requestId);
+        logCompletion(reqLog, { latencyMs: streamLatency, status: 'ok', chunks: chunkCount });
+        return res.end();
+      } else {
+        return; // Signal was aborted, resources handled
+      }
     } else {
       // Non-streaming
       const rawText = await CompletionService.execute({
@@ -98,15 +115,19 @@ export const handleCopilotRequest = async (req: Request, res: Response) => {
     }
   } catch (err: unknown) {
     const error = err as Error & { status?: number; detail?: string };
+    const isProduction = process.env.NODE_ENV === 'production';
+    const detail = isProduction ? 'An internal error occurred' : (error.detail || error.message);
+    
     console.error(`[Copilot Handler Error]`, error);
     logCompletion(reqLog, { latencyMs: markEnd(requestId), status: 'error', error: error.message });
     if (!res.headersSent) {
       return res.status(error.status || 500).json({ 
         error: 'provider_error', 
-        detail: error.detail || error.message 
+        detail: detail 
       });
     }
-    res.write(`data: ${JSON.stringify({ error: 'provider_error', detail: error.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: 'provider_error', detail: detail })}\n\n`);
+    res.write('data: [DONE]\n\n');
     res.end();
   }
 };

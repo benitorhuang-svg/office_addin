@@ -63,6 +63,7 @@ export const IdleCleaner = {
         }
       }
     }, SCAN_INTERVAL_MS);
+    scanTimer.unref();
   },
 
   /** Stop periodic scanning */

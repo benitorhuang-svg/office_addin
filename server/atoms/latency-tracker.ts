@@ -4,8 +4,14 @@
  */
 
 const marks = new Map<string, number>();
+const MAX_MARKS = 1000;
 
 export function markStart(label: string): void {
+  // Safety: prevent unbounded growth
+  if (marks.size > MAX_MARKS) {
+    const oldest = marks.keys().next().value;
+    if (oldest) marks.delete(oldest);
+  }
   marks.set(label, performance.now());
 }
 
