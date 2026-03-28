@@ -1,0 +1,36 @@
+/* 
+ * Nexus UI: Atoms - Visibility & Contrast
+ * Controlled optical state management.
+ */
+.nexus-none { display: none !important; }
+.nexus-hidden { display: none !important; }
+.nexus-block { display: block !important; }
+.nexus-inline-block { display: inline-block !important; }
+.nexus-visible { display: flex !important; }
+
+.nexus-opacity-0 { opacity: 0; }
+.nexus-opacity-1 { opacity: 0.01; }
+.nexus-opacity-3 { opacity: 0.03; }
+.nexus-opacity-5 { opacity: 0.05; }
+.nexus-opacity-10 { opacity: 0.1; }
+.nexus-opacity-20 { opacity: 0.2; }
+.nexus-opacity-40 { opacity: 0.4; }
+.nexus-opacity-50 { opacity: 0.5; }
+.nexus-opacity-60 { opacity: 0.6; }
+.nexus-opacity-80 { opacity: 0.8; }
+.nexus-opacity-90 { opacity: 0.9; }
+.nexus-opacity-100 { opacity: 1; }
+
+.nexus-overflow-hidden { overflow: hidden; }
+.nexus-overflow-y-auto { overflow-y: auto; }
+.nexus-overflow-x-auto { overflow-x: auto; }
+
+.nexus-blur-1 { filter: blur(4px); }
+.nexus-blur-2 { filter: blur(8px); }
+.nexus-blur-10 { filter: blur(10px); }
+.nexus-blur-20 { filter: blur(20px); }
+.nexus-blur-32 { filter: blur(32px); }
+.nexus-blur-48 { filter: blur(48px); }
+.nexus-blur-60 { filter: blur(60px); }
+.nexus-backdrop-blur-3xl { backdrop-filter: blur(64px); }
+.nexus-backdrop-blur-xl { backdrop-filter: blur(24px); }

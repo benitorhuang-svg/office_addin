@@ -1,0 +1,12 @@
+python-pptx
+openpyxl
+pandas
+numpy
+matplotlib
+seaborn
+python-docx
+networkx
+fastapi
+scipy
+statsmodels
+uvicorn

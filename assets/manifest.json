@@ -1,0 +1,29 @@
+{
+  "name": "Nexus Center Strategic Hub",
+  "short_name": "Nexus",
+  "description": "Industrial Intelligence & Workspace Connectivity Gateway",
+  "start_url": "/taskpane.html",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#020617",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "assets/icon-16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-80.png",
+      "sizes": "80x80",
+      "type": "image/png"
+    }
+  ],
+  "orientation": "any",
+  "scope": "/"
+}

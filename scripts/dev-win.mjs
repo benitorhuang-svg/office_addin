@@ -1,10 +1,9 @@
 import { spawn, execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import readline from 'node:readline';
 
-const require = createRequire(import.meta.url);
+// const require = createRequire(import.meta.url);
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -62,7 +61,7 @@ function shutdown() {
   console.log('\n[Dev Win] Shutting down all processes...');
   
   // Kill all child processes using Windows taskkill
-  processes.forEach(({ child, label, pid }) => {
+  processes.forEach(({ label, pid }) => {
     if (pid) {
       console.log(`[Dev Win] Stopping ${label} (PID: ${pid})...`);
       killProcessTree(pid);
@@ -70,7 +69,7 @@ function shutdown() {
   });
   
   // Also kill any remaining processes on our ports
-  const ports = [3000, 4000, 4001];
+  const ports = [3000, 3001, 4000, 4001];
   ports.forEach(port => {
     try {
       const result = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: 'pipe' });
@@ -82,7 +81,7 @@ function shutdown() {
           killProcessTree(pid);
         }
       });
-    } catch (error) {
+    } catch (_error) {
       // Ignore errors - port might not be in use
     }
   });
@@ -93,23 +92,28 @@ function shutdown() {
 
 // ─── Pre-emptive Cleanup ───────────────────────────────────────
 function cleanupPorts(ports) {
-  console.log(`[Dev Win] Pre-emptive cleanup of ports: ${ports.join(', ')}...`);
-  ports.forEach(port => {
+  console.log(`[Dev Win] Auditing ports: ${ports.join(', ')}...`);
+  for (const port of ports) {
     try {
       const result = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: 'pipe' });
       const lines = result.split('\n').filter(line => line.includes('LISTENING'));
-      lines.forEach(line => {
+      
+      for (const line of lines) {
         const parts = line.trim().split(/\s+/);
         const pid = parts[parts.length - 1];
+        
         if (pid && !isNaN(pid) && parseInt(pid) !== process.pid) {
-          killProcessTree(pid);
+          console.log(`[Dev Win] Terminating mystery process [PID: ${pid}] on Port [${port}]...`);
+          try {
+            execSync(`taskkill /F /PID ${pid} /T`, { stdio: 'ignore' });
+          } catch (_e) { /* already gone */ }
         }
-      });
-    } catch (e) {}
-  });
+      }
+    } catch (_e) { /* no process on port */ }
+  }
 }
 
-cleanupPorts([3000, 4000, 4001]);
+cleanupPorts([3001, 3000, 4000, 4001]);
 
 // ─── Start all processes ───────────────────────────────────────
 startProcess('npm', ['run', 'dev-server'], 'webpack-dev-server');
@@ -129,5 +133,5 @@ if (process.platform === 'win32') {
 }
 
 console.log('[Dev Win] All processes started. Press Ctrl+C to stop.');
-console.log('[Dev Win] Frontend: https://localhost:3000');
-console.log('[Dev Win] API: https://localhost:4000');
+console.log('[Dev Win] Unified Entry (Port 4000): https://localhost:4000/taskpane.html');
+console.log('[Dev Win] (Proxies frontend assets from Port 3001 in dev mode)');

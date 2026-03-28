@@ -1,0 +1,47 @@
+/* 
+ * Nexus UI: Atoms - Effects
+ */
+
+.nexus-bg-gradient-shine { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent); }
+.nexus-selection-blue::selection { background-color: rgba(37, 99, 235, 0.1); }
+.nexus-opacity-6 { opacity: 0.06; }
+.nexus-opacity-7 { opacity: 0.07; }
+.nexus-shadow-red { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+.nexus-shadow-amber { box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+.nexus-shadow-leaf-green { box-shadow: 0 0 25px rgba(113, 131, 85, 0.6); }
+.nexus-shadow-emerald { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+.nexus-grayscale { filter: grayscale(1); }
+.nexus-opacity-40 { opacity: 0.4; }
+.nexus-opacity-20 { opacity: 0.2; }
+.nexus-opacity-5 { opacity: 0.05; }
+.nexus-opacity-50 { opacity: 0.5; }
+.nexus-opacity-10 { opacity: 0.1; }
+.nexus-blur-3xl { filter: blur(64px); }
+.nexus-border-b-2 { border-bottom-width: 2px; }
+
+/* Transitions */
+.nexus-transition-all { transition: all 0.3s var(--ease-in-out); }
+.nexus-transition-colors { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+.nexus-duration-300 { transition-duration: 300ms; }
+.nexus-duration-500 { transition-duration: 500ms; }
+.nexus-duration-700 { transition-duration: 700ms; }
+.nexus-duration-1000 { transition-duration: 1000ms; }
+
+/* Backdrop & Blur */
+.nexus-backdrop-blur-2xl { backdrop-filter: blur(40px); }
+.nexus-backdrop-blur-3xl { backdrop-filter: blur(64px); }
+.nexus-blur-2xl { filter: blur(40px); }
+
+/* Interaction States (Standalone Atoms) */
+.nexus-active-scale-95:active { transform: scale(0.95); }
+.nexus-active-scale-99:active { transform: scale(0.99); }
+.nexus-hover-scale-101:hover { transform: scale(1.01); }
+
+/* Disabled States */
+.nexus-disabled-opacity-50:disabled { opacity: 0.5; }
+.nexus-disabled-cursor-not-allowed:disabled { cursor: not-allowed; }
+
+/* Shadows */
+.nexus-shadow-lg { box-shadow: var(--shadow-lg); }
+.nexus-shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+.nexus-shadow-ask-user { box-shadow: 0 25px 60px -15px rgba(37, 99, 235, 0.15); }

@@ -1,0 +1,79 @@
+/* 
+ * Nexus UI: Atoms - Colors
+ */
+
+/* Text Colors */
+.nexus-text-white { color: var(--color-white); }
+.nexus-text-slate-900 { color: var(--color-slate-900); }
+.nexus-text-slate-200 { color: var(--color-slate-200); }
+.nexus-text-slate-300 { color: var(--color-slate-300); }
+.nexus-text-blue-400 { color: #60a5fa; }
+.nexus-text-blue-500 { color: var(--color-brand-blue); }
+.nexus-text-red-400 { color: #f87171; }
+.nexus-text-red-500 { color: #ef4444; }
+.nexus-text-emerald-400 { color: #34d399; }
+.nexus-text-leaf-green { color: #718355; }
+.nexus-text-purple-600 { color: #9333ea; }
+.nexus-text-amber-500 { color: #f59e0b; }
+.nexus-text-violet-500 { color: #8b5cf6; }
+.nexus-text-emerald-500 { color: #10b981; }
+.nexus-bg-brand-primary { background-color: var(--color-brand-blue); }
+.nexus-bg-brand-secondary { background-color: #1e40af; }
+.nexus-shadow-brand-primary { box-shadow: 0 10px 40px rgba(37, 99, 235, 0.2); }
+.nexus-bg-nexus-depth { background-color: #f8fafc; }
+.nexus-w-28 { width: 7rem; }
+.nexus-h-28 { height: 7rem; }
+.nexus-blur-60 { filter: blur(60px); }
+.nexus-rounded-3rem { border-radius: 3rem; }
+
+/* Background Colors */
+.nexus-bg-white { background-color: var(--color-white); }
+.nexus-bg-slate-50 { background-color: var(--color-slate-50); }
+.nexus-bg-slate-100 { background-color: var(--color-slate-100); }
+.nexus-bg-blue-50 { background-color: #eff6ff; }
+.nexus-bg-blue-500 { background-color: var(--color-brand-blue); }
+.nexus-bg-red-500 { background-color: #ef4444; }
+.nexus-bg-emerald-500 { background-color: #10b981; }
+.nexus-bg-blue-600 { background-color: #2563eb; }
+.nexus-bg-emerald-600 { background-color: #059669; }
+.nexus-bg-violet-600 { background-color: #7c3aed; }
+.nexus-bg-slate-800 { background-color: #1e293b; }
+.nexus-bg-slate-900 { background-color: #0f172a; }
+.nexus-bg-blue-50-50 { background-color: rgba(239, 246, 255, 0.5); }
+.nexus-bg-slate-50-50 { background-color: rgba(248, 250, 252, 0.5); }
+.nexus-bg-leaf-green { background-color: #718355; }
+.nexus-bg-white-60 { background-color: rgba(255, 255, 255, 0.6); }
+.nexus-bg-white-80 { background-color: rgba(255, 255, 255, 0.8); }
+
+/* Border Colors */
+.nexus-border-slate-100 { border-color: var(--color-slate-100); }
+.nexus-border-slate-200 { border-color: var(--color-slate-200); }
+.nexus-border-blue-200 { border-color: #bfdbfe; }
+.nexus-border-white-5 { border-color: rgba(255, 255, 255, 0.05); }
+.nexus-border-t { border-top: 1px solid var(--color-nexus-border); }
+.nexus-border-leaf-green-20 { border-color: rgba(113, 131, 85, 0.2); }
+
+/* States (Hover/Focus) */
+.nexus-hover-bg-slate-50:hover { background-color: var(--color-slate-50); }
+.nexus-hover-bg-slate-100:hover { background-color: var(--color-slate-100); }
+.nexus-hover-bg-slate-200:hover { background-color: var(--color-slate-200); }
+.nexus-hover-bg-white:hover { background-color: var(--color-white); }
+.nexus-hover-bg-brand-secondary:hover { background-color: var(--color-brand-secondary); }
+.nexus-hover-text-slate-900:hover { color: var(--color-slate-900); }
+.nexus-hover-text-blue-500:hover { color: var(--color-brand-blue); }
+.nexus-hover-text-blue-600:hover { color: #2563eb; }
+.nexus-hover-text-red-400:hover { color: #f87171; }
+
+.nexus-focus-within-bg-white:focus-within { background-color: var(--color-white); }
+.nexus-focus-within-border-blue-500:focus-within { border-color: var(--color-brand-blue); }
+
+/* Opacity Variants */
+.nexus-bg-white-20 { background-color: rgba(255, 255, 255, 0.2); }
+.nexus-bg-white-30 { background-color: rgba(255, 255, 255, 0.3); }
+.nexus-bg-white-80 { background-color: rgba(255, 255, 255, 0.8); }
+.nexus-bg-white-90 { background-color: rgba(255, 255, 255, 0.9); }
+.nexus-placeholder-white-20::placeholder { color: rgba(255, 255, 255, 0.2); }
+
+/* Group Hover Patterns */
+.nexus-group:hover .nexus-group-hover-text-blue-600 { color: #2563eb; }
+.nexus-group:hover .nexus-group-hover-text-blue-400 { color: #60a5fa; }

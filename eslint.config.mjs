@@ -8,21 +8,43 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "dist-server/**",
       "node_modules/**",
-      "**/*.js",
-      "**/*.mjs",
-      "scripts/**",
-      "server/examples/**",
       "webpack.config.js",
-      "server/tests/**",
+      "**/*.docx",
     ],
+  },
+
+  // ─── JavaScript / MJS / CJS scripts configuration ─────
+  {
+    files: ["**/*.js", "**/*.mjs", "**/*.cjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+        ...globals.commonjs, // Important for .cjs
+      },
+    },
+    rules: {
+      "no-undef": "error",
+      "no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "no-empty": ["error", { allowEmptyCatch: true }],
+    },
   },
 
   // ─── Base JS recommended rules ────────────────────────
   js.configs.recommended,
 
-  // ─── TypeScript recommended (type-checked) ────────────
-  ...tseslint.configs.recommended,
+  // ─── TypeScript recommended (only for TS files) ───────
+  ...tseslint.configs.recommended.map((config) => ({ ...config, files: ["**/*.ts", "**/*.tsx"] })),
 
   // ─── Global settings for all TS files ─────────────────
   {
@@ -60,7 +82,7 @@ export default tseslint.config(
 
   // ─── Server-specific overrides ────────────────────────
   {
-    files: ["server/**/*.ts"],
+    files: ["backend/**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -75,7 +97,7 @@ export default tseslint.config(
 
   // ─── Frontend-specific overrides ──────────────────────
   {
-    files: ["src/**/*.ts"],
+    files: ["client/**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.browser,

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "esModuleInterop": true,
+    "types": ["node", "express", "cors"],
+    "typeRoots": ["../node_modules/@types"],
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "outDir": "../dist-server"
+  },
+  "include": ["**/*.ts", "**/*.d.ts"]
+}

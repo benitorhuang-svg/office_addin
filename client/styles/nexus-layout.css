@@ -1,0 +1,85 @@
+/**
+ * Nexus UI: Layout (Atoms & Template Styles)
+ * Clean, high-fidelity slot definitions following Atomic Design.
+ */
+
+:root {
+  --slot-header-height: 52px;
+}
+
+.nexus-layout-root {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-white);
+    color: var(--color-slate-900);
+    font-family: var(--font-heading);
+    overflow: hidden;
+    z-index: 50;
+}
+
+.nexus-slot-header {
+    flex-shrink: 0;
+    height: var(--slot-header-height);
+    z-index: 55;
+    border-bottom: 1px solid var(--color-slate-100);
+    background: var(--color-white);
+}
+
+.nexus-slot-onboarding {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-white);
+    z-index: 40;
+    min-height: 0;
+}
+
+.nexus-slot-history {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-white);
+    z-index: 30;
+    min-height: 0;
+    position: relative;
+    overflow-y: auto;
+}
+
+.nexus-slot-prompt {
+    flex-shrink: 0;
+    z-index: 20;
+    border-top: 1px solid var(--color-slate-100);
+    background: var(--color-white);
+}
+
+.nexus-slot-toast {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    pointer-events: none;
+}
+
+/* Atomic State Classes */
+.nexus-none { display: none !important; }
+.nexus-block { display: block !important; }
+.nexus-flex { display: flex !important; }
+
+/* Grid & Utilities */
+.nexus-w-full { width: 100%; }
+.nexus-h-full { height: 100%; }
+.nexus-flex-col { flex-direction: column; }
+.nexus-items-center { align-items: center; }
+.nexus-justify-center { justify-content: center; }
+.nexus-relative { position: relative; }
+.nexus-animate-fade-in { animation: nexus-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes nexus-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

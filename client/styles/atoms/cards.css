@@ -1,0 +1,40 @@
+/* 
+ * Nexus UI: Atoms - Cards
+ */
+
+.nexus-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--color-slate-200);
+    background: var(--color-white);
+    cursor: pointer;
+}
+
+.nexus-card:hover {
+    border-color: var(--color-brand-blue);
+    box-shadow: var(--shadow-lg);
+}
+
+.nexus-card-selected {
+    border-color: var(--color-brand-blue) !important;
+    background: var(--color-brand-blue-soft) !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.05);
+}
+
+.nexus-card-base {
+    border-radius: var(--radius-4xl);
+    border: 1px solid transparent;
+    transition: all 0.5s var(--ease-spring);
+}
+
+.nexus-card-variant-default { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.1); }
+.nexus-card-variant-default:hover { border-color: rgba(255, 255, 255, 0.2); }
+
+.nexus-card-variant-glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(24px); border-color: rgba(255, 255, 255, 0.1); }
+.nexus-card-variant-warning { background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.1); }
+.nexus-card-variant-warning:hover { background: rgba(245, 158, 11, 0.1); }
+
+.nexus-card-variant-success { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.1); }
+.nexus-card-variant-success:hover { background: rgba(16, 185, 129, 0.1); }

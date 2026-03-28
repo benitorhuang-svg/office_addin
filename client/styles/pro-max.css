@@ -1,0 +1,84 @@
+/* 
+    Pro Max Industrial HUD Design System (2026 Edition)
+    Glassmorphism + Cyber-Cyber Aesthetics
+*/
+
+:root {
+  --primary: #008CA1;      /* Cyan Industrial */
+  --secondary: #6366f1;   /* Indigo Matrix */
+  --accent: #10b981;      /* Success Matrix */
+  --background: #020617;  /* Space Deep */
+  --surface: rgba(15, 23, 42, 0.7); /* Glass Layer */
+  --border: rgba(255, 255, 255, 0.1);
+  --glow: 0 0 15px rgba(0, 140, 161, 0.3);
+}
+
+body {
+  background-color: var(--background);
+  color: #f8fafc;
+  font-family: 'Inter', 'Outfit', sans-serif;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Glassmorphism Card Style */
+.pro-max-card {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--glow);
+  transition: all 0.3s ease;
+}
+
+.pro-max-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(0, 140, 161, 0.5);
+}
+
+/* Agent HUD Indicator */
+.agent-status-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--primary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Scrollbar Optimization */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}
+
+/* Premium Typography Atomic Classes */
+.txt-gradient {
+  background: linear-gradient(90deg, #fff, var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}

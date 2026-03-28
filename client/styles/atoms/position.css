@@ -1,0 +1,39 @@
+/* 
+ * Nexus UI: Atoms - Position
+ * Precise space mapping utilities.
+ */
+.nexus-absolute { position: absolute; }
+.nexus-relative { position: relative; }
+.nexus-fixed { position: fixed; }
+.nexus-sticky { position: sticky; }
+.nexus-inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.nexus-inset-2 { top: var(--space-2); right: var(--space-2); bottom: var(--space-2); left: var(--space-2); }
+.nexus-inset-4 { top: var(--space-4); right: var(--space-4); bottom: var(--space-4); left: var(--space-4); }
+
+.nexus-top-0 { top: 0; }
+.nexus-top-4 { top: var(--space-4); }
+.nexus-top-8 { top: var(--space-8); }
+.nexus-top-12 { top: var(--space-12); }
+.nexus-bottom-0 { bottom: 0; }
+.nexus-left-0 { left: 0; }
+.nexus-right-0 { right: 0; }
+.nexus-left-1-2 { left: 50%; }
+.nexus-top-1-2 { top: 50%; }
+
+.nexus--translate-x-1-2 { transform: translateX(-50%); }
+.nexus--translate-y-1-2 { transform: translateY(-50%); }
+.nexus--translate-y-8 { transform: translateY(-2rem); }
+.nexus-translate-x-1-2 { transform: translateX(50%); }
+
+.nexus-z-0 { z-index: 0; }
+.nexus-z-10 { z-index: 10; }
+.nexus-z-20 { z-index: 20; }
+.nexus-z-30 { z-index: 30; }
+.nexus-z-40 { z-index: 40; }
+.nexus-z-50 { z-index: 50; }
+.nexus-z-60 { z-index: 60; }
+.nexus-z-100 { z-index: 100; }
+.nexus-z-200 { z-index: 200; }
+
+.nexus-pointer-events-none { pointer-events: none; }
+.nexus-pointer-events-auto { pointer-events: auto; }

@@ -1,0 +1,40 @@
+{
+  "version": "Omni-Arsenal 1.0",
+  "skills": {
+    "VectorNexus": {
+      "trigger": "General semantic search across development docs.",
+      "logic": "Use when user asks 'What is X?' or 'Find papers about Y'.",
+      "engine": "python3 backend/skills/vector_nexus.py"
+    },
+    "TripleTierSearch": {
+      "trigger": "High-precision technical retrieval.",
+      "logic": "Use when query contains variable names, specific terminal commands, or nested logic that requires Reranking.",
+      "engine": "python3 backend/skills/triple_tier_search.py"
+    },
+    "GalaxyGraph": {
+      "trigger": "Impact analysis and entity relationship mapping.",
+      "logic": "Use when user asks 'What is related to X?' or 'If I change Y, what breaks?'.",
+      "engine": "python3 backend/skills/galaxy_graph.py"
+    },
+    "VisionExpert": {
+      "trigger": "Visual content analysis of slides and diagrams.",
+      "logic": "Use when document contains unparsed images, flowcharts, or architecture diagrams.",
+      "engine": "python3 backend/skills/vision_expert.py"
+    },
+    "DevSync": {
+      "trigger": "Developer lifecycle and multi-platform synchronization.",
+      "logic": "Use when query involves GitHub Issues, PR status, or 'What is the current development progress?'.",
+      "engine": "python3 backend/skills/github_sync.py"
+    },
+    "PPT-Master": {
+      "trigger": "High-fidelity slide layout & UI/UX logic.",
+      "logic": "Use when user refers to 'slides', 'presentations', 'decks', or 'PPT design'.",
+      "engine": "python3 backend/skills/ppt_expert.py"
+    },
+    "ExcelExpert": {
+      "trigger": "Industrial data manipulation and spreadsheet automation.",
+      "logic": "Use when query involves 'Excel', 'spreadsheets', 'data analysis', or 'report generation'.",
+      "engine": "python3 backend/skills/excel_expert.py"
+    }
+  }
+}

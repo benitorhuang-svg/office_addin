@@ -1,0 +1,116 @@
+/* 
+ * Nexus UI: Tailwind Compatibility Layer
+ * Mapping common Tailwind utilities to Nexus Tokens
+ */
+
+/* Backgrounds */
+.nexus-bg-transparent { background-color: transparent; }
+.nexus-bg-white-1 { background-color: rgba(255, 255, 255, 0.01); }
+.nexus-bg-white-5 { background-color: rgba(255, 255, 255, 0.05); }
+.nexus-bg-white-10 { background-color: rgba(255, 255, 255, 0.1); }
+.nexus-bg-white-20 { background-color: rgba(255, 255, 255, 0.2); }
+.nexus-bg-white-30 { background-color: rgba(255, 255, 255, 0.3); }
+.nexus-bg-white-50 { background-color: rgba(255, 255, 255, 0.5); }
+.nexus-bg-white-60 { background-color: rgba(255, 255, 255, 0.6); }
+.nexus-bg-white-80 { background-color: rgba(255, 255, 255, 0.8); }
+.nexus-bg-white-90 { background-color: rgba(255, 255, 255, 0.9); }
+.nexus-bg-blue-600 { background-color: var(--color-brand-blue-600); }
+.nexus-bg-blue-500 { background-color: var(--color-brand-blue-500); }
+.nexus-bg-blue-50 { background-color: var(--color-brand-blue-soft); }
+.nexus-bg-blue-50-50 { background-color: rgba(239, 246, 255, 0.5); }
+.nexus-bg-emerald-500 { background-color: var(--color-brand-emerald-500); }
+.nexus-bg-amber-500 { background-color: var(--color-brand-amber-500); }
+.nexus-bg-violet-500 { background-color: var(--color-brand-violet-500); }
+
+/* Text */
+.nexus-text-blue-600 { color: #2563eb; }
+.nexus-text-blue-500-50 { color: rgba(59, 130, 246, 0.5); }
+.nexus-text-emerald-500 { color: #10b981; }
+.nexus-text-amber-500 { color: #f59e0b; }
+.nexus-text-violet-500 { color: #8b5cf6; }
+.nexus-text-slate-400 { color: var(--color-slate-400); }
+.nexus-text-slate-800 { color: var(--color-slate-800); }
+.nexus-text-slate-900 { color: var(--color-slate-900); }
+.nexus-text-white { color: var(--color-white); }
+
+/* Borders */
+.nexus-border-t { border-top: 1px solid var(--color-nexus-border); }
+.nexus-border-b { border-bottom: 1px solid var(--color-nexus-border); }
+.nexus-border-r { border-right: 1px solid var(--color-nexus-border); }
+.nexus-border-l { border-left: 1px solid var(--color-nexus-border); }
+.nexus-border-slate-100 { border-color: var(--color-slate-100); }
+.nexus-border-slate-100-30 { border-color: rgba(241, 245, 249, 0.3); }
+.nexus-border-blue-50-50 { border-color: rgba(239, 246, 255, 0.5); }
+.nexus-border-white-5 { border-color: rgba(255, 255, 255, 0.05); }
+.nexus-border-blue-200 { border-color: #bfdbfe; }
+.nexus-border-none { border-style: none; }
+
+/* Shadows */
+.nexus-shadow-blue-glow { box-shadow: var(--shadow-blue-glow); }
+.nexus-shadow-blue-300-50 { box-shadow: 0 0 20px rgba(147, 197, 253, 0.5); }
+.nexus-shadow-emerald-300-50 { box-shadow: 0 0 20px rgba(110, 231, 183, 0.5); }
+.nexus-shadow-blue-pulse { box-shadow: var(--shadow-blue-pulse); }
+.nexus-shadow-2xl { box-shadow: var(--shadow-2xl); }
+.nexus-shadow-glass { box-shadow: var(--shadow-glass); }
+
+/* Dimensions & Spacing */
+.nexus-w-1 { width: 4px; }
+.nexus-h-1 { height: 4px; }
+.nexus-w-6 { width: 24px; }
+.nexus-h-6 { height: 24px; }
+.nexus-w-10 { width: 40px; }
+.nexus-h-10 { height: 40px; }
+.nexus-w-18 { width: 72px; }
+.nexus-h-18 { height: 72px; }
+.nexus-w-72 { width: 18rem; }
+.nexus-rounded-full { border-radius: 9999px; }
+.nexus-rounded-32px { border-radius: 32px; }
+
+/* Interactivity & Hover */
+.nexus-hover-translate-x-3:hover { transform: translateX(12px); }
+.nexus-hover-rotate-6:hover { transform: rotate(6deg); }
+.nexus-hover-scale-110:hover { transform: scale(1.1); }
+.nexus-hover-text-slate-900:hover { color: var(--color-slate-900); }
+.nexus-hover-bg-blue-50-50:hover { background-color: rgba(239, 246, 255, 0.5); }
+.nexus-hover--translate-y-1:hover { transform: translateY(-4px); }
+
+.nexus-group:hover .nexus-group-hover-rotate-6 { transform: rotate(6deg); }
+.nexus-group:hover .nexus-group-hover-scale-110 { transform: scale(1.1); }
+.nexus-group:hover .nexus-group-hover-nexus-opacity-100 { opacity: 1; }
+.nexus-group:hover .nexus-group-hover-text-blue-600 { color: #2563eb; }
+
+/* Group Search Specific */
+.nexus-group-search:hover { border-color: #3b82f6; box-shadow: var(--shadow-blue-pulse); }
+.nexus-group-search:hover .nexus-group-hover-text-blue-600 { color: #2563eb; }
+
+/* Transitions & Animations */
+.nexus-transition-all { transition: all 0.3s var(--ease-in-out); }
+.nexus-transition-colors { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+.nexus-duration-1000 { transition-duration: 1000ms; }
+.nexus-duration-700 { transition-duration: 700ms; }
+.nexus-duration-500 { transition-duration: 500ms; }
+.nexus-duration-300 { transition-duration: 300ms; }
+
+/* Typo */
+.nexus-placeholder-slate-300::placeholder { color: var(--color-slate-300); }
+.nexus-text-13px { font-size: 13px; }
+.nexus-text-15px { font-size: 15px; }
+
+/* Layout Utils */
+.nexus-outline-none { outline: 2px solid transparent; outline-offset: 2px; }
+.nexus-cursor-pointer { cursor: pointer; }
+.nexus-hidden { display: none; }
+.nexus-backdrop-blur-3xl { backdrop-filter: blur(64px); }
+.nexus-backdrop-blur-2xl { backdrop-filter: blur(40px); }
+.nexus-bg-transparent { background-color: transparent; }
+.nexus-border-none { border-style: none; }
+.nexus-bg-blue-400 { background-color: var(--color-brand-blue-400); }
+.nexus-text-slate-200 { color: var(--color-slate-200); }
+.nexus-w-3 { width: 12px; }
+.nexus-h-3 { height: 12px; }
+.nexus-w-1-5 { width: 6px; }
+.nexus-h-1-5 { height: 6px; }
+.nexus-w-36 { width: 144px; }
+.nexus-h-36 { height: 144px; }
+.nexus-border-1-5 { border-width: 1.5px; }
+.nexus-border-emerald-500-10 { border-color: rgba(16, 185, 129, 0.1); }

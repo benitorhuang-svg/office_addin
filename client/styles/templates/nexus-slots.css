@@ -1,0 +1,82 @@
+/* 
+ * Nexus UI: Templates - System Slots
+ * Critical structural segments of the Office Add-in.
+ */
+.nexus-layout-root {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-white);
+    color: var(--color-slate-900);
+    font-family: var(--font-heading);
+    overflow: hidden;
+    z-index: 50;
+    transition: all 0.5s var(--ease-spring);
+}
+
+.nexus-slot-header {
+    z-index: 55;
+    transition: all 0.3s var(--ease-spring);
+    border-bottom: 1px solid var(--color-slate-100);
+    flex-shrink: 0;
+}
+
+.nexus-slot-onboarding {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    transition: all 0.5s var(--ease-spring);
+    background: var(--color-white);
+    padding-bottom: 2rem;
+}
+
+.nexus-slot-history {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+    z-index: 10;
+    transition: all 0.3s var(--ease-spring);
+}
+
+.nexus-slot-prompt {
+    flex-shrink: 0;
+    z-index: 20;
+    transition: all 0.3s var(--ease-spring);
+    border-top: 1px solid var(--color-slate-100);
+}
+
+.nexus-slot-toast {
+    position: fixed;
+    top: var(--space-8);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    pointer-events: none;
+}
+
+/* Specific component IDs (Stabilized Atomic Props) */
+#chat-history {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    padding: 8px 10px 16px 10px !important;
+    overflow-y: auto !important;
+    background: var(--color-white) !important;
+    gap: 2px !important;
+}
+
+#chat-history::-webkit-scrollbar { width: 4px; }
+#chat-history::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: var(--radius-full); }

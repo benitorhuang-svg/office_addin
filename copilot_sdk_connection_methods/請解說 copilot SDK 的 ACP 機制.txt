@@ -1,6 +1,0 @@
-taskkill /f /im node.exe /t ; node scripts/patch-copilot-sdk.mjs ; npm run dev
-
-
-請解說 github copilot SDK 的 ACP 機制
-
-請針對power query 規劃新手7天學習計畫

@@ -1,0 +1,34 @@
+/* 
+ * Nexus UI: Atoms - Flexbox
+ * High-density layout primitives.
+ */
+.nexus-flex { display: flex; }
+.nexus-flex-col { display: flex; flex-direction: column; }
+.nexus-flex-row { display: flex; flex-direction: row; }
+.nexus-flex-row-reverse { display: flex; flex-direction: row-reverse; }
+.nexus-flex-1 { flex: 1 1 0%; }
+.nexus-items-center { align-items: center; }
+.nexus-items-start { align-items: flex-start; }
+.nexus-items-end { align-items: flex-end; }
+.nexus-justify-between { justify-content: space-between; }
+.nexus-justify-center { justify-content: center; }
+.nexus-justify-end { justify-content: flex-end; }
+.nexus-justify-start { justify-content: flex-start; }
+.nexus-items-stretch { align-items: stretch; }
+.nexus-shrink-0 { flex-shrink: 0; }
+.nexus-flex-shrink-0 { flex-shrink: 0; }
+.nexus-flex-wrap { flex-wrap: wrap; }
+
+/* Aspect-specific flex atoms */
+.nexus-gap-1 { gap: var(--space-1); }
+.nexus-gap-1-5 { gap: var(--space-1-5); }
+.nexus-gap-2 { gap: var(--space-2); }
+.nexus-gap-3 { gap: var(--space-3); }
+.nexus-gap-4 { gap: var(--space-4); }
+.nexus-gap-5 { gap: 1.25rem; }
+.nexus-gap-6 { gap: var(--space-6); }
+.nexus-gap-8 { gap: var(--space-8); }
+.nexus-gap-10 { gap: var(--space-10); }
+.nexus-gap-12 { gap: var(--space-12); }
+.nexus-gap-14 { gap: var(--space-14); }
+.nexus-gap-16 { gap: var(--space-16); }

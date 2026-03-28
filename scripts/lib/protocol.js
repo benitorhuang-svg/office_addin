@@ -3,7 +3,7 @@
  * Handles framing (Content-Length) and line-based parsing. 
  */
 
-const LOG_PREFIX = '[Protocol]';
+// const LOG_PREFIX = '[Protocol]';
 
 function createContentLengthFrame(json) {
     const body = JSON.stringify(json);
@@ -26,7 +26,7 @@ function parseInputBuffer(buffer, onMessage) {
             if (nextBuffer.length >= bodyOffset + length) {
                 const body = nextBuffer.slice(bodyOffset, bodyOffset + length).toString('utf8');
                 nextBuffer = nextBuffer.slice(bodyOffset + length);
-                try { onMessage(JSON.parse(body)); } catch (e) { /* corrupted */ }
+                try { onMessage(JSON.parse(body)); } catch (_e) { /* corrupted */ }
                 continue;
             }
         } else {
@@ -36,7 +36,7 @@ function parseInputBuffer(buffer, onMessage) {
                 const line = str.substring(0, newlineIndex).trim();
                 nextBuffer = nextBuffer.slice(newlineIndex + 1);
                 if (line && line.startsWith('{')) {
-                    try { onMessage(JSON.parse(line)); } catch (e) { /* skip */ }
+                    try { onMessage(JSON.parse(line)); } catch (_e) { /* skip */ }
                 }
                 continue;
             }

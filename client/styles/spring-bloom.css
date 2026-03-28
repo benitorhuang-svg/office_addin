@@ -1,0 +1,132 @@
+/*
+ * Style: Nexus Ultra-Grand (Prestige Edition)
+ * THE WORLD-CLASS HUD AESTHETIC.
+ */
+:root {
+  --nexus-blue: #2563eb;
+  --nexus-indigo: #4f46e5;
+  --nexus-emerald: #059669;
+  --nexus-accent: #7c3aed;
+  --nexus-slate-900: #0f172a;
+  --nexus-slate-400: #94a3b8;
+  --glass-white: rgba(255, 255, 255, 0.65);
+}
+
+@keyframes mesh-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.nexus-grand-root {
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Moving Mesh Background */
+.nexus-grand-root::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.08), transparent 40%),
+              radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.08), transparent 40%),
+              radial-gradient(circle at 50% 10%, rgba(16, 185, 129, 0.05), transparent 40%);
+  animation: mesh-flow 20s ease infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Ultra-Premium Glass Card */
+.glass-card-premium {
+  background: var(--glass-white);
+  backdrop-filter: blur(60px) saturate(200%);
+  -webkit-backdrop-filter: blur(60px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 10px 40px -10px rgba(0, 0, 0, 0.02),
+    0 40px 80px -20px rgba(15, 23, 42, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  border-radius: 56px;
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Card Reflection Glare */
+.glass-card-premium::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(135deg, transparent 45%, rgba(255, 255, 255, 0.2) 50%, transparent 55%);
+  transition: all 1s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.glass-card-premium:hover::before {
+  top: 100%;
+  left: 100%;
+}
+
+.glass-card-premium:hover {
+  transform: translateY(-16px) scale(1.02);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 50px 100px -20px rgba(37, 99, 235, 0.12),
+    0 20px 50px -15px rgba(0, 0, 0, 0.05);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+/* Status Hub Rotating Glow */
+@keyframes slow-rotate {
+  from { transform: translate(-50%, 0) rotate(0deg); }
+  to { transform: translate(-50%, 0) rotate(360deg); }
+}
+
+.status-hub-ring {
+  background: white;
+  border-radius: 50%;
+  box-shadow: 
+    0 40px 120px -15px rgba(37, 99, 235, 0.15),
+    0 0 0 1px rgba(241, 245, 249, 1);
+  transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Floating Staggered Animation */
+@keyframes prestige-reveal {
+  0% { opacity: 0; transform: translateY(40px) scale(0.95); filter: blur(20px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.animate-grand {
+  opacity: 0;
+  animation: prestige-reveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Icon Glows - Refined */
+.icon-glow-blue { box-shadow: 0 15px 40px -5px rgba(37, 99, 235, 0.4); }
+.icon-glow-emerald { box-shadow: 0 15px 40px -5px rgba(16, 185, 129, 0.4); }
+.icon-glow-amber { box-shadow: 0 15px 40px -5px rgba(245, 158, 11, 0.4); }
+.icon-glow-violet { box-shadow: 0 15px 40px -5px rgba(139, 92, 246, 0.4); }
+
+.wide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 3.5rem;
+}
+
+/* Custom Selection & Scroll */
+::selection { background: rgba(37, 99, 235, 0.1); color: var(--nexus-blue); }
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, transparent, var(--nexus-blue), transparent);
+  border-radius: 10px;
+}

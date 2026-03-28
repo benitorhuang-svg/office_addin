@@ -1,0 +1,133 @@
+/* 
+ * Nexus UI: Atoms - Animations
+ */
+
+.nexus-animate-pulse-glow { animation: nexus-pulse-glow 2s infinite; }
+@keyframes nexus-pulse-glow {
+    0%, 100% { opacity: 0.2; filter: blur(32px); }
+    50% { opacity: 0.5; filter: blur(48px); }
+}
+
+.nexus-animate-ping { animation: nexus-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes nexus-ping {
+    75%, 100% { transform: scale(2); opacity: 0; }
+}
+
+.nexus-animate-pulse { animation: nexus-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes nexus-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}
+
+.nexus-animate-bounce { animation: nexus-bounce 1s infinite; }
+.nexus-animate-slide-in-right { animation: slide-in-right 0.5s ease-out forwards; }
+
+@keyframes slide-in-right {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes nexus-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nexus-bounce {
+    0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+    50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+
+.nexus-spinner { border: 2px solid var(--color-slate-100); border-top-color: var(--color-brand-blue); border-radius: var(--radius-full); width: 100%; height: 100%; animation: nexus-spin 0.8s linear infinite; }
+@keyframes nexus-spin {
+    to { transform: rotate(360deg); }
+}
+
+.nexus-translate-x-full { transform: translateX(100%); }
+.nexus--translate-x-full { transform: translateX(-100%); }
+.nexus-group-hover-shine:hover .nexus--translate-x-full { transform: translateX(100%); }
+.nexus-scale-y-125 { transform: scaleY(1.25); }
+.nexus-scale-125 { transform: scale(1.25); }
+.nexus-scale-103 { transform: scale(1.03); }
+.nexus-scale-101 { transform: scale(1.01); }
+.nexus-scale-99 { transform: scale(0.99); }
+.nexus-transition-opacity { transition: opacity 0.7s var(--ease-spring); }
+.nexus-duration-1000 { transition-duration: 1000ms; }
+
+/* Interactive States */
+.nexus-hover-scale-101:hover { transform: scale(1.01); }
+.nexus-hover-scale-105:hover { transform: scale(1.05); }
+.nexus-hover-scale-110:hover { transform: scale(1.1); }
+.nexus-active-scale-99:active { transform: scale(0.99); }
+.nexus-active-scale-95:active { transform: scale(0.95); }
+
+/* Group Hover States */
+.nexus-group:hover .nexus-group-hover-translate-x-full { transform: translateX(100%); }
+.nexus-group:hover .nexus-group-hover-opacity-100 { opacity: 1; }
+.nexus-group:hover .nexus-group-hover-grayscale-0 { filter: grayscale(0); }
+.nexus-group:hover .nexus-group-hover-scale-105 { transform: scale(1.05); }
+
+/* Entry Animations */
+.nexus-animate-in { animation: nexus-in 0.3s ease-out; }
+.nexus-fade-in { animation: nexus-fade 0.3s ease-out; }
+.nexus-slide-in-from-bottom-2 { animation: nexus-slide-in-bottom-2 0.3s ease-out; }
+.nexus-slide-in-from-bottom-6 { animation: nexus-slide-in-bottom-6 0.4s ease-out; }
+.nexus-zoom-in-95 { animation: nexus-zoom-95 0.3s ease-out; }
+.nexus-animate-spring { animation: nexus-spring-entry 0.6s var(--ease-spring); }
+.nexus-animate-grand { animation: nexus-grand-reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes nexus-grand-reveal {
+    from { color: transparent; transform: translateY(30px); opacity: 0; filter: blur(10px); }
+    to { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+@keyframes nexus-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes nexus-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes nexus-slide-in-bottom-2 {
+    from { transform: translateY(0.5rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes nexus-slide-in-bottom-6 {
+    from { transform: translateY(1.5rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes nexus-zoom-95 {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes nexus-spring-entry {
+    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Premium COT Thinking State */
+.nexus-animate-pulse-blue {
+    animation: nexus-pulse-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes nexus-pulse-blue {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); opacity: 0.8; }
+    50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); opacity: 1; }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); opacity: 0.8; }
+}
+
+.nexus-animate-shimmer-fast {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    background-size: 200% 100%;
+    animation: nexus-shimmer 1.5s infinite;
+}
+
+@keyframes nexus-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}

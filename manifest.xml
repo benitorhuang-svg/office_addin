@@ -5,15 +5,16 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="TaskPaneApp">
   <Id>b7a1e2f3-c4d5-6e7f-8a90-b1c2d3e4f5a6</Id>
   <Version>1.0.0.1</Version>
-  <ProviderName>office_Agent</ProviderName>
+  <ProviderName>Nexus</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="office_Agent AI Assistant"/>
-  <Description DefaultValue="office_Agent is your AI-powered companion for writing and editing in Microsoft Word."/>
-  <IconUrl DefaultValue="https://localhost:3000/assets/logo-premium.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/logo-premium.png"/>
+  <DisplayName DefaultValue="Nexus Center" />
+  <Description DefaultValue="Industrial Precision Workspace Orchestrator" />
+  <IconUrl DefaultValue="https://localhost:4000/assets/logo-premium.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:4000/assets/logo-premium.png"/>
   <SupportUrl DefaultValue="https://www.contoso.com/help"/>
   <AppDomains>
     <AppDomain>https://www.contoso.com</AppDomain>
+    <AppDomain>https://localhost:4000</AppDomain>
     <AppDomain>https://localhost:4000</AppDomain>
   </AppDomains>
   <Hosts>
@@ -23,7 +24,7 @@
     <Host Name="Workbook"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/>
+    <SourceLocation DefaultValue="https://localhost:4000/taskpane.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -145,19 +146,19 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.Premium16" DefaultValue="https://localhost:3000/assets/logo-premium.png"/>
-        <bt:Image id="Icon.Premium32" DefaultValue="https://localhost:3000/assets/logo-premium.png"/>
-        <bt:Image id="Icon.Premium80" DefaultValue="https://localhost:3000/assets/logo-premium.png"/>
+        <bt:Image id="Icon.Premium16" DefaultValue="https://localhost:4000/assets/logo-premium.png"/>
+        <bt:Image id="Icon.Premium32" DefaultValue="https://localhost:4000/assets/logo-premium.png"/>
+        <bt:Image id="Icon.Premium80" DefaultValue="https://localhost:4000/assets/logo-premium.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812" />
-        <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html" />
-        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html" />
+        <bt:Url id="Commands.Url" DefaultValue="https://localhost:4000/commands.html" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:4000/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Get started with office_Agent!" />
-        <bt:String id="CommandsGroup.Label" DefaultValue="office_Agent" />
-        <bt:String id="TaskpaneButton.Label" DefaultValue="office_Agent" />
+        <bt:String id="GetStarted.Title" DefaultValue="Get started with Nexus Center!" />
+        <bt:String id="CommandsGroup.Label" DefaultValue="Nexus Center" />
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Nexus Center" />
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Your sample add-in loaded successfully. Go to the HOME tab and click the 'Show Task Pane' button to get started." />

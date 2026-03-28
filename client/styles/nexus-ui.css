@@ -1,0 +1,35 @@
+/* 
+ * Nexus UI: Master Design Entry
+ * Standardized Industrial Architecture with Atomic Structural Grounding.
+ */
+
+/* 1. Global Tokens (Design Language) */
+@import "./nexus-tokens.css";
+
+/* 2. Atomic Layer (Utilities & Base) */
+@import "./nexus-atoms.css";
+
+/* 3. Molecule Layer (Component Patterns) */
+@import "./nexus-molecules.css";
+
+/* 4. Structural Layer (Global Layout Props) */
+@import "./templates/nexus-slots.css";
+
+/* 5. Tooling/Misc Layer */
+/* Add future utility layers here */
+
+/* Industrialized Success States */
+.nexus-auth-card-verified {
+    background: #ecfdf5 !important; /* Solid emerald-50 */
+    border-color: #10b981 !important; /* Industrial emerald-500 border */
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.nexus-auth-card-verified .nexus-text-slate-800 {
+    color: #064e3b !important; /* emerald-900 */
+}
+
+.nexus-auth-card-verified .nexus-text-slate-500 {
+    color: #047857 !important; /* emerald-700 */
+}

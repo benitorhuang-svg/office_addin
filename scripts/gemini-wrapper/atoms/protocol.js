@@ -48,7 +48,7 @@ function parseNdJsonFrame(buffer, onMessage) {
         try {
             onMessage(JSON.parse(str.trim()));
             nextBuffer = Buffer.alloc(0);
-        } catch (e) { }
+        } catch (_e) { /* ignored */ }
     }
     return nextBuffer;
 }

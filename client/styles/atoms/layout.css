@@ -1,0 +1,93 @@
+/* 
+ * Nexus UI: Atoms - Layout
+ */
+
+.nexus-divider { display: flex; align-items: center; gap: var(--space-3); width: 100%; border: none; }
+.nexus-divider::before, .nexus-divider::after { content: ""; flex: 1; height: 1px; background: var(--color-slate-100); }
+
+.nexus-status-icon { display: flex; align-items: center; justify-content: center; }
+.nexus-status-icon.success { color: var(--color-brand-emerald); }
+.nexus-status-icon.error { color: var(--color-brand-rose); }
+.nexus-status-icon.pending { border: 1.5px solid var(--color-slate-300); border-radius: var(--radius-full); }
+
+.nexus-inset-4 { top: 1rem; right: 1rem; bottom: 1rem; left: 1rem; }
+.nexus-pointer-events-none { pointer-events: none; }
+.nexus-block { display: block !important; }
+.nexus-none { display: none !important; }
+.nexus-opacity-1 { opacity: 1 !important; }
+.nexus-transition-all { transition: all 0.5s var(--ease-spring); }
+.nexus-duration-500 { transition-duration: 500ms; }
+.nexus-shrink-0 { flex-shrink: 0; }
+.nexus-flex-shrink-0 { flex-shrink: 0; }
+.nexus-cursor-pointer { cursor: pointer; }
+.nexus-z-100 { z-index: 100; }
+.nexus-inline-flex { display: inline-flex; }
+.nexus-flex-row { flex-direction: row; }
+.nexus-flex-row-reverse { flex-direction: row-reverse; }
+
+/* Positioning Matrix */
+.nexus-relative { position: relative; }
+.nexus-absolute { position: absolute; }
+.nexus-sticky { position: sticky; }
+.nexus-top-0 { top: 0; }
+.nexus-top-4 { top: 1rem; }
+.nexus-right-4 { right: 1rem; }
+.nexus-inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.nexus-z-10 { z-index: 10; }
+.nexus-z-40 { z-index: 40; }
+.nexus-z-50 { z-index: 50; }
+
+/* Dimensions */
+.nexus-w-full { width: 100%; }
+.nexus-h-full { height: 100%; }
+.nexus-w-10 { width: 2.5rem; }
+.nexus-h-10 { height: 2.5rem; }
+.nexus-w-24 { width: 6rem; }
+.nexus-w-40 { width: 10rem; }
+.nexus-w-64 { width: 16rem; }
+.nexus-w-72 { width: 18rem; }
+.nexus-min-w-max { min-width: max-content !important; }
+.nexus-whitespace-nowrap { white-space: nowrap !important; }
+
+/* Display & Box Model */
+.nexus-flex { display: flex; }
+.nexus-flex-col { flex-direction: column; }
+.nexus-inline-flex { display: inline-flex; }
+.nexus-items-center { align-items: center; }
+.nexus-items-start { align-items: flex-start; }
+.nexus-items-end { align-items: flex-end; }
+.nexus-justify-center { justify-content: center; }
+.nexus-justify-between { justify-content: space-between; }
+.nexus-justify-end { justify-content: flex-end; }
+.nexus-flex-1 { flex: 1 1 0%; }
+.nexus-flex-shrink-0 { flex-shrink: 0; }
+.nexus-shrink-0 { flex-shrink: 0; }
+
+/* Typography */
+.nexus-text-10px { font-size: 10px; }
+.nexus-text-11px { font-size: 11px; }
+.nexus-text-12px { font-size: 12px; }
+.nexus-text-14px { font-size: 14px; }
+.nexus-font-black { font-weight: 900; }
+.nexus-tracking-tighter { letter-spacing: -0.05em; }
+
+/* Spacing Extensions */
+.nexus-pl-6 { padding-left: 1.5rem; }
+.nexus-pr-12 { padding-right: 3rem; }
+.nexus-pr-24 { padding-right: 6rem; }
+
+.nexus-block { display: block !important; }
+.nexus-none { display: none !important; }
+.nexus-hidden { display: none !important; }
+.nexus-overflow-hidden { overflow: hidden; }
+.nexus-overflow-y-auto { overflow-y: auto; }
+
+.nexus-opacity-1 { opacity: 1 !important; }
+.nexus-opacity-50 { opacity: 0.5; }
+.nexus-opacity-60 { opacity: 0.6; }
+
+.nexus-cursor-pointer { cursor: pointer; }
+.nexus-z-10 { z-index: 10; }
+.nexus-z-40 { z-index: 40; }
+.nexus-z-50 { z-index: 50; }
+.nexus-z-100 { z-index: 100; }

@@ -35,7 +35,7 @@ child.stdout.on('data', (chunk) => {
       }
       const body = JSON.stringify(msg);
       process.stdout.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`);
-    } catch(e) {
+    } catch (_e) {
        // Fallback for non-JSON or parsing errors
        process.stdout.write(`Content-Length: ${Buffer.byteLength(line, 'utf8')}\r\n\r\n${line}`);
     }

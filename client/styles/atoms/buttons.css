@@ -1,0 +1,40 @@
+/* 
+ * Nexus UI: Atoms - Buttons
+ */
+
+.nexus-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: 900;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: none;
+    text-transform: uppercase;
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+}
+
+.nexus-btn-primary {
+    background: var(--color-brand-blue);
+    color: var(--color-white);
+    box-shadow: var(--shadow-primary);
+}
+
+.nexus-btn-primary:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.3);
+}
+
+.nexus-btn-ghost {
+    background: transparent;
+    color: var(--color-slate-500);
+}
+
+.nexus-btn-ghost:hover {
+    background: var(--color-slate-50);
+    color: var(--color-slate-900);
+}

@@ -1,0 +1,39 @@
+# Nexus Center: Port-Perfect Industrial Orchestration (2026)
+
+services:
+  # --- Nexus Master Engine (Unified Frontend & Backend) ---
+  nexus-master:
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+    image: nexus-center:latest
+    container_name: nexus-center-master
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GITHUB_PAT=${GITHUB_PAT:-}
+      - COPILOT_GITHUB_TOKEN=${COPILOT_GITHUB_TOKEN:-}
+      - AUTO_CONNECT_CLI=${AUTO_CONNECT_CLI:-true}
+      - DEFAULT_RESPONSE_LANGUAGE=${DEFAULT_RESPONSE_LANGUAGE:-zh-TW}
+    volumes:
+      - shared_data:/app/backend/skills/output
+      - ./certs:/app/certs:ro
+    networks:
+      - nexus-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "NODE_TLS_REJECT_UNAUTHORIZED=0 node -e \"fetch('https://localhost:4000/').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  nexus-network:
+    driver: bridge
+
+volumes:
+  shared_data:
+    driver: local

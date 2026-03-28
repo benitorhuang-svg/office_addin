@@ -1,0 +1,89 @@
+/* 
+ * Nexus UI: Molecules - Auth Gateway (Premium Redesign)
+ */
+
+.nexus-auth-card {
+    background: #fff;
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 20px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+}
+
+.nexus-auth-card:hover {
+    border-color: #3b82f640;
+    box-shadow: 0 12px 24px -8px rgba(59, 130, 246, 0.12);
+    transform: translateY(-2px);
+}
+
+.nexus-auth-card-selected {
+    border-color: #3b82f6;
+    background: #f8fafc;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.05);
+}
+
+.nexus-auth-card-visitor {
+    background: linear-gradient(135deg, #fff 0%, #eff6ff 100%);
+}
+
+/* Provider brand hover accents */
+.nexus-auth-card-gemini:hover {
+    border-color: #818cf840;
+    box-shadow: 0 12px 24px -8px rgba(99, 102, 241, 0.12);
+}
+
+.nexus-auth-card-github:hover {
+    border-color: #47556940;
+    box-shadow: 0 12px 24px -8px rgba(30, 41, 59, 0.12);
+}
+
+.nexus-auth-icon-shell {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.nexus-auth-input {
+    background: #fff !important;
+    border: 1.5px solid #f1f5f9 !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    transition: all 0.3s ease !important;
+}
+
+.nexus-auth-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08) !important;
+}
+
+.nexus-auth-prime-btn {
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.nexus-auth-prime-btn:hover {
+    opacity: 0.9;
+    transform: scale(0.98);
+}
+
+.nexus-auth-prime-btn svg {
+    opacity: 0.6;
+}

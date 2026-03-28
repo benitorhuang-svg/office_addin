@@ -3,28 +3,57 @@
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { InjectManifest } = require("workbox-webpack-plugin");
+const path = require("path");
 
-const urlDev = "https://localhost:3000/";
+const urlDev = "https://localhost:3001/";
 const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
 
 async function getHttpsOptions() {
+  try {
+    const fs = require("fs");
+    const certPath = path.resolve(__dirname, "certs/localhost.crt");
+    const keyPath = path.resolve(__dirname, "certs/localhost.key");
+    
+    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      console.log("[Webpack] Using local certificates from certs/ folder.");
+      return {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+      };
+    }
+  } catch (err) {
+    console.warn("[Webpack] Failed to load local certificates, falling back to devCerts:", err.message);
+  }
+
   const httpsOptions = await devCerts.getHttpsServerOptions();
   return { ca: httpsOptions.ca, key: httpsOptions.key, cert: httpsOptions.cert };
 }
 
 module.exports = async (env, options) => {
-  const dev = options.mode === "development";
+  const mode = (options && options.mode) || process.env.NODE_ENV || "development";
+  const dev = mode === "development";
   const config = {
     devtool: dev ? "eval-cheap-module-source-map" : false,
     entry: {
-      taskpane: ["./src/taskpane/organisms/taskpane-entry.ts"],
-      commands: "./src/commands/molecules/office-commands.ts",
+      taskpane: ["./client/organisms/taskpane-entry.ts"],
+      commands: "./client/commands/molecules/office-commands.ts",
+      monitor: "./client/organisms/monitor-entry.ts"
     },
     output: {
       clean: true,
+      globalObject: "self",
     },
     resolve: {
       extensions: [".ts", ".html", ".js", ".css"],
+      alias: {
+        "@shared": path.resolve(__dirname, "shared"),
+        "@components": path.resolve(__dirname, "client/components"),
+        "@services": path.resolve(__dirname, "client/services"),
+        "@atoms": path.resolve(__dirname, "client/components/atoms"),
+        "@molecules": path.resolve(__dirname, "client/components/molecules"),
+        "@organisms": path.resolve(__dirname, "client/components/organisms"),
+      }
     },
     module: {
       rules: [
@@ -32,23 +61,7 @@ module.exports = async (env, options) => {
           test: /\.css$/i,
           use: [
             "style-loader",
-            {
-              loader: "css-loader",
-              options: {
-                importLoaders: 1,
-              },
-            },
-            {
-              loader: "postcss-loader",
-              options: {
-                postcssOptions: {
-                  plugins: [
-                    require("@tailwindcss/postcss"),
-                    require("autoprefixer"),
-                  ],
-                },
-              },
-            },
+            "css-loader"
           ],
         },
         {
@@ -75,8 +88,13 @@ module.exports = async (env, options) => {
     plugins: [
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
-        template: "./src/taskpane/organisms/taskpane.html",
+        template: "./client/organisms/taskpane.html",
         chunks: ["taskpane"],
+      }),
+      new HtmlWebpackPlugin({
+        filename: "monitor.html",
+        template: "./client/organisms/monitor.html",
+        chunks: ["monitor"],
       }),
       new CopyWebpackPlugin({
         patterns: [
@@ -91,7 +109,8 @@ module.exports = async (env, options) => {
               if (dev) {
                 return content;
               } else {
-                return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+                // Production replacement: 4000 (Unified Gateway) -> Production URL
+                return content.toString().replace(/https:\/\/localhost:4000\//g, "https://www.contoso.com/");
               }
             },
           },
@@ -99,7 +118,7 @@ module.exports = async (env, options) => {
       }),
       new HtmlWebpackPlugin({
         filename: "commands.html",
-        template: "./src/commands/molecules/office-commands.html",
+        template: "./client/commands/molecules/office-commands.html",
         chunks: ["commands"],
       }),
     ],
@@ -134,13 +153,27 @@ module.exports = async (env, options) => {
         }
       ],
       compress: false, // Disable compression for reliable SSE
-      server: {
+      server: dev ? {
         type: "https",
         options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),
-      },
-      port: process.env.npm_package_config_dev_server_port || 3000,
+      } : undefined,
+      port: process.env.npm_package_config_dev_server_port || 3001,
     },
   };
+
+  // Prevent InjectManifest from running multiple times in dev (webpack --watch/devServer).
+  if (!dev) {
+    if (!global.__WB_INJECT_MANIFEST_ADDED__) {
+      config.plugins.push(
+        new InjectManifest({
+          swSrc: "./client/sw.ts",
+          swDest: "sw.js",
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for office.js
+        })
+      );
+      global.__WB_INJECT_MANIFEST_ADDED__ = true;
+    }
+  }
 
   return config;
 };

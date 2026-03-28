@@ -1,0 +1,23 @@
+/*
+ * Nexus UI: Atoms - Borders
+ */
+
+.nexus-border-slate-100 { border: 1px solid var(--color-slate-100); }
+.nexus-border-blue-500 { border: 1px solid var(--color-brand-blue); }
+.nexus-border-none { border: none !important; }
+
+/* Radius */
+.nexus-rounded-md { border-radius: var(--radius-md); }
+.nexus-rounded-lg { border-radius: var(--radius-lg); }
+.nexus-rounded-xl { border-radius: var(--radius-xl); }
+.nexus-rounded-2xl { border-radius: var(--radius-2xl); }
+.nexus-rounded-3xl { border-radius: 3rem; }
+.nexus-rounded-full { border-radius: var(--radius-full); }
+.nexus-rounded-10px { border-radius: 10px; }
+
+/* Rings (Focus) */
+.nexus-focus-ring-0:focus { ring: 0; outline: none; }
+.nexus-focus-ring-2:focus { ring: 2px solid var(--color-brand-blue); }
+.nexus-rounded-30px { border-radius: 30px; }
+.nexus-ring-1 { box-shadow: 0 0 0 1px var(--color-slate-200); }
+.nexus-ring-transparent { box-shadow: 0 0 0 1px transparent; }

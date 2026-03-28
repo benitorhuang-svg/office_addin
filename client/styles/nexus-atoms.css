@@ -1,0 +1,142 @@
+/* 
+ * Nexus UI: Atomic Hub
+ * Consolidated atomic layer split for scalability.
+ */
+
+@import "./atoms/base.css";
+@import "./atoms/typography.css";
+@import "./atoms/buttons.css";
+@import "./atoms/cards.css";
+@import "./atoms/colors.css";
+@import "./atoms/spacing.css";
+@import "./atoms/dimensions.css";
+@import "./atoms/effects.css";
+@import "./atoms/animations.css";
+@import "./atoms/borders.css";
+@import "./atoms/flex.css";
+@import "./atoms/position.css";
+@import "./atoms/visibility.css";
+@import "./atoms/grid.css";
+@import "./atoms/tailwind-compat.css";
+
+/* Icon Shell Atom (Generic) */
+.nexus-icon-shell {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    background: var(--color-slate-50);
+    border: 1px solid var(--color-slate-100);
+    color: var(--color-slate-400);
+    transition: all 0.3s ease;
+}
+
+.nexus-card:hover .nexus-icon-shell {
+    background: var(--color-brand-blue-soft);
+    color: var(--color-brand-blue);
+    border-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Home Branding Button Atom (Rainbow Edition) */
+.nexus-brand-home {
+    width: 32px;
+    height: 32px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #60a5fa, #fb7185);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    padding: 0;
+}
+
+.nexus-brand-home:hover {
+    transform: rotate(-10deg) scale(1.1);
+    box-shadow: 0 6px 15px rgba(251, 113, 133, 0.3);
+}
+
+.nexus-brand-home:active {
+    transform: scale(0.95);
+}
+
+/* Brand Pill Atoms: Responsive Labeling */
+.nexus-pill {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.3s ease;
+}
+
+.nexus-pill-preview {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.nexus-pill-gemini {
+    background: #eef2ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+}
+
+.nexus-pill-copilot {
+    background: #f8fafc;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+}
+
+.nexus-pill-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+/* Enhanced Hover Logic for Provider Cards */
+.nexus-card:hover .nexus-icon-shell.nexus-icon-gemini {
+    background: #eef2ff;
+    color: #4f46e5;
+    border-color: #c7d2fe;
+}
+
+.nexus-card:hover .nexus-icon-shell.nexus-icon-github {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+/* Expert Hub: Quick Action Atoms */
+.nexus-expert-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 99px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.nexus-active-glow {
+    box-shadow: 0 0 15px rgba(79, 70, 229, 0.3);
+    border-color: rgba(79, 70, 229, 0.4);
+}
+
+.nexus-hover-glow:hover {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    background: #fff;
+    border-color: #e2e8f0;
+}
+

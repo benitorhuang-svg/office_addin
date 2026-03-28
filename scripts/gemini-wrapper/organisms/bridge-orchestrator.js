@@ -64,6 +64,18 @@ class BridgeOrchestrator {
             });
         }
 
+        if (method === 'models.list') {
+            log(`[BRIDGE] Virtual models.list response (protocol 3)`);
+            return this.sdk.send({
+                jsonrpc: "2.0", id,
+                result: [
+                    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+                    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+                    { id: 'gemini-3.1-pro-preview-customtools', name: 'Gemini 3.1 Pro (Preview)' }
+                ]
+            });
+        }
+
         if (method === 'auth.getStatus') {
             return this.sdk.send({
                 jsonrpc: "2.0", id,
@@ -83,7 +95,7 @@ class BridgeOrchestrator {
             state.idMap.set(cliId, id);
             state.sessionConfig = params;
             // Remember the SDK-side sessionId so events reach the right session
-            state.sdkSessionId = params.sessionId || null;
+            state.sdkSessionId = params.sessionId || state.sdkSessionId || 'active-session';
 
             // Convert mcpServers: SDK uses Record<string, Config>, CLI expects array
             let mcpArray = [];
@@ -130,6 +142,8 @@ class BridgeOrchestrator {
             }
             state.setSession(null, null, null);
             state.clearTextBuffer();
+            // In ACP v1/v2, disconnect might not exist or return MethodNotFound.
+            // We return success to the SDK regardless so the client side can proceed.
             return this.sdk.send({ jsonrpc: "2.0", id, result: { success: true } });
         }
 
@@ -231,6 +245,25 @@ class BridgeOrchestrator {
                     data: { deltaContent: text }
                 });
             }
+            return;
+        }
+
+        // Handle tool calls from Gemini
+        if (updateType === 'tool_call' || updateType === 'assistant.tool_call') {
+            log(`[BRIDGE] TOOL CALL: ${update.toolCallId || 'unbound'}`);
+            this.sendSessionEvent(sessionId, {
+                type: 'assistant.tool_call',
+                data: update.content ? { toolCalls: [update] } : update
+            });
+            return;
+        }
+
+        if (updateType === 'tool_call_update' || updateType === 'assistant.tool_call_update') {
+            log(`[BRIDGE] TOOL RESULT: ${update.toolCallId || 'unbound'} (${update.status})`);
+            this.sendSessionEvent(sessionId, {
+                type: 'assistant.tool_call_update',
+                data: update
+            });
             return;
         }
 
