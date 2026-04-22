@@ -1,4 +1,4 @@
-import { WritingPreset } from "../atoms/types.js";
+import type { WritingPreset } from "../atoms/types.js";
 
 /**
  * Atom: Fallback Writing Presets

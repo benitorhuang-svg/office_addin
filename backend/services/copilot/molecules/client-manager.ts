@@ -1,7 +1,9 @@
-import { CopilotClient, CopilotClientOptions } from "@github/copilot-sdk";
-import { ACPConnectionMethod } from '../atoms/types.js';
+import { CopilotClient } from "@github/copilot-sdk";
+import type { CopilotClientOptions } from "@github/copilot-sdk";
+import type { ACPConnectionMethod } from '../atoms/types.js';
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
 import { IdleCleaner } from './idle-cleaner.js';
+import { logger } from '../../../atoms/logger.js';
 
 /**
  * Modern Client Manager with Connection Pooling and Health Monitoring.
@@ -64,7 +66,7 @@ class ClientManager {
     // Check if a client is already being created for this key
     const pendingPromise = this.pendingClients.get(clientKey);
     if (pendingPromise) {
-      console.log(`[Client Manager] Waiting for pending creation: ${method}`);
+      logger.info('ClientManager', 'Waiting for pending client creation', { method });
       return pendingPromise;
     }
 
@@ -74,23 +76,28 @@ class ClientManager {
 
     // Create a new promise for the client creation
     const createClientPromise = (async () => {
+      let client: CopilotClient | undefined;
+      let startTimer: ReturnType<typeof setTimeout> | undefined;
+
       try {
-        console.log(`[Client Manager] Starting new ${method} instance (Adaptive Mode)`);
+        logger.info('ClientManager', 'Starting new Copilot client', { method, clientKey });
         const startTimeoutMs = method === 'gemini_cli'
           ? CORE_SDK_CONFIG.GEMINI_CLIENT_START_TIMEOUT_MS
           : CORE_SDK_CONFIG.CLIENT_START_TIMEOUT_MS;
         
         // standard SDK client instantiation
-        const client = new CopilotClient(options);
+        client = new CopilotClient(options);
 
         // Add a safety timeout to prevent permanent server hangs during handshake.
-        await Promise.race([
-          client.start(),
-          new Promise((_, reject) => setTimeout(
+        const startPromise = client.start();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          startTimer = setTimeout(
             () => reject(new Error(`ACP Client Timeout (${method}): Agent failed to start/handshake within ${Math.round(startTimeoutMs / 1000)}s`)),
             startTimeoutMs
-          ))
-        ]);
+          );
+        });
+
+        await Promise.race([startPromise, timeoutPromise]);
 
         // Store client info
         this.clients.set(clientKey, {
@@ -110,9 +117,15 @@ class ClientManager {
 
         return client;
       } catch (error) {
-        console.error(`[Client Manager] Failed to start ${method}:`, error);
+        if (client) {
+          await client.stop().catch(() => undefined);
+        }
+        logger.error('ClientManager', 'Failed to start Copilot client', { method, clientKey, error });
         throw error;
       } finally {
+        if (startTimer) {
+          clearTimeout(startTimer);
+        }
         this.pendingClients.delete(clientKey);
       }
     })();
@@ -143,7 +156,7 @@ class ClientManager {
         await clientInfo.client.ping();
         clientInfo.healthy = true;
       } catch (error) {
-        console.warn(`[Client Manager] Health check failed for ${key}:`, error);
+        logger.warn('ClientManager', 'Client health check failed', { key, method: clientInfo.method, error });
         clientInfo.healthy = false;
         if ((now - clientInfo.lastUsed) > 60000) {
           clientsToRemove.push(key);
@@ -162,7 +175,11 @@ class ClientManager {
       try {
         await clientInfo.client.stop();
       } catch (error) {
-        console.warn(`[Client Manager] Stop error for ${key}:`, error);
+        logger.warn('ClientManager', 'Failed to stop Copilot client cleanly', {
+          key,
+          method: clientInfo.method,
+          error,
+        });
       }
       this.clients.delete(key);
       IdleCleaner.remove(key);

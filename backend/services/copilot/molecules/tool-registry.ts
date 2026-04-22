@@ -1,9 +1,13 @@
-import { defineTool, Tool } from "@github/copilot-sdk";
+import { defineTool } from "@github/copilot-sdk";
+import type { Tool } from "@github/copilot-sdk";
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { logger } from '../../../atoms/logger.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+const PYTHON_TOOL_TIMEOUT_MS = Number(process.env.PYTHON_TOOL_TIMEOUT_MS || 15000);
+const PYTHON_TOOL_MAX_BUFFER_BYTES = Number(process.env.PYTHON_TOOL_MAX_BUFFER_BYTES || 1024 * 1024);
 
 /**
  * Molecule: Centralized Tool Registry
@@ -20,8 +24,9 @@ const searchTool: Tool<{ query: string }> = defineTool("google_search", {
     },
     required: ["query"]
   },
+  skipPermission: true,
   handler: async ({ query }) => {
-    console.log(`${CORE_SDK_CONFIG.MOCK_ACP_SEARCH_RESULT.substring(0, 20)}: ${query}`);
+    logger.info('ToolRegistry', 'Executing google_search tool', { query });
     if (query.toUpperCase().includes("ACP") && query.toUpperCase().includes("COPILOT")) {
       return CORE_SDK_CONFIG.MOCK_ACP_SEARCH_RESULT;
     }
@@ -47,10 +52,17 @@ const pythonTool: Tool<{ code: string }> = defineTool("python_executor", {
   handler: async ({ code }) => {
     const tmpFile = join(tmpdir(), `nexus_script_${randomUUID()}.py`);
     try {
-      console.log(`[Python Engine] Staging industrial script: ${tmpFile}`);
+      logger.info('ToolRegistry', 'Staging python_executor script', {
+        tmpFile,
+        timeoutMs: PYTHON_TOOL_TIMEOUT_MS,
+      });
       await writeFile(tmpFile, code, 'utf-8');
-      
-      const { stdout, stderr } = await execAsync(`python "${tmpFile}"`);
+
+      const { stdout, stderr } = await execFileAsync('python', [tmpFile], {
+        timeout: PYTHON_TOOL_TIMEOUT_MS,
+        maxBuffer: PYTHON_TOOL_MAX_BUFFER_BYTES,
+        windowsHide: true,
+      });
       const output = (stdout + (stderr || "")).trim();
 
       // Multi-Chart Dash-Orchestrator: Processing ALL industrial dispatch signals
@@ -64,7 +76,12 @@ const pythonTool: Tool<{ code: string }> = defineTool("python_executor", {
                   const title = parts[1];
                   const type = parts[2];
                   const range = parts[3] || "AUTO";
-                  console.log(`[Python Bridge] Dispatching dashboard component [${index + 1}/${commandLines.length}]: ${title}`);
+                  logger.info('ToolRegistry', 'Dispatching chart from python bridge', {
+                    index,
+                    total: commandLines.length,
+                    title,
+                    chartType: type,
+                  });
                   
                   // Broadcast with index for auto-stacking on client
                   NexusSocketRelay.broadcast('EXCEL_CHART_EXTERNAL', { title, chartType: type, range, index });
@@ -73,14 +90,21 @@ const pythonTool: Tool<{ code: string }> = defineTool("python_executor", {
       }
       
       return output || "Execution successful (no standard output).";
-    } catch (err: any) {
-      console.error(`[Python Engine] Execution failed:`, err.message);
-      return `Runtime Error: ${err.message}`;
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('ToolRegistry', 'python_executor failed', {
+        tmpFile,
+        error,
+      });
+      return `Runtime Error: ${error.message}`;
     } finally {
       try {
         await unlink(tmpFile);
       } catch (e) {
-        console.warn(`[Python Engine] Cleanup failed for ${tmpFile}`);
+        logger.warn('ToolRegistry', 'Failed to cleanup python temp file', {
+          tmpFile,
+          error: e,
+        });
       }
     }
   }
@@ -97,6 +121,7 @@ const chartTool: Tool<{ title: string; chartType: string; range?: string }> = de
     },
     required: ["title", "chartType"]
   },
+  skipPermission: true,
   handler: async ({ title, chartType, range }) => {
     // Nexus Protocol: Sending dispatch signal to Client Architect
     return `[DISPATCH]: EXCEL_CHART_INIT | ${title} | ${chartType} | ${range || "AUTO"}`;
@@ -104,6 +129,6 @@ const chartTool: Tool<{ title: string; chartType: string; range?: string }> = de
 });
 
 /** All tools injected into every SDK session */
-export function getSessionTools(): Tool<any>[] {
+export function getSessionTools() {
   return [searchTool, pythonTool, chartTool];
 }

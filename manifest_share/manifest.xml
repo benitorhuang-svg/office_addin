@@ -3,12 +3,6 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="TaskPaneApp">
-  <Id>b7a1e2f3-c4d5-6e7f-8a90-b1c2d3e4f5a6</Id>
-  <Version>1.0.0.1</Version>
-  <ProviderName>Nexus</ProviderName>
-  <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Nexus Center" />
-  <Description DefaultValue="Industrial Precision Workspace Orchestrator" />
   <Id>b7a1e2f3-c4d5-6e7f-8a90-b1c2d3e4f5a7</Id>
   <Version>1.0.0.1</Version>
   <ProviderName>Nexus</ProviderName>

@@ -3,6 +3,8 @@
  * Periodically scans for idle CopilotClient instances and cleans them up.
  */
 
+import { logger } from '../../../atoms/logger.js';
+
 const DEFAULT_IDLE_MINUTES = 30;
 const SCAN_INTERVAL_MS = 5 * 60_000; // 5 minutes
 
@@ -54,12 +56,12 @@ export const IdleCleaner = {
       const idleEntries = this.getIdleEntries();
       for (const entry of idleEntries) {
         const idleMins = Math.round((Date.now() - entry.lastActivity) / 60_000);
-        console.log(`[IdleCleaner] Cleaning idle client "${entry.key}" (idle ${idleMins}min)`);
+        logger.info('IdleCleaner', 'Cleaning idle client', { key: entry.key, idleMinutes: idleMins });
         try {
           await cleanupFn(entry.key);
           this.remove(entry.key);
         } catch (err) {
-          console.error(`[IdleCleaner] Failed to cleanup "${entry.key}":`, err);
+          logger.error('IdleCleaner', 'Failed to cleanup idle client', { key: entry.key, error: err });
         }
       }
     }, SCAN_INTERVAL_MS);

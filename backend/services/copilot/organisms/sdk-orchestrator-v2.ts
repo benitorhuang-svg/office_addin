@@ -1,12 +1,12 @@
 import config from '../../../config/molecules/server-config.js';
-import { ACPConnectionMethod, AzureInfo, ACPSessionConfig } from '../atoms/types.js';
+import type { ACPConnectionMethod, AzureInfo, ACPSessionConfig } from '../atoms/types.js';
 import { resolveMethodFromContext } from '../molecules/option-resolver.js';
 import { stopAllClients } from '../molecules/client-manager.js';
 import { clearAllPendingInputs, resolveInput as resolveInputFromQueue } from '../molecules/pending-input-queue.js';
 import { cleanupAllSessions } from '../molecules/session-lifecycle.js';
-import { NexusSocketRelay } from '../../molecules/nexus-socket.js';
 import { SdkTurnOrchestrator } from '../molecules/sdk-turn-orchestrator.js';
 import { SdkRetryEngine } from '../molecules/sdk-retry-engine.js';
+import { checkAgentHealth } from './health-prober.js';
 
 /**
  * Organism: Modern SDK Orchestrator (Refactored)
@@ -21,10 +21,10 @@ export class ModernSDKOrchestrator {
 
   /**
    * Main entry point for sending prompts via GitHub Copilot SDK.
+   * NOTE: Token management is handled internally by core-config; no token param needed.
    */
   public static async sendPrompt(
     prompt: string,
-    _token: string,
     onChunk?: (chunk: string) => void,
     isExplicitCli: boolean = false,
     modelName: string = config.COPILOT_MODEL,
@@ -33,10 +33,13 @@ export class ModernSDKOrchestrator {
     geminiKey?: string,
     signal?: AbortSignal
   ): Promise<string> {
-    if (signal?.aborted) return '';
-    
+    // Throw a proper AbortError so callers (retry engine, SSE handler) can
+    // distinguish abort from success and avoid logging it as an error.
+    if (signal?.aborted) {
+      throw new DOMException('The operation was aborted', 'AbortError');
+    }
+
     const method = methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli);
-    NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', { isStreaming: true });
 
     const acpConfig: ACPSessionConfig = {
       method,
@@ -54,7 +57,6 @@ export class ModernSDKOrchestrator {
       acpConfig,
       onChunk
     );
-
     return result as string;
   }
 
@@ -65,6 +67,7 @@ export class ModernSDKOrchestrator {
   }
 
   public static async healthCheck(): Promise<Record<string, boolean>> {
-    return {}; // Logic delegated to molecules
+    const health = await checkAgentHealth();
+    return { [health.type || 'unknown']: !!health.ok };
   }
 }

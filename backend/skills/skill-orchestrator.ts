@@ -10,8 +10,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Decides 'When to use what' to maximize efficiency.
  */
 export class SkillOrchestrator {
-    private manifest: Record<string, unknown> | null = null;
-
     private manifestPromise: Promise<void>;
 
     constructor() {
@@ -21,8 +19,7 @@ export class SkillOrchestrator {
     private async init() {
         const manifestPath = path.join(__dirname, "skills-manifest.json");
         try {
-            const data = await fs.promises.readFile(manifestPath, "utf-8");
-            this.manifest = JSON.parse(data);
+            await fs.promises.readFile(manifestPath, "utf-8");
         } catch (err) {
             console.error("ORCHESTRATOR: Manifest load failed", err);
         }

@@ -8,6 +8,7 @@ import { AUTH_BTN_IDS } from "@services/atoms/layout-registry";
 import { PROVIDER_PROFILES, ProviderProfile } from "@services/atoms/provider-profiles";
 import { createProviderCard } from "../molecules/ProviderCard";
 import { createAuthInputArea } from "../molecules/AuthInputArea";
+import { createButton } from "../atoms/Button";
 
 export interface AuthGatewayProps {
     auth: AuthController | null;
@@ -137,6 +138,25 @@ export function createAuthGateway({ auth }: AuthGatewayProps): NexusComponent {
     selectionGrid.appendChild(buildProviderNode(PROVIDER_PROFILES[NexusProvider.COPILOT_PAT]));
 
     container.appendChild(selectionGrid);
+
+    // --- ➕ 全局清除功能：清除所有 API 記憶 ---
+    const resetBtn = createButton({
+        id: "nexus-global-reset",
+        label: "清除所有受信任的 API 記憶",
+        icon: "trash-2",
+        className: "nexus-w-full nexus-mt-3 nexus-bg-white nexus-text-slate-400 nexus-border-slate-100 nexus-hover-text-red-500 nexus-hover-bg-red-50 nexus-transition-all nexus-opacity-50 nexus-hover-opacity-100"
+    });
+
+    resetBtn.onclick = () => {
+        const keys = ["nexus_gemini_key", "nexus_github_pat", "nexus_verified_gemini", "nexus_verified_github"];
+        keys.forEach(k => localStorage.removeItem(k));
+        import("../molecules/Toast").then(({ Toast }) => {
+            Toast.show("記憶已清除，正在重新初始化...", "info");
+            setTimeout(() => window.location.reload(), 1000);
+        });
+    };
+
+    container.appendChild(resetBtn);
 
     // Initial Binding & Auto-Login Handshake
     setTimeout(() => {

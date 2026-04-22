@@ -26,6 +26,11 @@ export function createAuthInputArea({ profile, onVerify, onEnter, isVerified = f
     if (profile.provider === NexusProvider.GEMINI_API) {
         const input = createInput({ id: "gemini-input", type: "password", placeholder: "輸入 Google AI API Key..." });
         input.className += " nexus-auth-input";
+        
+        // --- ➕ 記憶功能：自動載入 ---
+        const savedKey = localStorage.getItem("nexus_gemini_key");
+        if (savedKey) input.value = savedKey;
+
         inputArea.appendChild(input);
 
         const btnGroup = document.createElement("div");
@@ -42,6 +47,9 @@ export function createAuthInputArea({ profile, onVerify, onEnter, isVerified = f
             e.stopPropagation();
             const key = (document.getElementById("gemini-input") as HTMLInputElement)?.value;
             if (key) {
+                // --- ➕ 記憶功能：自動儲存 ---
+                localStorage.setItem("nexus_gemini_key", key);
+
                 verifyBtn.innerHTML = `驗證中...`;
                 await onVerify("gemini", key);
             } else {
@@ -67,6 +75,11 @@ export function createAuthInputArea({ profile, onVerify, onEnter, isVerified = f
     } else if (profile.provider === NexusProvider.COPILOT_PAT) {
         const input = createInput({ id: "pat-input", type: "password", placeholder: "輸入 GitHub Personal Token..." });
         input.className += " nexus-auth-input";
+
+        // --- ➕ 記憶功能：自動載入 ---
+        const savedToken = localStorage.getItem("nexus_github_pat");
+        if (savedToken) input.value = savedToken;
+
         inputArea.appendChild(input);
 
         const btnGroup = document.createElement("div");
@@ -83,6 +96,9 @@ export function createAuthInputArea({ profile, onVerify, onEnter, isVerified = f
             e.stopPropagation();
             const token = (document.getElementById("pat-input") as HTMLInputElement)?.value;
             if (token) {
+                // --- ➕ 記憶功能：自動儲存 ---
+                localStorage.setItem("nexus_github_pat", token);
+
                 verifyBtn.innerHTML = `驗證中...`;
                 await onVerify("github", token);
             } else {

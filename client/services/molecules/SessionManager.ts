@@ -10,7 +10,7 @@ import { getHealth } from "@services/organisms/api-orchestrator";
 export class SessionManager {
     private static isConnected: boolean = false;
     private static isHomeResetting: boolean = false;
-    private static stabilityTimeout: any = null;
+    private static stabilityTimeout: ReturnType<typeof setTimeout> | null = null;
     private static healthInterval: number | null = null;
 
     public static async syncState(onSuccess?: () => void) {
@@ -31,7 +31,8 @@ export class SessionManager {
             
             NexusStateStore.update({ 
                 power: serverState.power,
-                uplinkMode: serverState.uplinkMode || 'CLI' // Sync APC/CLI mode from server
+                uplinkMode: serverState.uplinkMode || 'CLI', // Sync APC/CLI mode from server
+                ...(typeof serverState.isStreaming === 'boolean' ? { isStreaming: serverState.isStreaming } : {})
             });
             if (serverState.provider) NexusStateStore.setProvider(serverState.provider);
             
@@ -41,7 +42,7 @@ export class SessionManager {
         } catch (e: unknown) {
             this.isConnected = false;
             NexusStateStore.setServerConnected(false);
-            console.warn(`[SessionManager] Sync Failure`);
+            console.warn(`[SessionManager] Sync Failure`, e);
         }
     }
 

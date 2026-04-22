@@ -1,4 +1,4 @@
-import { ChatContext, AuthController, NexusProvider } from "../atoms/types";
+import { ChatContext, AuthController, NexusProvider, OfficeAction } from "../atoms/types";
 import { HistoryManager } from "../molecules/HistoryManager";
 import { ChatUiHelper } from "../molecules/chat-ui-helper";
 import { CircuitBreaker } from "../molecules/circuit-breaker";
@@ -12,6 +12,21 @@ import { IntelligenceStep } from "../../components/atoms/StepItem";
  */
 export class ChatOrchestrator {
   private isGenerating = false;
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === "object" && error !== null && "detail" in error) {
+      const detail = (error as { detail?: unknown }).detail;
+      if (typeof detail === "string" && detail.length > 0) {
+        return detail;
+      }
+    }
+
+    return String(error);
+  }
 
   public async handleSend(
     prompt: string,
@@ -141,7 +156,7 @@ To trigger the Excel Chart Factory IMMEDIATELY from within your Python logic, yo
       }
 
       // 5. Normal UI Action Rendering
-      const finalActions: any[] = [...(res.actions || [])];
+      const finalActions: OfficeAction[] = [...(res.actions || [])];
       if (!finalActions.some(a => a.type === 'INSERT')) {
         finalActions.push({ type: 'INSERT', text: "Paste to Office", icon: "edit", value: res.text });
       }
@@ -155,14 +170,14 @@ To trigger the Excel Chart Factory IMMEDIATELY from within your Python logic, yo
             Toast.show("COPIED_TO_CLIPBOARD", "success");
             return;
         }
-        await applyUniversalOfficeActions([{ type: type as any, value: val }], val);
+        await applyUniversalOfficeActions([{ type, value: val }], val);
       });
 
       CircuitBreaker.recordSuccess(provider as NexusProvider);
       return res.text || "";
-    } catch (error: any) {
+    } catch (error: unknown) {
       CircuitBreaker.recordFailure(auth.getAuthProvider() as NexusProvider);
-      const msg = `Error: ${error.detail || error.message || String(error)}`;
+      const msg = `Error: ${this.getErrorMessage(error)}`;
       ChatUiHelper.renderError(ctx.historyEl as HTMLElement, msg);
       return "";
     } finally {

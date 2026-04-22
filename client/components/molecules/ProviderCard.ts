@@ -28,7 +28,7 @@ export function createProviderCard({ id, profile, isSkip = false, onHeaderClick 
         github: "nexus-bg-slate-100 nexus-text-slate-600",
     };
     iconShell.className = `nexus-auth-icon-shell ${iconColorMap[profile.pillVariant] || 'nexus-bg-slate-50 nexus-text-slate-400'} group-hover:scale-110 nexus-transition-all`;
-    iconShell.appendChild(createIcon({ name: profile.icon as any, size: 24 }));
+    iconShell.appendChild(createIcon({ name: profile.icon, size: 24 }));
     
     const textBody = document.createElement("div");
     textBody.className = "nexus-flex nexus-flex-col nexus-flex-1";

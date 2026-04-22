@@ -2,7 +2,7 @@ import { getPresetById } from '../atoms/presets.js';
 import { PROFESSIONAL_DRAFT_DIRECTIVE } from '../atoms/prompt-template.js';
 import { SYSTEM_IDENTITY_TEMPLATE } from '../atoms/system-identity.js';
 import { WORD_ACTION_GUIDE } from '../atoms/word-instructions.js';
-import { OfficeContext } from '../atoms/types.js';
+import type { OfficeContext } from '../atoms/types.js';
 
 /**
  * Organism: Prompt Orchestrator

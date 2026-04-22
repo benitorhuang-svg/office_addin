@@ -1,8 +1,8 @@
 import { stopAllClients } from '../services/copilot/organisms/sdk-provider.js';
-import http from 'node:http';
-import https from 'node:https';
+import type { Server as HttpServer } from 'node:http';
+import type { Server as HttpsServer } from 'node:https';
 
-type ManagedServer = http.Server | https.Server;
+type ManagedServer = HttpServer | HttpsServer;
 
 /**
  * Molecule: Lifecycle Manager

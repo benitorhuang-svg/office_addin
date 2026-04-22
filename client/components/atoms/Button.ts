@@ -1,11 +1,11 @@
 /* global document, HTMLButtonElement */
 
-import { createIcon } from "./Icon";
+import { createIcon, type IconName } from "./Icon";
 
 export interface ButtonProps {
   id?: string;
   label?: string;
-  icon?: string;
+  icon?: IconName;
   title?: string;
   variant?: "primary" | "zen" | "outline"; 
   className?: string; 
@@ -38,7 +38,7 @@ export function createButton({
   btn.className = `${baseClasses} ${variantClasses} ${className}`;
   
   if (icon) {
-    const iconEl = createIcon({ name: icon as any, size: isZen ? 22 : 16 });
+    const iconEl = createIcon({ name: icon, size: isZen ? 22 : 16 });
     iconEl.setAttribute("class", `${label ? "nexus-mr-2" : ""} nexus-opacity-80`);
     btn.appendChild(iconEl);
   }

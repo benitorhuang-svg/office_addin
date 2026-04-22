@@ -1,4 +1,4 @@
-import { CopilotClientOptions, SessionConfig } from "@github/copilot-sdk";
+import type { CopilotClientOptions, SessionConfig } from "@github/copilot-sdk";
 
 export type ACPConnectionMethod = 'copilot_cli' | 'gemini_cli' | 'azure_byok' | 'remote_cli';
 

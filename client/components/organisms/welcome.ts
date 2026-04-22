@@ -3,7 +3,7 @@
  * The premium entry portal for modern AI-assisted editing.
  */
 import { createTypography } from "@atoms/Typography";
-import { createIcon } from "@atoms/Icon";
+import { createIcon, type IconName } from "@atoms/Icon";
 
 export interface WelcomeScreenProps {
     onStartLive?: () => void;
@@ -34,13 +34,13 @@ export function createWelcomeScreen({ onStartLive, onStartPreview }: WelcomeScre
     const lattice = document.createElement("div");
     lattice.className = "nexus-w-full nexus-max-w-320 nexus-flex nexus-flex-col nexus-gap-6 nexus-mb-16";
 
-    const createFeature = (icon: string, title: string, sub: string) => {
+    const createFeature = (icon: IconName, title: string, sub: string) => {
         const item = document.createElement("div");
         item.className = "nexus-flex nexus-items-start nexus-gap-4 nexus-p-5 nexus-bg-slate-50-30 nexus-rounded-2xl nexus-border nexus-border-slate-100-50 nexus-hover-shadow-sm nexus-transition-all";
         
         const iShell = document.createElement("div");
         iShell.className = "nexus-text-brand-blue nexus-mt-0-5";
-        iShell.appendChild(createIcon({ name: icon as any, size: 18 }));
+        iShell.appendChild(createIcon({ name: icon, size: 18 }));
         
         const tShell = document.createElement("div");
         tShell.appendChild(createTypography({ variant: "h3", text: title, className: "nexus-text-slate-900" }));

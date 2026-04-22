@@ -1,8 +1,9 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import { Server } from 'node:http';
-import { Server as HttpsServer } from 'node:https';
+import { WebSocket, WebSocketServer } from 'ws';
+import type { Server } from 'node:http';
+import type { Server as HttpsServer } from 'node:https';
 import { GlobalSystemState } from './system-state-store.js';
-import { ACPConnectionMethod } from '../copilot/atoms/types.js';
+import type { ACPConnectionMethod } from '../copilot/atoms/types.js';
+import { logger } from '../../atoms/logger.js';
 /**
  * Molecule: Nexus Socket Relay
  * Handles real-time state broadcasts between PWA and Taskpane.
@@ -13,12 +14,12 @@ export class NexusSocketRelay {
 
     public static attach(server: Server | HttpsServer) {
         this.wss = new WebSocketServer({ server });
-        
-        console.log('[Socket] Nexus Relay Attached.');
+
+        logger.info('NexusSocket', 'Nexus relay attached');
 
         this.wss.on('connection', (ws) => {
             this.clients.add(ws);
-            console.log(`[Socket] Client connected. Total: ${this.clients.size}`);
+            logger.info('NexusSocket', 'Client connected', { totalClients: this.clients.size });
 
             ws.on('message', (data) => {
                 try {
@@ -27,7 +28,7 @@ export class NexusSocketRelay {
                         ws.send(JSON.stringify({ type: 'PONG', payload: {} }));
                         return;
                     }
-                    console.log(`[Socket] Received: ${type}`);
+                    logger.info('NexusSocket', 'Received socket message', { type });
                     // Relayer logic: Broadcast to other clients if needed, 
                     // or handle specific server-side actions.
                     if (type === 'SET_POWER' || type === 'SET_PROVIDER') {
@@ -39,17 +40,17 @@ export class NexusSocketRelay {
                         this.broadcast('SYSTEM_STATE_UPDATED', GlobalSystemState.getState());
                     }
                 } catch (e) {
-                    console.error('[Socket] Parse Error:', e);
+                    logger.error('NexusSocket', 'Failed to parse incoming socket message', { error: e });
                 }
             });
 
             ws.on('close', () => {
                 this.clients.delete(ws);
-                console.log(`[Socket] Client disconnected. Remaining: ${this.clients.size}`);
+                logger.info('NexusSocket', 'Client disconnected', { remainingClients: this.clients.size });
             });
 
             ws.on('error', (err) => {
-                console.error('[Socket] Connection Error:', err);
+                logger.error('NexusSocket', 'WebSocket connection error', { error: err });
                 this.clients.delete(ws);
             });
             
@@ -67,7 +68,7 @@ export class NexusSocketRelay {
                 client.send(message);
             }
         });
-        
-        console.log(`[Socket] Broadcast: ${type}`);
+
+        logger.info('NexusSocket', 'Broadcast socket event', { type, clientCount: this.clients.size });
     }
 }

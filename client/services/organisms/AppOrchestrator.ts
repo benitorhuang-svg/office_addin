@@ -9,6 +9,17 @@ import { HistoryManager } from "@services/molecules/HistoryManager";
 import { resolveProviderProfile } from "@services/atoms/provider-profiles";
 import { SessionManager } from "../molecules/SessionManager";
 import { DiagnosticEngine } from "../molecules/DiagnosticEngine";
+import { SocketService } from "@services/molecules/socket-service";
+import { SocketEvent } from "@shared/enums";
+import { createExcelChart } from "@services/molecules/excel-actions";
+
+interface AttachedFilePayload {
+    name: string;
+}
+
+function getEventDetail<T>(event: Event): T {
+    return (event as CustomEvent<T>).detail;
+}
 
 /**
  * Organism Service: App Orchestrator
@@ -24,7 +35,7 @@ export class AppOrchestrator {
         // Finalize model configuration loading
         const { getConfig } = await import("../organisms/api-orchestrator");
         const config = await getConfig();
-        ModelManager.loadConfig(config as any);
+        ModelManager.loadConfig(config);
     }
 
     public static startHealthMonitor() { SessionManager.startMonitoring(); }
@@ -137,17 +148,17 @@ export class AppOrchestrator {
     }
 
     public static initListeners() {
-        window.addEventListener("NEXUS_ATTACH_FILE", (e: any) => this.handleFileAttach(e.detail));
-        window.addEventListener("NEXUS_ATTACH_BATCH", (e: any) => this.handleBatchAttach(e.detail));
+        window.addEventListener("NEXUS_ATTACH_FILE", (event: Event) => {
+            this.handleFileAttach(getEventDetail<AttachedFilePayload | null>(event));
+        });
+        window.addEventListener("NEXUS_ATTACH_BATCH", (event: Event) => {
+            this.handleBatchAttach(getEventDetail<string[]>(event));
+        });
         window.addEventListener("NEXUS_EXCEL_TOGGLE", () => this.handleExcelToggle());
         window.addEventListener("NEXUS_AUTH_TRIGGER", () => { this.triggerHomeReset(); Toast.show("REDIRECT: AUTH_GATEWAY", "info"); });
 
         // Industrial Protocol Bridge V14: Zero-Latency Charting from Python Tool
-        const { SocketService } = require("@services/molecules/socket-service");
-        const { SocketEvent } = require("@shared/enums");
-        const { createExcelChart } = require("@services/molecules/excel-actions");
-
-        SocketService.on(SocketEvent.EXCEL_CHART_EXTERNAL, async (payload: any) => {
+        SocketService.on(SocketEvent.EXCEL_CHART_EXTERNAL, async (payload) => {
             console.log(`%c[BRIDGE] External_Dispatch_Received: ${payload.title} (Index: ${payload.index})`, "color: #f59e0b; font-weight: bold;");
             Toast.show(`BRIDGE_LINK: Rendering [${payload.title}]`, "success");
             try {
@@ -159,7 +170,7 @@ export class AppOrchestrator {
         });
     }
 
-    private static handleFileAttach(file: any) {
+    private static handleFileAttach(file: AttachedFilePayload | null) {
         if (!file) return;
         const state = NexusStateStore.getState();
         const nextAttachments = Array.from(new Set([...(state.attachments || []), file.name]));

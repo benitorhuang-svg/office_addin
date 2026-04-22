@@ -59,10 +59,11 @@ class TaskpaneLauncher {
         if (!this.isInitializing) this.refreshUI();
     });
 
-    SocketService.on(SocketEvent.SYSTEM_STATE_UPDATED, (data: { power: NexusPowerState; provider: NexusProvider }) => {
+    SocketService.on(SocketEvent.SYSTEM_STATE_UPDATED, (data: { power?: NexusPowerState; provider?: NexusProvider; isStreaming?: boolean }) => {
         if (AppOrchestrator.getIsHomeResetting?.()) return; // Lock UI state
-        if (data.power) NexusStateStore.update({ power: data.power });
+        if (data.power !== undefined) NexusStateStore.setPower(data.power);
         if (data.provider) NexusStateStore.setProvider(data.provider);
+        if (typeof data.isStreaming === "boolean") NexusStateStore.update({ isStreaming: data.isStreaming });
     });
 
     this.isInitializing = false;

@@ -17,8 +17,19 @@ export interface SocketEventMap {
     };
     'SET_POWER': { power: NexusPowerState };
     'SET_PROVIDER': { provider: NexusProvider };
-    'TELEMETRY_LATENCY': { latencyMs: number, model: string };
-    'CHAT_PROGRESS': { progress: number, status: string };
+    'TELEMETRY_LATENCY': {
+        ms?: number;
+        latencyMs?: number;
+        ttftMs?: number;
+        model?: string;
+        endpoint?: string;
+        method?: string;
+        status?: number;
+        requestId?: string;
+        turnId?: string;
+        phase?: string;
+    };
+    'CHAT_PROGRESS': { text?: string; done?: boolean; progress?: number; status?: string; turnId?: string };
     'PING': Record<string, never>;
     'PONG': Record<string, never>;
 }

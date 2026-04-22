@@ -4,6 +4,7 @@
  */
 import { createButton } from "../atoms/Button";
 import { NexusStateStore } from "../../services/molecules/global-state";
+import { NexusProvider, type NexusState } from "@shared/types";
 
 export function createExpertHub(onClearChat?: () => void) {
     const container = document.createElement("div");
@@ -27,7 +28,7 @@ export function createExpertHub(onClearChat?: () => void) {
         }`;
     };
 
-    NexusStateStore.subscribe((state: any) => updateExcelUI(state.isExcelActive));
+    NexusStateStore.subscribe((state: NexusState) => updateExcelUI(state.isExcelActive ?? false));
     updateExcelUI(NexusStateStore.getState().isExcelActive);
 
     // --- Gemini Login (Visible only when in Preview/None mode)
@@ -38,15 +39,15 @@ export function createExpertHub(onClearChat?: () => void) {
         onClick: () => window.dispatchEvent(new CustomEvent("NEXUS_AUTH_TRIGGER"))
     });
 
-    const updateLoginUI = (provider: string) => {
-        if (provider === "NONE" || provider === "") {
+    const updateLoginUI = (provider?: NexusState["provider"] | null) => {
+        if (!provider || provider === NexusProvider.NONE) {
             loginBtn.classList.remove("nexus-hidden");
         } else {
             loginBtn.classList.add("nexus-hidden");
         }
     };
 
-    NexusStateStore.subscribe((state: any) => updateLoginUI(state.provider));
+    NexusStateStore.subscribe((state: NexusState) => updateLoginUI(state.provider));
     updateLoginUI(NexusStateStore.getState().provider);
 
     const eraserBtn = createButton({

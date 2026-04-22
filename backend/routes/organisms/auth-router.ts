@@ -1,14 +1,27 @@
-import express, { Request, Response, Router } from 'express';
+import express, { type Request, type Response } from 'express';
 import config from '../../config/env.js';
 import { renderStatusHTML } from '../atoms/status-html.js';
 import { SESSION_STORE } from '../molecules/session-store.js';
 import { OAuthService } from './oauth-service.js';
+import { logger } from '../../atoms/logger.js';
+
+interface GeminiModelsResponse {
+  models?: unknown[];
+  error?: {
+    message?: string;
+  };
+}
+
+interface GitHubUserResponse {
+  login?: string;
+  message?: string;
+}
 
 /**
  * Organism: Auth Router
  * Coordinates the full OAuth lifecycle using specialized Atoms and Molecules.
  */
-const authRouter: Router = express.Router();
+const authRouter = express.Router();
 
 /**
  * Endpoint: Polling for session token
@@ -69,7 +82,7 @@ authRouter.get('/callback', async (req: Request, res: Response): Promise<void> =
     ));
   } catch (err: unknown) {
     const error = err as Error;
-    console.error(`[OAuth Callback Error]`, error);
+    logger.error('AuthRouter', 'OAuth callback failed', { error });
     res.status(500).send(renderStatusHTML(
       '連線失敗', 
       `發生錯誤：${error.message}`, 
@@ -87,14 +100,14 @@ authRouter.post('/verify/gemini', async (req: Request, res: Response): Promise<v
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    const data = await response.json() as any;
+    const data = await response.json() as GeminiModelsResponse;
     if (response.ok && data.models) {
       res.json({ success: true, models: data.models.length });
     } else {
       res.status(401).json({ error: data.error?.message || 'Invalid API Key' });
     }
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -109,14 +122,14 @@ authRouter.post('/verify/github', async (req: Request, res: Response): Promise<v
     const response = await fetch('https://api.github.com/user', {
       headers: { 'Authorization': `token ${token}`, 'User-Agent': 'Nexus-Center-Industrial' }
     });
-    const data = await response.json() as any;
+    const data = await response.json() as GitHubUserResponse;
     if (response.ok && data.login) {
       res.json({ success: true, login: data.login });
     } else {
       res.status(401).json({ error: data.message || 'Invalid GitHub Token' });
     }
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 

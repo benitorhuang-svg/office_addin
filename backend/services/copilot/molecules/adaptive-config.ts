@@ -1,4 +1,4 @@
-import { AgentEnvironment, ACPConnectionMethod } from '../atoms/types.js';
+import type { AgentEnvironment, ACPConnectionMethod } from '../atoms/types.js';
 import config from '../../../config/env.js';
 
 /**

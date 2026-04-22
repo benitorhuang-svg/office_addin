@@ -2,6 +2,7 @@ import { createLayoutBox } from "@atoms/LayoutBox";
 import { createStepItem, IntelligenceStep } from "@atoms/StepItem";
 import { createBatchFileDetails } from "./BatchFileDetails";
 import { createStoryCard } from "./StoryCard";
+import { NexusStateStore } from "@services/molecules/global-state";
 
 export interface ChatBubbleProps {
   role: "user" | "assistant";
@@ -107,7 +108,7 @@ async function initializeAnimation(container: HTMLElement, resultWrapper: HTMLEl
         
         let i = 0;
         const typeInterval = setInterval(() => {
-            const globalStreaming = (window as any).NexusStateStore?.getState?.()?.isStreaming ?? false;
+            const globalStreaming = NexusStateStore.getState().isStreaming ?? false;
             if (globalStreaming) {
                 clearInterval(typeInterval);
                 resultWrapper.textContent = originalText;

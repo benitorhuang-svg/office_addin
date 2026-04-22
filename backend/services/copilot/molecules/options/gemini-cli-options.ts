@@ -1,10 +1,11 @@
-import { approveAll } from "@github/copilot-sdk";
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import config from '../../../../config/env.js';
 
-import { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
+import { handleCopilotPermissionRequest } from '../../atoms/permission-policy.js';
+import type { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
+import { logger } from '../../../../atoms/logger.js';
 
 const projectRoot = process.cwd();
 
@@ -53,14 +54,18 @@ export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
             try {
                 const tempAuthPath = path.join(os.tmpdir(), 'gemini-auth-token.json');
                 fs.writeFileSync(tempAuthPath, authJson);
-                console.log(`[Cloud Auth] Injected Google OAuth credentials to ${tempAuthPath}`);
+                logger.info('GeminiCliOptions', 'Injected temporary cloud auth credentials for Gemini CLI', {
+                  tempAuthPath,
+                });
                 cloudAuthEnv = {
                     GOOGLE_APPLICATION_CREDENTIALS: tempAuthPath,
                     // Force the CLI to use this path instead of ~/.gemini/auth
                     GEMINI_AUTH_PATH: tempAuthPath
                 };
             } catch (e) {
-                console.error(`[Cloud Auth Error] Failed to write temporary credentials:`, e);
+                logger.error('GeminiCliOptions', 'Failed to write temporary cloud auth credentials', {
+                  error: e,
+                });
             }
         }
 
@@ -77,7 +82,7 @@ export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
       streaming: !!cfg.streaming,
       // Default to gemini-2.5-flash as defined in our ModelManager
       model: cfg.model || 'gemini-2.5-flash',
-      onPermissionRequest: approveAll,
+      onPermissionRequest: handleCopilotPermissionRequest,
     },
   };
 };

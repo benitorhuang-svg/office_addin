@@ -21,6 +21,7 @@ Commands:
   up          (Recommended) Industrial Zenith Startup (Trust SSL + Docker Up).
   trust-ssl   Directly inject/trust the local SSL certificate onto the host.
   diagnose    Check environment, Docker, and network health.
+  doctor      Alias for diagnose.
   link        Generate and link Office Manifest to local WEF.
   icon-sync   Sync assets and update system icons.
   help        Show this help message.
@@ -29,6 +30,7 @@ Commands:
 async function main() {
     switch (command) {
         case 'diagnose':
+        case 'doctor':
             console.log('\x1b[34m[Nexus] Running Diagnostics...\x1b[0m');
             try {
                 // Use existing diag.mjs

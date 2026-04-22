@@ -9,6 +9,13 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "sourceMap": true,
     "outDir": "../dist-server"
   },
   "include": ["**/*.ts", "**/*.d.ts"]

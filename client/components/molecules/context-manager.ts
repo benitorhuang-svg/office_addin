@@ -3,6 +3,7 @@
  * Handles the project manifest list and attachment toggling.
  */
 import { NexusStateStore } from "../../services/molecules/global-state";
+import type { NexusState } from "@shared/types";
 
 export function createContextManager() {
     const wrapper = document.createElement("div");
@@ -84,7 +85,7 @@ export function createContextManager() {
         menu.appendChild(clearAllContainer);
     };
 
-    NexusStateStore.subscribe((state: any) => refreshItems(state.attachments, state.enabledAttachments));
+    NexusStateStore.subscribe((state: NexusState) => refreshItems(state.attachments, state.enabledAttachments));
     refreshItems(NexusStateStore.getState().attachments, NexusStateStore.getState().enabledAttachments);
 
     btn.onclick = (e) => {

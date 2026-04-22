@@ -1,11 +1,12 @@
 import config from '../../../config/molecules/server-config.js';
-import { OfficeContext } from '../atoms/types.js';
+import type { OfficeContext } from '../atoms/types.js';
 import { emitChunks } from '../atoms/formatters.js';
 import { GeminiRestService } from './gemini-rest-service.js';
 import { GitHubModelsService } from './github-models-service.js';
 import { PromptOrchestrator } from './prompt-orchestrator.js';
 import { FallbackChain } from '../molecules/fallback-chain.js';
 import { sendPromptViaCopilotSdk } from './sdk-provider.js';
+import { logger } from '../../../atoms/logger.js';
 
 export interface CompletionRequest {
   prompt: string;
@@ -54,17 +55,15 @@ export const CompletionService = {
 
       // Branch 3: Modern Copilot SDK (CLI-based / BYOK) with enhanced orchestrator
       const isExplicitGeminiCli = req.authProvider === 'gemini_cli';
-      const patToken = config.getServerPatToken();
 
-      // Combined Prompt: Aggressive Tool Injection Protocol
-      // We wrap the user prompt and append a 'System Override' to the tail
-      const combinedPrompt = `${system}\n\n[USER_REQUEST]:\n${user}\n\n[SYSTEM_OVERRIDE]:\nYou MUST use [python_executor] for any calculations and [create_excel_chart] for any data presentation. Do NOT explain that you can do it later; do it NOW. Execute the turn with zero meta-talk.`;
+      // Build a clean two-part prompt; tool use is driven by registered SessionConfig.tools,
+      // not inline prompt injection (SDK spec: tools must be registered, not injected).
+      const combinedPrompt = `${system}\n\n${user}`;
 
       const streamedText = await sendPromptViaCopilotSdk(
-        combinedPrompt, 
-        patToken, 
-        onChunk, 
-        isExplicitGeminiCli, 
+        combinedPrompt,
+        onChunk,
+        isExplicitGeminiCli,
         resolvedModel,
         undefined, // azure info
         isExplicitGeminiCli ? 'gemini_cli' : undefined,
@@ -75,16 +74,19 @@ export const CompletionService = {
       // Gemini CLI can occasionally finish the SSE path without any user-visible text.
       // Fallback to a non-streaming request so the UI gets a concrete answer instead of an empty bubble.
       if (isExplicitGeminiCli && req.stream && !String(streamedText || '').trim()) {
-        console.warn('[Modern CompletionService] Empty Gemini CLI streaming result. Retrying once with non-streaming fallback.');
+        logger.warn('CompletionService', 'Empty Gemini CLI streaming result; retrying once with non-streaming fallback', {
+          model: resolvedModel,
+          authProvider: req.authProvider,
+        });
         const fallbackText = await sendPromptViaCopilotSdk(
           user,
-          patToken,
           undefined,
           true,
           resolvedModel,
           undefined,
           'gemini_cli',
-          req.geminiKey
+          req.geminiKey,
+          signal  // propagate abort to fallback — avoids resource leak on disconnect
         );
 
         if (fallbackText && onChunk) {
@@ -95,26 +97,46 @@ export const CompletionService = {
 
       return streamedText;
     } catch (err: unknown) {
-      console.error('[Modern CompletionService Error]', err);
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        logger.info('CompletionService', 'Completion aborted by caller', {
+          model: resolvedModel,
+          authProvider: req.authProvider,
+        });
+        throw err;
+      }
+
+      logger.error('CompletionService', 'Primary completion path failed', {
+        model: resolvedModel,
+        authProvider: req.authProvider,
+        error: err,
+      });
 
       // Attempt fallback chain if configured and this isn't already a fallback
       const chain = FallbackChain.fromEnv();
       if (chain) {
-        console.warn('[CompletionService] Primary model failed, attempting fallback chain...');
+        logger.warn('CompletionService', 'Primary model failed; attempting fallback chain', {
+          model: resolvedModel,
+          authProvider: req.authProvider,
+        });
         try {
           const fallbackResult = await chain.execute(async (fallbackModel) => {
             const { system: _s, user: u } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, fallbackModel, req.presetId || 'general');
             // Use Copilot SDK for fallback models
-            const patToken = config.getServerPatToken();
-            const text = await sendPromptViaCopilotSdk(u, patToken, onChunk, false, fallbackModel);
+            const text = await sendPromptViaCopilotSdk(u, onChunk, false, fallbackModel, undefined, undefined, undefined, signal);
             return text;
           });
           if (fallbackResult.fallbackUsed) {
-            console.log(`[CompletionService] Fallback succeeded with model: ${fallbackResult.model}`);
+            logger.info('CompletionService', 'Fallback model succeeded', {
+              primaryModel: resolvedModel,
+              fallbackModel: fallbackResult.model,
+            });
           }
           return fallbackResult.result;
         } catch (fallbackErr) {
-          console.error('[CompletionService] Fallback chain exhausted:', fallbackErr);
+          logger.error('CompletionService', 'Fallback chain exhausted', {
+            primaryModel: resolvedModel,
+            error: fallbackErr,
+          });
         }
       }
 

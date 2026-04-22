@@ -1,5 +1,5 @@
 import config from '../../../config/env.js';
-import { AzureInfo, ACPConnectionMethod, ACPSessionConfig, ACPOptions } from '../atoms/types.js';
+import type { AzureInfo, ACPConnectionMethod, ACPSessionConfig, ACPOptions } from '../atoms/types.js';
 
 // Atomized Option Builders
 import { buildCopilotCliOptions } from './options/copilot-cli-options.js';

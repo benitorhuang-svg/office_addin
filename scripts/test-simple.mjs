@@ -27,7 +27,7 @@ async function verify(model) {
         return new Promise((resolve) => {
             const reader = response.body;
             let gotData = false;
-            reader.on('data', (d) => {
+            reader.on('data', (_d) => {
                 gotData = true;
                 process.stdout.write('.');
             });

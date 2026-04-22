@@ -35,6 +35,13 @@ module.exports = async (env, options) => {
   const dev = mode === "development";
   const config = {
     devtool: dev ? "eval-cheap-module-source-map" : false,
+    cache: {
+      type: "filesystem",
+      buildDependencies: {
+        config: [__filename],
+      },
+      name: `${mode}-cache`,
+    },
     entry: {
       taskpane: ["./client/organisms/taskpane-entry.ts"],
       commands: "./client/commands/molecules/office-commands.ts",
@@ -84,6 +91,21 @@ module.exports = async (env, options) => {
           },
         },
       ],
+    },
+    optimization: {
+      runtimeChunk: "single",
+      splitChunks: {
+        chunks: "all",
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: "vendors",
+            priority: 10,
+            reuseExistingChunk: true,
+          },
+        },
+      },
+      ...(dev ? {} : { minimize: true }),
     },
     plugins: [
       new HtmlWebpackPlugin({

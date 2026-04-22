@@ -41,8 +41,7 @@ export function createPlusMenu() {
 
     const directoryInput = document.createElement("input");
     directoryInput.type = "file";
-    // @ts-ignore
-    directoryInput.webkitdirectory = true;
+    directoryInput.setAttribute("webkitdirectory", "");
     directoryInput.style.display = "none";
     directoryInput.onchange = () => {
         const files = Array.from(directoryInput.files || []);

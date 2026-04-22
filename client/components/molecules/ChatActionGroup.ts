@@ -17,8 +17,6 @@ export function createChatActionGroup({ actions, onAction }: ChatActionGroupProp
 
     actions.forEach(action => {
         const label = action.text || "Execute";
-        const iconName = action.icon || (action.type === 'INSERT' ? 'edit' : 'copy');
-        
         const btn = document.createElement("button");
         const isInsert = action.type === 'INSERT';
         

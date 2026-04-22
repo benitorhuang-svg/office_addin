@@ -3,11 +3,13 @@
  * Sliding window per-IP rate limiting Express middleware.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import { logger } from '../../atoms/logger.js';
+import { getClientIp } from '../../atoms/client-ip.js';
 
 interface WindowEntry {
-  count: number;
-  windowStart: number;
+  timestamps: number[];
+  lastSeen: number;
 }
 
 const store = new Map<string, WindowEntry>();
@@ -19,17 +21,16 @@ const CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
 const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of store) {
-    if (now - entry.windowStart > WINDOW_MS * 2) {
+    if (entry.timestamps.length === 0 || now - entry.lastSeen > WINDOW_MS * 2) {
       store.delete(ip);
     }
   }
 }, CLEANUP_INTERVAL_MS);
 cleanupTimer.unref();
 
-import { getClientIp } from '../../atoms/client-ip.js';
-
 export function createRateLimiter(maxRequests?: number) {
-  const limit = maxRequests ?? Number(process.env.RATE_LIMIT_RPM || '30');
+  const configuredLimit = maxRequests ?? Number(process.env.RATE_LIMIT_RPM || '30');
+  const limit = Number.isFinite(configuredLimit) && configuredLimit > 0 ? configuredLimit : 30;
   const enabled = process.env.RATE_LIMIT_ENABLED !== 'false';
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -37,19 +38,22 @@ export function createRateLimiter(maxRequests?: number) {
 
     const ip = getClientIp(req);
     const now = Date.now();
-    const entry = store.get(ip);
+    const windowStart = now - WINDOW_MS;
+    const entry = store.get(ip) ?? { timestamps: [], lastSeen: now };
+    entry.timestamps = entry.timestamps.filter((timestamp) => timestamp > windowStart);
+    entry.lastSeen = now;
 
-    if (!entry || now - entry.windowStart >= WINDOW_MS) {
-      store.set(ip, { count: 1, windowStart: now });
-      next();
-      return;
-    }
+    const resetAt = entry.timestamps.length > 0 ? entry.timestamps[0] + WINDOW_MS : now + WINDOW_MS;
+    const remaining = Math.max(limit - entry.timestamps.length, 0);
 
-    entry.count++;
+    res.setHeader('RateLimit-Limit', String(limit));
+    res.setHeader('RateLimit-Remaining', String(remaining));
+    res.setHeader('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
 
-    if (entry.count > limit) {
-      const retryAfter = Math.ceil((entry.windowStart + WINDOW_MS - now) / 1000);
-      res.set('Retry-After', String(retryAfter));
+    if (entry.timestamps.length >= limit) {
+      const retryAfter = Math.max(1, Math.ceil((resetAt - now) / 1000));
+      res.setHeader('Retry-After', String(retryAfter));
+      logger.warn('RateLimiter', 'Request throttled', { ip, limit, retryAfter });
       res.status(429).json({
         error: 'rate_limit_exceeded',
         detail: `Too many requests. Limit: ${limit}/min. Retry after ${retryAfter}s.`,
@@ -57,6 +61,8 @@ export function createRateLimiter(maxRequests?: number) {
       return;
     }
 
+    entry.timestamps.push(now);
+    store.set(ip, entry);
     next();
   };
 }

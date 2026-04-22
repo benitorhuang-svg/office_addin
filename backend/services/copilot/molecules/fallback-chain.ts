@@ -3,6 +3,8 @@
  * Executes an async operation with sequential model fallback on failure.
  */
 
+import { logger } from '../../../atoms/logger.js';
+
 interface FallbackResult<T> {
   result: T;
   model: string;
@@ -31,10 +33,17 @@ export class FallbackChain {
           attempts: i + 1,
         };
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          throw err;
+        }
+
         lastError = err as Error;
-        console.warn(
-          `[FallbackChain] Model "${model}" failed (attempt ${i + 1}/${this.models.length}): ${lastError.message}`
-        );
+        logger.warn('FallbackChain', 'Model fallback attempt failed', {
+          model,
+          attempt: i + 1,
+          totalAttempts: this.models.length,
+          error: lastError.message,
+        });
       }
     }
 

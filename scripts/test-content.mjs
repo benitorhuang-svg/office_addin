@@ -33,7 +33,7 @@ async function verify(model) {
                                 content += data.text;
                                 process.stdout.write(data.text);
                             }
-                        } catch (e) {}
+                        } catch (_e) {}
                     }
                 }
             });

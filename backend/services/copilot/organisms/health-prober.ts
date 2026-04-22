@@ -1,7 +1,8 @@
 import config from '../../../config/env.js';
-import { ACPConnectionMethod, ACPHealthResult } from '../atoms/types.js';
+import type { ACPConnectionMethod, ACPHealthResult } from '../atoms/types.js';
 import { resolveACPOptions } from '../molecules/option-resolver.js';
 import { getOrCreateClient } from '../molecules/client-manager.js';
+import { logger } from '../../../atoms/logger.js';
 
 // Atomized Health Checkers
 import { checkRemoteHealth } from '../molecules/health/remote-checker.js';
@@ -13,14 +14,14 @@ import { checkCliBaselineHealth } from '../molecules/health/cli-checker.js';
  */
 export async function warmUpClient(method: ACPConnectionMethod) {
     try {
-        console.log(`[ACP Prober] Warming up ${method}...`);
+    logger.info('HealthProber', 'Warming Copilot SDK client', { method });
         const { clientOptions } = resolveACPOptions({ 
             method, model: '', streaming: false 
         });
         await getOrCreateClient(method, clientOptions);
-        console.log(`[ACP Prober] ${method} is warmed up and ready.`);
+    logger.info('HealthProber', 'Copilot SDK client warmed successfully', { method });
     } catch (err) {
-        console.warn(`[ACP Prober] Failed to warm up ${method}:`, err);
+    logger.warn('HealthProber', 'Failed to warm Copilot SDK client', { method, error: err });
     }
 }
 

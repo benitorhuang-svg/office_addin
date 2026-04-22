@@ -1,6 +1,6 @@
-import { approveAll } from "@github/copilot-sdk";
-import { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
+import type { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
 import { CORE_SDK_CONFIG } from "../../atoms/core-config.js";
+import { handleCopilotPermissionRequest } from '../../atoms/permission-policy.js';
 
 /**
  * Molecule: Remote CLI (Acp Port) Option Builder
@@ -15,7 +15,7 @@ export const buildRemoteCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
     sessionOptions: {
       model: cfg.model,
       streaming: cfg.streaming,
-      onPermissionRequest: approveAll,
+      onPermissionRequest: handleCopilotPermissionRequest,
     },
   };
 };

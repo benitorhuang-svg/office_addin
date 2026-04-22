@@ -19,7 +19,7 @@ export default tseslint.config(
   {
     files: ["**/*.js", "**/*.mjs", "**/*.cjs"],
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: 2025,
       sourceType: "module",
       globals: {
         ...globals.node,
@@ -50,7 +50,7 @@ export default tseslint.config(
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: 2025,
       sourceType: "module",
       globals: {
         ...globals.node,

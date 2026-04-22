@@ -45,7 +45,7 @@ async function verifyGeminiStreaming(model) {
                                 fullText += data.text;
                                 process.stdout.write(data.text);
                             }
-                        } catch (e) {}
+                        } catch (_e) {}
                     }
                 }
             });

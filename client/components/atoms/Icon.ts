@@ -6,7 +6,8 @@
 export type IconName = 
     | "nexus-logo" | "step-01" | "step-02" | "prerequisites" 
     | "backend" | "link" | "connected" | "disconnected" | "close"
-    | "gemini" | "github" | "eye" | "user" | "home" | "disconnect" | "plus" | "eraser" | "broom" | "trash";
+    | "gemini" | "github" | "eye" | "user" | "home" | "disconnect" | "plus" | "eraser" | "broom" | "trash"
+    | "activity" | "arrow-right" | "trash-2" | "check" | "shield-check";
 
 export interface IconProps {
     name: IconName;
@@ -33,7 +34,12 @@ const icons: Record<IconName, string> = {
     "disconnect": `<path d="M9 2v4M15 2v4M8 6h8v1a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V6z"></path><path d="M12 12v2"></path><path d="M8 15h8a1 1 0 0 1 1 1v2a4 4 0 0 1-8 0v-2a1 1 0 0 1 1-1zM12 20v2"></path>`,
     "plus": `<path d="M5 12h14"></path><path d="M12 5v14"></path>`,
     "eraser": `<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.4 5.4c1 1 1 2.5 0 3.4L13 21"></path><path d="m22 21H7"></path><path d="m5 11 9 9"></path>`,
-    "trash": `<path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"></path>`
+    "trash": `<path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"></path>`,
+    "activity": `<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>`,
+    "arrow-right": `<path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>`,
+    "trash-2": `<path d="M3 6h18"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path>`,
+    "check": `<path d="M20 6 9 17l-5-5"></path>`,
+    "shield-check": `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path>`
 };
 
 export function createIcon({ name, className = "", size = 24 }: IconProps): SVGSVGElement {

@@ -1,8 +1,13 @@
-import { CopilotClient, CopilotSession, SessionConfig } from "@github/copilot-sdk";
-import { ACPConnectionMethod } from '../atoms/types.js';
+import crypto from 'crypto';
+import { CopilotClient } from "@github/copilot-sdk";
+import type { CopilotSession, SessionConfig } from "@github/copilot-sdk";
+import type { ACPConnectionMethod } from '../atoms/types.js';
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
+import { handleCopilotPermissionRequest } from '../atoms/permission-policy.js';
+import { applyLeastPrivilegeToolSurface } from '../atoms/tool-surface-policy.js';
 import { getSessionTools } from './tool-registry.js';
 import { waitForUserInput, deletePendingInput } from './pending-input-queue.js';
+import { logger } from '../../../atoms/logger.js';
 
 /**
  * Molecule: Session Lifecycle Manager
@@ -16,7 +21,21 @@ interface ManagedSession {
 
 const activeSessions = new Map<string, ManagedSession>();
 
-import crypto from 'crypto';
+type SessionTool = NonNullable<SessionConfig['tools']>[number];
+
+function mergeSessionTools(sessionTools?: SessionTool[]): SessionTool[] {
+  const merged = new Map<string, SessionTool>();
+
+  for (const tool of getSessionTools()) {
+    merged.set(tool.name, tool);
+  }
+
+  for (const tool of sessionTools ?? []) {
+    merged.set(tool.name, tool);
+  }
+
+  return Array.from(merged.values());
+}
 
 export function generateSessionId(): string {
   return crypto.randomUUID();
@@ -27,54 +46,77 @@ export async function createSession(
   sessionOptions: SessionConfig,
   method: ACPConnectionMethod,
   sessionId: string,
-  onChunk?: (chunk: string) => void
+  onChunk?: (chunk: string) => void,
+  signal?: AbortSignal
 ): Promise<{ session: CopilotSession; sessionId: string }> {
+  let sessionTimeout: ReturnType<typeof setTimeout> | undefined;
+  const originalPreToolUse = sessionOptions.hooks?.onPreToolUse;
+  const originalUserInputRequest = sessionOptions.onUserInputRequest;
+  const toolSurface = applyLeastPrivilegeToolSurface(sessionOptions);
   const augmentedOptions: SessionConfig = {
     ...sessionOptions,
-    tools: getSessionTools(),
+    clientName: sessionOptions.clientName || 'nexus-center-office-addin',
+    workingDirectory: sessionOptions.workingDirectory || process.cwd(),
+    sessionId,
+    ...toolSurface,
+    onPermissionRequest: sessionOptions.onPermissionRequest || handleCopilotPermissionRequest,
+    tools: mergeSessionTools(sessionOptions.tools),
     hooks: {
-      onPreToolUse: async (input) => {
+      ...sessionOptions.hooks,
+      onPreToolUse: async (input, invocation) => {
         if (onChunk) {
           onChunk(`${CORE_SDK_CONFIG.PROGRESS_FEEDBACK_PREFIX}${input.toolName}${CORE_SDK_CONFIG.PROGRESS_FEEDBACK_SUFFIX}`);
         }
+
+        return originalPreToolUse?.(input, invocation);
       }
     },
-    onUserInputRequest: async (request) => {
-      return waitForUserInput(sessionId, request.question, onChunk);
+    onUserInputRequest: async (request, invocation) => {
+      if (originalUserInputRequest) {
+        return originalUserInputRequest(request, invocation);
+      }
+      return waitForUserInput(sessionId, request.question, onChunk, signal);
     }
   };
 
-  console.log(`[SDK V2] Creating session with model: ${sessionOptions.model}, streaming: ${sessionOptions.streaming}`);
+  logger.info('SDKSession', 'Creating Copilot SDK session', {
+    sessionId,
+    method,
+    clientName: augmentedOptions.clientName,
+    workingDirectory: augmentedOptions.workingDirectory,
+    availableTools: augmentedOptions.availableTools,
+    model: sessionOptions.model,
+    streaming: sessionOptions.streaming,
+  });
 
   const sessionTimeoutMs = method === 'gemini_cli'
     ? CORE_SDK_CONFIG.GEMINI_CLIENT_START_TIMEOUT_MS
     : CORE_SDK_CONFIG.CLIENT_START_TIMEOUT_MS;
 
-  const session = await Promise.race([
-    client.createSession(augmentedOptions),
-    new Promise<never>((_, reject) => {
-      setTimeout(
-        () => reject(new Error(`Timeout waiting for Copilot SDK to initialize (JSON-RPC handshake failed after ${Math.round(sessionTimeoutMs / 1000)}s)`)),
-        sessionTimeoutMs
-      );
-    })
-  ]);
-
-  if (onChunk && sessionOptions.streaming) {
-    const unsubscribeIdle = session.on("session.idle", () => {
-      console.log(`[SDK V2] Session ${sessionId} is idle`);
-    });
+  try {
+    const session = await Promise.race([
+      client.createSession(augmentedOptions),
+      new Promise<never>((_, reject) => {
+        sessionTimeout = setTimeout(
+          () => reject(new Error(`Timeout waiting for Copilot SDK to initialize (JSON-RPC handshake failed after ${Math.round(sessionTimeoutMs / 1000)}s)`)),
+          sessionTimeoutMs
+        );
+      })
+    ]) as CopilotSession;
 
     activeSessions.set(sessionId, {
       session,
       cleanup: () => {
-        unsubscribeIdle();
         deletePendingInput(sessionId);
       }
     });
-  }
 
-  return { session, sessionId };
+    return { session, sessionId };
+  } finally {
+    if (sessionTimeout) {
+      clearTimeout(sessionTimeout);
+    }
+  }
 }
 
 export function getActiveSession(sessionId: string): ManagedSession | undefined {
@@ -90,13 +132,13 @@ export function cleanupSession(sessionId: string): void {
 }
 
 export async function cleanupAllSessions(): Promise<void> {
-  console.log('[SDK V2] Cleaning up all sessions...');
+  logger.info('SDKSession', 'Cleaning up all active sessions', { count: activeSessions.size });
   for (const [sessionId, sessionData] of activeSessions.entries()) {
     try {
       sessionData.cleanup();
       await sessionData.session.disconnect();
     } catch (e) {
-      console.warn(`[SDK V2] Cleanup error for ${sessionId}:`, e);
+      logger.warn('SDKSession', 'Failed during session cleanup', { sessionId, error: e });
     }
     activeSessions.delete(sessionId);
   }

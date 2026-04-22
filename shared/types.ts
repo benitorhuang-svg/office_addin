@@ -59,6 +59,9 @@ export interface OfficeAction {
     text?: string;
     icon?: string;
     value?: string;
+    title?: string;
+    chartType?: string;
+    range?: string;
     metadata?: Record<string, unknown>;
     
     // Formatting Atoms
@@ -127,12 +130,23 @@ export interface ChatContext {
 }
 
 export interface SocketEventMap {
-    [SocketEvent.SYSTEM_STATE_UPDATED]: { power: NexusPowerState; provider: NexusProvider };
-    [SocketEvent.CHAT_PROGRESS]: { text: string; done?: boolean };
-    [SocketEvent.TELEMETRY_LATENCY]: { ms: number };
+    [SocketEvent.SYSTEM_STATE_UPDATED]: { power?: NexusPowerState; provider?: NexusProvider; status?: string; isStreaming?: boolean };
+    [SocketEvent.CHAT_PROGRESS]: { text?: string; done?: boolean; progress?: number; status?: string; turnId?: string };
+    [SocketEvent.TELEMETRY_LATENCY]: {
+        ms?: number;
+        latencyMs?: number;
+        ttftMs?: number;
+        model?: string;
+        endpoint?: string;
+        method?: string;
+        status?: number;
+        requestId?: string;
+        turnId?: string;
+        phase?: string;
+    };
     [SocketEvent.SET_POWER]: { on: boolean };
     [SocketEvent.SET_PROVIDER]: { provider: NexusProvider };
-    [SocketEvent.EXCEL_CHART_EXTERNAL]: { title: string; chartType: string; range: string };
+    [SocketEvent.EXCEL_CHART_EXTERNAL]: { title: string; chartType: string; range: string; index?: number };
     [SocketEvent.PING]: Record<string, unknown>;
     [SocketEvent.PONG]: Record<string, unknown>;
 }

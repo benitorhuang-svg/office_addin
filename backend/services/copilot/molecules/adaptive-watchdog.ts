@@ -47,12 +47,14 @@ export const AdaptiveWatchdog = {
 
     const sorted = [...modelSamples].sort((a, b) => a - b);
     const len = sorted.length;
+    // Use Math.min to guard against floating-point rounding producing an out-of-bounds index.
+    const idx = (pct: number) => Math.min(Math.floor(len * pct), len - 1);
 
     return {
       count: len,
-      p50: sorted[Math.floor(len * 0.5)],
-      p95: sorted[Math.floor(len * 0.95)],
-      p99: sorted[Math.floor(len * 0.99)],
+      p50: sorted[idx(0.5)],
+      p95: sorted[idx(0.95)],
+      p99: sorted[idx(0.99)],
       lastUpdated: Date.now(),
     };
   },

@@ -7,13 +7,22 @@ import { getOrCreateClient } from '../../services/copilot/molecules/client-manag
 import { ModernSDKOrchestrator } from '../../services/copilot/organisms/sdk-orchestrator-v2.js';
 import { NexusSocketRelay } from '../../services/molecules/nexus-socket.js';
 import { GlobalSystemState } from '../../services/molecules/system-state-store.js';
-import { ACPConnectionMethod } from '../../services/copilot/atoms/types.js';
+import type { ACPConnectionMethod } from '../../services/copilot/atoms/types.js';
 import { createRateLimiter } from '../molecules/rate-limiter.js';
 import { validateCopilotRequest } from '../atoms/request-validator.js';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const limiter = createRateLimiter();
+const ACP_VALIDATION_METHODS: Record<string, ACPConnectionMethod> = {
+  azure: 'azure_byok',
+  azure_openai: 'azure_byok',
+  azure_byok: 'azure_byok',
+  gemini: 'gemini_cli',
+  gemini_cli: 'gemini_cli',
+  copilot: 'copilot_cli',
+  copilot_cli: 'copilot_cli',
+};
 
 
 
@@ -38,25 +47,37 @@ apiRouter.get('/config', (_req, res) => {
 apiRouter.post('/gemini/validate', async (req, res) => {
   try {
     const { apiKey } = req.body;
+    if (typeof apiKey !== 'string' || !apiKey.trim()) {
+      res.status(400).json({ status: 400, detail: 'apiKey missing' });
+      return;
+    }
     await GeminiRestService.validate(apiKey);
     res.json({ status: 200, detail: 'Gemini Key is valid' });
   } catch (err: unknown) {
     const error = err as { status?: number; detail?: string };
-    res.status(error.status || 401).json({ status: error.status, detail: error.detail });
+    const status = error.status || 401;
+    res.status(status).json({ status, detail: error.detail || 'Gemini Key is invalid' });
   }
 });
 
 // Unified Endpoint: Validate ANY login method via Native ACP Spec (GitHub Copilot SDK)
 apiRouter.post('/acp/validate', async (req, res) => {
+  let client: Awaited<ReturnType<typeof getOrCreateClient>> | undefined;
+  let validationTimer: ReturnType<typeof setTimeout> | undefined;
+
   try {
     const { method, token, endpoint, deployment } = req.body;
-        if (!method) {
-            res.status(400).json({ detail: 'Method missing' });
-            return;
-        }
-    
-    // We map 'method' string from frontend to the proper ACPConnectionMethod inside the backend
-    const acpMethod = method === "azure" ? "azure_byok" : (method === "gemini" ? "gemini_cli" : "copilot_cli");
+    if (typeof method !== 'string' || !method.trim()) {
+      res.status(400).json({ detail: 'Method missing' });
+      return;
+    }
+
+    const acpMethod = ACP_VALIDATION_METHODS[method];
+    if (!acpMethod) {
+      res.status(400).json({ detail: `Unsupported ACP validation method: ${method}` });
+      return;
+    }
+
     console.log(`[API] Validating ${method} via ${acpMethod}...`);
     
     // Natively build Copilot Client Options with the injected tokens for the specific ACP agent
@@ -70,26 +91,28 @@ apiRouter.post('/acp/validate', async (req, res) => {
     });
     
     // Spawn and start the client to explicitly validate credentials via ACP JSON-RPC handshake
-    const client = await getOrCreateClient(acpMethod, clientOptions);
+    client = await getOrCreateClient(acpMethod, clientOptions);
     
     // Explicit health check with timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    
-    try {
-      await client.ping('health-check');
-      res.json({ status: 200, detail: `${method} session is valid via ACP` });
-    } catch (err: unknown) {
-      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError') {
-        throw new Error("ACP Handshake Timeout: Agent did not respond to ping within 15s");
-      }
-      throw err;
-    } finally {
-      clearTimeout(timeout);
-    }
+    const validationTimeoutMs = 15_000;
+    const pingPromise = client.ping('health-check');
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      validationTimer = setTimeout(() => {
+        reject(new Error('ACP Handshake Timeout: Agent did not respond to ping within 15s'));
+      }, validationTimeoutMs);
+    });
+
+    await Promise.race([pingPromise, timeoutPromise]);
+    res.json({ status: 200, detail: `${method} session is valid via ACP` });
   } catch (err: unknown) {
     console.error(`[ACP Token Validation Error]`, err);
-    res.status(401).json({ status: 401, detail: err instanceof Error ? err.message : `Invalid credentials or ACP failure` });
+    const detail = err instanceof Error ? err.message : `Invalid credentials or ACP failure`;
+    const status = detail.includes('Timeout') ? 504 : 401;
+    res.status(status).json({ status, detail });
+  } finally {
+    if (validationTimer) {
+      clearTimeout(validationTimer);
+    }
   }
 });
 
@@ -145,7 +168,7 @@ apiRouter.post('/system/patch', async (_req, res) => {
   try {
     console.log('[API] Triggering SDK Patching...');
     const patcherPath = path.resolve(process.cwd(), 'scripts', 'patch-copilot-sdk.mjs');
-    const patcherUrl = pathToFileURL(patcherPath).href;
+    const patcherUrl = `${pathToFileURL(patcherPath).href}?t=${Date.now()}-${Math.random().toString(36).slice(2)}`;
     await import(patcherUrl); 
     res.json({ status: 200, detail: 'SDK Patched successfully' });
   } catch (err: unknown) {
@@ -170,13 +193,13 @@ apiRouter.get('/system/state', (_req, res) => {
 });
 
 apiRouter.post('/system/state', (req, res) => {
-  const { power, provider, isWarming } = req.body;
+  const { power, provider, isWarming, isStreaming } = req.body;
   const origin = req.headers.origin || 'unknown';
   
-  GlobalSystemState.update({ power, provider, isWarming });
+  GlobalSystemState.update({ power, provider, isWarming, isStreaming });
   const newState = GlobalSystemState.getState();
   
-  console.log(`[Sync] Update from ${origin} -> Power: ${newState.power}, Provider: ${newState.provider}`);
+  console.log(`[Sync] Update from ${origin} -> Power: ${newState.power}, Provider: ${newState.provider}, Streaming: ${newState.isStreaming}`);
   
   NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', newState);
   res.json({ status: 200, ...newState });

@@ -1,24 +1,30 @@
 import { getOrCreateClient } from '../../molecules/client-manager.js';
-import { ACPHealthResult } from '../../atoms/types.js';
+import type { ACPHealthResult } from '../../atoms/types.js';
 
 /**
  * Molecule: Remote CLI Health Checker
  */
 export async function checkRemoteHealth(port: string): Promise<ACPHealthResult | null> {
   const start = Date.now();
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 1500);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
 
   try {
     const client = await getOrCreateClient('remote_cli', { 
       cliUrl: `localhost:${port}`,
       cliPath: 'copilot'
     });
-    await client.ping('health');
-    clearTimeout(id);
+    await Promise.race([
+      client.ping('health'),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error('Remote CLI health check timed out')), 1500);
+      }),
+    ]);
     return { ok: true, type: 'remote_cli', latency: Date.now() - start };
   } catch {
-    clearTimeout(id);
     return null;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
   }
 }

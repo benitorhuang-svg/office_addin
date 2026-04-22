@@ -1,7 +1,7 @@
-import { approveAll } from "@github/copilot-sdk";
 import * as path from 'node:path';
 import config from '../../../../config/env.js';
-import { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
+import { handleCopilotPermissionRequest } from '../../atoms/permission-policy.js';
+import type { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
 
 const projectRoot = process.cwd();
 
@@ -39,7 +39,7 @@ export const buildCopilotCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
     sessionOptions: {
       model: cfg.model,
       streaming: cfg.streaming,
-      onPermissionRequest: approveAll,
+      onPermissionRequest: handleCopilotPermissionRequest,
       provider: apiBase ? {
         type: 'openai',
         baseUrl: apiBase,

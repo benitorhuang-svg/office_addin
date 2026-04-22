@@ -8,6 +8,21 @@ import { NEXUS_SLOTS } from "@services/atoms/layout-registry";
 import { createLayoutBox } from "@atoms/LayoutBox";
 import { NexusComponent } from "@shared/types";
 
+interface LayoutModeProps {
+    mode: 'chat' | 'welcome' | 'offline' | 'monitor';
+    provider?: string | null;
+    isCLI?: boolean;
+}
+
+function isLayoutModeProps(props: unknown): props is LayoutModeProps {
+    if (typeof props !== "object" || props === null || !("mode" in props)) {
+        return false;
+    }
+
+    const mode = (props as { mode?: unknown }).mode;
+    return mode === 'chat' || mode === 'welcome' || mode === 'offline' || mode === 'monitor';
+}
+
 export function createNexusBaseLayout(): NexusComponent {
     const header = createLayoutBox({ id: NEXUS_SLOTS.HEADER, className: "nexus-slot-header" });
     const onboarding = createLayoutBox({ id: NEXUS_SLOTS.ONBOARDING, className: "nexus-slot-onboarding" });
@@ -24,7 +39,7 @@ export function createNexusBaseLayout(): NexusComponent {
     /**
      * Update: Handles the visibility choreography of slots.
      */
-    const update = (props: { mode: 'chat' | 'welcome' | 'offline' | 'monitor', provider?: any, isCLI?: boolean }) => {
+    const update = (props: LayoutModeProps) => {
         if (!props) return;
 
         // Reset visibility for all slots
@@ -64,7 +79,11 @@ export function createNexusBaseLayout(): NexusComponent {
 
     return {
         element: layout,
-        update: (props: unknown) => update(props as any),
+        update: (props: unknown) => {
+            if (isLayoutModeProps(props)) {
+                update(props);
+            }
+        },
         destroy: () => {}
     };
 }

@@ -4,6 +4,7 @@ import { sendToCopilot } from "../organisms/api-orchestrator";
 import { HistoryManager } from "../molecules/HistoryManager";
 import { ChatUiHelper } from "../molecules/chat-ui-helper";
 import { createExcelChart } from "./excel-actions";
+import { NexusStateStore } from "./global-state";
 
 /**
  * Molecule Service: Stream Engine
@@ -29,67 +30,72 @@ export class StreamEngine {
         let streamBuffer = "";
         let receivedFirst = false;
 
-        const res = await sendToCopilot(
-            prompt,
-            await auth.getAccessToken(),
-            docCtx,
-            model,
-            presetId,
-            auth.getAuthProvider(),
-            await auth.getGeminiToken(),
-            systemPrompt, 
-            async (chunk) => {
-                if (!receivedFirst) {
-                    receivedFirst = true;
-                    HistoryManager.removeTypingIndicator();
-                }
-
-                if (onChunk) onChunk(chunk);
-
-                // 1. Specialized Protocol Dispatchers
-                if (chunk.startsWith("[ASK_USER]:")) {
-                    const parts = chunk.split(":");
-                    ChatUiHelper.renderAskUser(bubble, parts[1], parts.slice(2).join(":"));
-                    return;
-                }
-
-                if (chunk.includes("[DISPATCH]: EXCEL_CHART_INIT")) {
-                    const parts = chunk.split("|").map(p => p.trim());
-                    if (parts.length >= 3) {
-                        const title = parts[1];
-                        const type = parts[2];
-                        const range = parts[3] || "AUTO";
-                        console.log(`[Stream Logic] Industrial Dispatch: Creating ${type} chart '${title}' on ${range}`);
-                        createExcelChart(title, type, range).catch(e => console.warn("[Stream Logic] Chart dispatch failure:", e));
+        NexusStateStore.update({ isStreaming: true });
+        try {
+            const res = await sendToCopilot(
+                prompt,
+                await auth.getAccessToken(),
+                docCtx,
+                model,
+                presetId,
+                auth.getAuthProvider(),
+                await auth.getGeminiToken(),
+                systemPrompt, 
+                async (chunk) => {
+                    if (!receivedFirst) {
+                        receivedFirst = true;
+                        HistoryManager.removeTypingIndicator();
                     }
+
+                    if (onChunk) onChunk(chunk);
+
+                    // 1. Specialized Protocol Dispatchers
+                    if (chunk.startsWith("[ASK_USER]:")) {
+                        const parts = chunk.split(":");
+                        ChatUiHelper.renderAskUser(bubble, parts[1], parts.slice(2).join(":"));
+                        return;
+                    }
+
+                    if (chunk.includes("[DISPATCH]: EXCEL_CHART_INIT")) {
+                        const parts = chunk.split("|").map(p => p.trim());
+                        if (parts.length >= 3) {
+                            const title = parts[1];
+                            const type = parts[2];
+                            const range = parts[3] || "AUTO";
+                            console.log(`[Stream Logic] Industrial Dispatch: Creating ${type} chart '${title}' on ${range}`);
+                            createExcelChart(title, type, range).catch(e => console.warn("[Stream Logic] Chart dispatch failure:", e));
+                        }
+                    }
+
+                    streamBuffer += chunk;
+                    
+                    // 2. Real-time heavy-duty cleaning: Strip internal protocol markers for the main bubble
+                    const cleaned = this.cleanAIContent(
+                        streamBuffer.replace(/\[(THOUGHT|TASK|DISPATCH)\]:.*?\n?/gi, '')
+                                    .replace(/\[DISPATCH\]:.*?(?=\n|$)/gi, '') // Handle pipe-based dispatch too
+                    );
+                    this.throttledUiUpdate(bubble, cleaned);
                 }
+            );
 
-                streamBuffer += chunk;
-                
-                // 2. Real-time heavy-duty cleaning: Strip internal protocol markers for the main bubble
-                const cleaned = this.cleanAIContent(
-                    streamBuffer.replace(/\[(THOUGHT|TASK|DISPATCH)\]:.*?\n?/gi, '')
-                                .replace(/\[DISPATCH\]:.*?(?=\n|$)/gi, '') // Handle pipe-based dispatch too
-                );
-                this.throttledUiUpdate(bubble, cleaned);
-            }
-        );
-
-        // Final Sync & Forced Completion
-        const rawContent = streamBuffer || res.text || "";
-        const finalContent = this.cleanAIContent(rawContent);
-        const finalHtml = await marked.parse(finalContent);
-        
-        ChatUiHelper.updateAssistantBubble(bubble, finalContent, () => finalHtml);
-        ChatUiHelper.completeAssistantBubble(bubble, finalContent);
-        
-        HistoryManager.forceScroll();
-        
-        // Return cleaned response for orchestrator logic
-        return { 
-            ...res, 
-            text: finalContent 
-        };
+            // Final Sync & Forced Completion
+            const rawContent = streamBuffer || res.text || "";
+            const finalContent = this.cleanAIContent(rawContent);
+            const finalHtml = await marked.parse(finalContent);
+            
+            ChatUiHelper.updateAssistantBubble(bubble, finalContent, () => finalHtml);
+            ChatUiHelper.completeAssistantBubble(bubble, finalContent);
+            
+            HistoryManager.forceScroll();
+            
+            // Return cleaned response for orchestrator logic
+            return { 
+                ...res, 
+                text: finalContent 
+            };
+        } finally {
+            NexusStateStore.update({ isStreaming: false });
+        }
     }
 
     /**

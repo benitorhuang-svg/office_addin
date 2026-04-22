@@ -4,6 +4,10 @@
 import { OfficeAction, OfficeContextPayload } from "@shared/types";
 import { SLIDE_DESIGN_TOKENS } from "../atoms/slide-design-tokens";
 
+function getPowerPointErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Organism Module: PowerPoint Slide Factory
  * UPDATED: Optimized for 'Atomic Design' and 'High-Fidelity Branding'.
@@ -120,7 +124,11 @@ export async function createIndustrialSlides(rawText: string): Promise<number> {
       console.log(`[Slide Factory V9] Autonomous manufacturing of ${slideContents.length} slides...`);
 
       for (const content of slideContents) {
-        const slide = slides.add() as any;
+        slides.add();
+        slides.load("items");
+        await context.sync();
+
+        const slide = slides.items[slides.items.length - 1];
         const { title, body } = content;
         if (slide) {
           await applyAtomicSlideStyles(context, slide, title, body);
@@ -130,8 +138,8 @@ export async function createIndustrialSlides(rawText: string): Promise<number> {
       await context.sync();
       return slideContents.length;
     });
-  } catch (error: any) {
-    console.error(`[Slide Factory V9] Critical Office JS Error: ${error.message}. Redirecting to Stable Injection.`);
+  } catch (error: unknown) {
+    console.error(`[Slide Factory V9] Critical Office JS Error: ${getPowerPointErrorMessage(error)}. Redirecting to Stable Injection.`);
     // Ultimate Fallback: High-stability text injection if the slide factory crashed
     await insertTextIntoPowerPoint(rawText);
     return 0; // Return 0 to indicate specialized factory failed, but content was injected.

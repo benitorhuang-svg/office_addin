@@ -1,10 +1,10 @@
-import https from 'node:https';
+import type { ServerOptions } from 'node:https';
 import fs from 'node:fs';
 import path from 'node:path';
 
 export interface ResolvedHttpsServerOptions {
   isHttps: boolean;
-  options: https.ServerOptions;
+  options: ServerOptions;
 }
 
 export async function resolveHttpsServerOptions(): Promise<ResolvedHttpsServerOptions> {

@@ -1,5 +1,5 @@
 import { createLayoutBox } from "@atoms/LayoutBox";
-import { AuthController } from "@shared/types";
+import { AuthController, NexusComponent } from "@shared/types";
 import { createAuthGateway } from "@organisms/AuthGateway";
 
 export interface WelcomeMessageProps {
@@ -13,7 +13,7 @@ export interface WelcomeMessageProps {
  * A clean, tight-packed start that waits for user interaction.
  * ACHIEVED: Dialogue-First Interaction.
  */
-export function createWelcomeMessage(initialProps?: WelcomeMessageProps): any {
+export function createWelcomeMessage(initialProps?: WelcomeMessageProps): NexusComponent {
     const stage = createLayoutBox({ className: "nexus-welcome-stage" });
     const container = createLayoutBox({
         id: "welcome-message",
@@ -60,6 +60,6 @@ export function createWelcomeMessage(initialProps?: WelcomeMessageProps): any {
 
     return {
         element: container,
-        update: (newProps: WelcomeMessageProps) => render(newProps)
+        update: (newProps: unknown) => render(newProps as WelcomeMessageProps)
     };
 }

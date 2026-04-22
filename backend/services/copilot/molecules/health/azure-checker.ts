@@ -1,4 +1,4 @@
-import { ACPHealthResult } from '../../atoms/types.js';
+import type { ACPHealthResult } from '../../atoms/types.js';
 
 /**
  * Molecule: Azure BYOK Health Checker

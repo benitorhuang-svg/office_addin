@@ -10,7 +10,10 @@ WORKDIR /app
 # 1. Cache Package Resolution (High-Fidelity Layering)
 COPY package*.json ./
 COPY infra/mocks ./infra/mocks
-RUN npm install --legacy-peer-deps --include=dev
+RUN npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retries 10 && \
+    npm install --legacy-peer-deps --include=dev
 
 # 2. Build Industrial Assets (Cache-Busting Force)
 # Explicitly invalidate cache for the assets folder

@@ -13,17 +13,18 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "typeRoots": ["./node_modules/@types"],
     "types": ["node", "office-js", "office-runtime"],
     "paths": {
-      "@shared/*": ["shared/*"],
-      "@components/*": ["client/components/*"],
-      "@services/*": ["client/services/*"],
-      "@atoms/*": ["client/components/atoms/*"],
-      "@molecules/*": ["client/components/molecules/*"],
-      "@organisms/*": ["client/components/organisms/*"]
+      "@shared/*": ["./shared/*"],
+      "@components/*": ["./client/components/*"],
+      "@services/*": ["./client/services/*"],
+      "@atoms/*": ["./client/components/atoms/*"],
+      "@molecules/*": ["./client/components/molecules/*"],
+      "@organisms/*": ["./client/components/organisms/*"]
     }
   },
   "include": ["client/**/*.ts", "backend/**/*.ts", "shared/**/*.ts"],

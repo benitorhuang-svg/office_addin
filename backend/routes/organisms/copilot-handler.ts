@@ -1,23 +1,23 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import config from '../../config/env.js';
 import { CompletionService } from '../../services/copilot/organisms/completion-service.js';
 import { ResponseParser } from '../../services/copilot/molecules/response-parser.js';
 import { markStart, markEnd } from '../../atoms/latency-tracker.js';
 import { createRequestLog, logCompletion } from '../../atoms/request-logger.js';
+import { GlobalSystemState } from '../../services/molecules/system-state-store.js';
+import { NexusSocketRelay } from '../../services/molecules/nexus-socket.js';
+import { logger } from '../../atoms/logger.js';
 
 /**
  * Organism: Copilot Route Handler
  * Manages the high-level request/response cycle for AI tasks.
  */
 export const handleCopilotRequest = async (req: Request, res: Response): Promise<void> => {
-  console.log(`[API Handler DEBUG] STARTING /api/copilot handler (streaming: ${req.body.stream})`);
-
-  const reqLog = createRequestLog(req);
+  const reqLog = createRequestLog(req, (res.locals as { requestId?: string }).requestId);
   const requestId = reqLog.requestId;
   markStart(requestId);
   let firstTokenTracked = false;
   let chunkCount = 0;
-  console.log(`[API Handler DEBUG] STARTING /api/copilot handler (streaming: ${req.body.stream})`);
   const { prompt, officeContext, model, stream, authProvider, presetId, systemPrompt } = req.body;
   const geminiKey = (req.headers['x-gemini-key'] as string) || config.GEMINI_API_KEY;
   const streamingRes = res as Response & {
@@ -27,6 +27,13 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
   };
 
   try {
+    const setStreamingState = (isStreaming: boolean) => {
+      GlobalSystemState.update({ isStreaming });
+      NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', GlobalSystemState.getState());
+    };
+
+    setStreamingState(true);
+
     if (stream) {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -57,11 +64,12 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
       const handleDisconnect = () => {
         if (!isClientConnected || res.writableEnded) return;
         isClientConnected = false;
+        setStreamingState(false);
         abortController.abort();
-        console.log(`[API Handler] Client disconnected (ID: ${requestId}). Aborting upstream AI for efficiency.`);
+        logger.info('CopilotHandler', 'Client disconnected during stream; aborting upstream turn', { requestId });
       };
 
-      req.on('aborted', handleDisconnect);
+      // Node 18+: req.on('aborted') is deprecated. Use res.on('close') as the single disconnect signal.
       res.on('close', handleDisconnect);
 
       await CompletionService.execute({
@@ -115,11 +123,17 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
       return;
     }
   } catch (err: unknown) {
+    // Client disconnected mid-stream — not an error, just close cleanly.
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      if (!res.headersSent) res.status(499).end();
+      else res.end();
+      return;
+    }
+
     const error = err as Error & { status?: number; detail?: string };
-    const isProduction = process.env.NODE_ENV === 'production';
-    const detail = isProduction ? 'An internal error occurred' : (error.detail || error.message);
+    const detail = error.detail || error.message;
     
-    console.error(`[Copilot Handler Error]`, error);
+    logger.error('CopilotHandler', 'Copilot request failed', { requestId, error });
     logCompletion(reqLog, { latencyMs: markEnd(requestId), status: 'error', error: error.message });
     if (!res.headersSent) {
       res.status(error.status || 500).json({ 
@@ -131,5 +145,8 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
     res.write(`data: ${JSON.stringify({ error: 'provider_error', detail: detail })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
+  } finally {
+    GlobalSystemState.update({ isStreaming: false });
+    NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', GlobalSystemState.getState());
   }
 };

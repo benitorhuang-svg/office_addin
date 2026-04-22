@@ -1,6 +1,9 @@
 {
   "name": "office-addin-taskpane",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=25.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane.git"
@@ -17,16 +20,18 @@
   "scripts": {
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
-    "build:server": "esbuild backend/ecosystems/server-entry.ts --bundle --platform=node --format=esm --outfile=dist-server/index.mjs --packages=external",
+    "build:server": "esbuild backend/ecosystems/server-entry.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-server/index.mjs --packages=external --tree-shaking=true --minify-syntax",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p backend/tsconfig.json",
+    "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
     "dev-server": "webpack serve --mode development",
-    "lint": "office-addin-lint check",
+    "lint": "eslint .",
     "prettier": "office-addin-lint prettier",
     "start": "npm run dev",
     "start:prod": "node scripts/patch-copilot-sdk.mjs && node dist-server/index.mjs",
     "start:addin": "office-addin-debugging start manifest.xml",
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
-    "start:server": "tsx watch backend/ecosystems/server-entry.ts",
+    "start:server": "node --watch --experimental-transform-types backend/ecosystems/server-entry.ts",
     "dev": "node scripts/patch-copilot-sdk.mjs && node scripts/dev-win.mjs",
     "docker:up": "npx nexus up",
     "nexus": "node scripts/nexus.mjs"
@@ -58,6 +63,9 @@
     "@types/office-runtime": "^1.0.36",
     "@types/supertest": "^7.2.0",
     "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
+    "@typescript-eslint/utils": "^8.57.2",
     "ajv": "^8.18.0",
     "ajv-keywords": "^5.1.0",
     "babel-loader": "^10.1.1",
@@ -90,9 +98,8 @@
     "source-map-loader": "^5.0.0",
     "style-loader": "^4.0.0",
     "supertest": "^7.2.2",
-    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2",
     "webpack": "^5.105.4",
     "webpack-cli": "^7.0.2",

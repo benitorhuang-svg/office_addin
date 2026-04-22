@@ -5,6 +5,7 @@
  * to guarantee atomic-level consistency.
  */
 import { NexusProvider } from "@shared/types";
+import type { IconName } from "@atoms/Icon";
 
 export interface ProviderProfile {
     /** Unique provider key */
@@ -14,7 +15,7 @@ export interface ProviderProfile {
     /** Short subtitle for login card */
     subtitle: string;
     /** Icon name from the Icon atom */
-    icon: string;
+    icon: IconName;
     /** CSS class suffix for pill colour theming */
     pillVariant: "preview" | "gemini" | "github";
     /** Label shown in the prompt bar pill */

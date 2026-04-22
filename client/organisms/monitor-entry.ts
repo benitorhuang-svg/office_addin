@@ -38,9 +38,10 @@ class MonitorLauncher {
         if (monitor.update) monitor.update(state);
     });
 
-    SocketService.on(SocketEvent.SYSTEM_STATE_UPDATED, (data: { power: NexusPowerState; provider: NexusProvider }) => {
-        if (data.power) NexusStateStore.setPower(data.power === NexusPowerState.ON);
+    SocketService.on(SocketEvent.SYSTEM_STATE_UPDATED, (data: { power?: NexusPowerState; provider?: NexusProvider; isStreaming?: boolean }) => {
+        if (data.power !== undefined) NexusStateStore.setPower(data.power);
         if (data.provider) NexusStateStore.setProvider(data.provider);
+        if (typeof data.isStreaming === "boolean") NexusStateStore.update({ isStreaming: data.isStreaming });
     });
 
     console.log("%c[NEXUS_MONITOR] Matrix_Link_Established", "color: #10b981; font-weight: bold;");

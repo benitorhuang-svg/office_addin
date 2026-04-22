@@ -3,6 +3,15 @@
 
 import { OfficeAction, OfficeContextPayload } from "@shared/types";
 
+function getExcelErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function resolveExcelChartType(type: string): Excel.ChartType {
+  const chartTypeKey = type as keyof typeof Excel.ChartType;
+  return (Excel.ChartType[chartTypeKey] ?? type) as Excel.ChartType;
+}
+
 export async function getExcelContext(): Promise<OfficeContextPayload> {
   try {
     return await Excel.run(async (context) => {
@@ -78,8 +87,8 @@ export async function insertTextIntoExcel(text: string): Promise<void> {
       targetRange.format.autofitColumns();
       await context.sync();
     });
-  } catch (error: any) {
-    console.warn("[Excel Factory V10] Table mapping failed. Falling back to single-cell insertion.", error.message);
+  } catch (error: unknown) {
+    console.warn("[Excel Factory V10] Table mapping failed. Falling back to single-cell insertion.", getExcelErrorMessage(error));
     // Absolute fallback: Standard text-in-cell
     await Excel.run(async (context) => {
       const selection = context.workbook.getSelectedRange();
@@ -181,8 +190,9 @@ export async function applyExcelActions(actions: OfficeAction[] | undefined, fal
               break;
             }
             case "create_chart": {
-              const { title, chartType, range } = action as any;
-              await createExcelChart(title, chartType, range);
+              const chartTitle = action.title || action.text || "Industrial Analysis";
+              const chartType = action.chartType || "ColumnClustered";
+              await createExcelChart(chartTitle, chartType, action.range);
               break;
             }
           }
@@ -210,10 +220,10 @@ export async function createExcelChart(title: string, type: string, rangeAddress
         }
 
         // 1. Add the Chart with 'Auto' positioning
-        const chart = sheet.charts.add(type as any, targetRange, "Auto");
+        const chart = sheet.charts.add(resolveExcelChartType(type), targetRange, "Auto");
         
         // 2. Industrial Title Hardening (Encoding Fix & Protocol Stripping)
-        let cleanTitle = title.replace(/[\[\]]/g, "").replace(/[^\x20-\x7E\s\u4E00-\u9FFF]/g, ""); 
+        let cleanTitle = title.replaceAll("[", "").replaceAll("]", "").replace(/[^\x20-\x7E\s\u4E00-\u9FFF]/g, ""); 
         if (cleanTitle.includes("BRIDGE_DISPATCH")) cleanTitle = cleanTitle.split(":")[0];
         
         chart.title.text = cleanTitle.trim() || `Industrial Analysis ${index + 1}`;

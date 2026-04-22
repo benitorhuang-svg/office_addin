@@ -13,6 +13,22 @@ export interface ControlMatrixProps {
     onMethodChange: (method: string) => void;
 }
 
+interface ControlField {
+    id: string;
+    label: string;
+    placeholder?: string;
+}
+
+interface ControlMethod {
+    id: string;
+    label: string;
+    sub: string;
+    icon: string;
+    iconBg: string;
+    type: "oauth" | "auto" | "input";
+    fields?: ControlField[];
+}
+
 export function createControlMatrix(props: ControlMatrixProps) {
     const container = document.createElement("div");
     container.className = "nexus-flex nexus-flex-col nexus-gap-4 nexus-w-full nexus-p-2 nexus-animate-in nexus-animate-fade-in nexus-slide-in-from-bottom-2 nexus-duration-500 nexus-font-outfit";
@@ -32,7 +48,7 @@ export function createControlMatrix(props: ControlMatrixProps) {
         if (key === 'pat') setStoredToken(val);
     };
 
-    const methods = [
+    const methods: ControlMethod[] = [
         { 
             id: 'overview', 
             label: "Overview", 
@@ -68,7 +84,7 @@ export function createControlMatrix(props: ControlMatrixProps) {
         }
     ];
 
-    const renderMethodBtn = (m: any) => {
+    const renderMethodBtn = (m: ControlMethod) => {
         const wrapper = document.createElement("div");
         wrapper.className = "nexus-flex nexus-flex-col nexus-group/item";
         
@@ -94,16 +110,20 @@ export function createControlMatrix(props: ControlMatrixProps) {
         drawer.className = "nexus-hidden nexus-flex-col nexus-gap-3 nexus-p-4 nexus-bg-slate-50-50 nexus-border nexus-border-slate-100 nexus-rounded-2xl nexus-mt-2 nexus-animate-in nexus-animate-fade-in nexus-slide-in-from-top-1 nexus-duration-300";
         
         if (m.type === 'input' && m.fields) {
-            m.fields.forEach((f: any) => {
+            const inputFields = m.fields;
+
+            inputFields.forEach((f) => {
                 const input = document.createElement("input");
                 input.type = "password";
                 input.className = "nexus-w-full nexus-px-4 nexus-py-2-5 nexus-bg-white nexus-border nexus-border-slate-200 nexus-rounded-xl nexus-text-11px nexus-focus-outline-none nexus-focus-ring-2 nexus-focus-ring-blue-500/10 nexus-focus-border-blue-500 nexus-transition-all";
-                input.placeholder = f.label;
+                input.placeholder = f.placeholder ?? f.label;
                 
                 getStored(f.id).then(v => { input.value = v; });
                 
-                input.onchange = async (e) => {
-                    const val = (e.target as HTMLInputElement).value;
+                input.onchange = async (event) => {
+                    const target = event.currentTarget;
+                    if (!(target instanceof HTMLInputElement)) return;
+                    const val = target.value;
                     await setStored(f.id, val);
                     Toast.show(`PROTO_SYNC: ${f.label.toUpperCase()}`, "info");
                 };
@@ -115,7 +135,9 @@ export function createControlMatrix(props: ControlMatrixProps) {
             verifyBtn.innerText = "Verify Uplink";
             verifyBtn.onclick = async () => {
                 Toast.show("Probing Matrix...", "info");
-                const pat = await getStored(m.fields[0].id);
+                const field = inputFields[0];
+                if (!field) return;
+                const pat = await getStored(field.id);
                 const res = await validateACPToken('copilot', pat);
                 if (res.ok) Toast.show("Uplink Established!", "success");
                 else Toast.show(`Refused: ${res.message}`, "error");
@@ -158,11 +180,12 @@ export function createControlMatrix(props: ControlMatrixProps) {
     return {
         element: container,
         update: (activeProvider: string) => {
-            const allBtns = container.querySelectorAll("button[data-method]");
-            allBtns.forEach((btn: any) => {
+            const allBtns = container.querySelectorAll<HTMLButtonElement>("button[data-method]");
+            allBtns.forEach((btn) => {
                 const isTarget = btn.dataset.method === activeProvider;
-                btn.querySelector(".indicator").classList.toggle("nexus-bg-blue-600", isTarget);
-                btn.querySelector(".indicator").classList.toggle("nexus-scale-125", isTarget);
+                const indicator = btn.querySelector<HTMLElement>(".indicator");
+                indicator?.classList.toggle("nexus-bg-blue-600", isTarget);
+                indicator?.classList.toggle("nexus-scale-125", isTarget);
                 btn.classList.toggle("nexus-bg-blue-50-50", isTarget);
             });
         }
