@@ -8,7 +8,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "▶ 執行測試..."
-npm run test:backend -- --passWithNoTests
+npx jest --testPathPatterns=src --passWithNoTests
 if [ $? -ne 0 ]; then
   echo "✖ 測試失敗，push 已取消。"
   exit 1

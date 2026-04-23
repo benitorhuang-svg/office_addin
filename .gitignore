@@ -61,3 +61,5 @@ manifest.xml.cer
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+coverage/

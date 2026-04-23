@@ -1,10 +1,18 @@
-/**
+﻿/**
  * QA Reviewer Agent: Output checking and self-correction.
  * Wraps generation logic with a 5-Dimension DesignReview and auto-healing loops.
  */
 
-import { reviewDesign, type DesignDomain, type DesignReviewResult } from "@agents/skills/molecules/design-reviewer.js";
-import { selfCorrect as internalSelfCorrect, type CorrectionResult, type SelfCorrectorOptions } from "@agents/skills/molecules/self-corrector.js";
+import {
+  reviewDesign,
+  type DesignDomain,
+  type DesignReviewResult,
+} from "@agents/skills/molecules/design-reviewer.js";
+import {
+  selfCorrect as internalSelfCorrect,
+  type CorrectionResult,
+  type SelfCorrectorOptions,
+} from "@agents/skills/molecules/self-corrector.js";
 import { logger } from "@shared/logger/index.js";
 
 const TAG = "QAReviewerAgent";
@@ -21,7 +29,7 @@ export class QAReviewerAgent {
   public static async enforceQuality(
     generate: (prompt: string) => Promise<string>,
     prompt: string,
-    opts: SelfCorrectorOptions,
+    opts: SelfCorrectorOptions
   ): Promise<CorrectionResult> {
     const { domain, traceId } = opts;
     const log = traceId ? logger.withTrace(traceId) : logger;

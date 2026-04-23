@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Router Agent: Intent recognition, task breakdown, and assignment.
  * Uses Layer 1 Metadata (Schema) to determine which expert should handle the query.
  * Updated: Supports Parallel Task Breakdown for cross-app queries.
@@ -28,7 +28,10 @@ export class RouterAgent {
   /**
    * Analyzes the query and determines if it needs one or more experts.
    */
-  public static async analyzeIntent(query: string, context: RoutingContext): Promise<RoutingResult> {
+  public static async analyzeIntent(
+    query: string,
+    context: RoutingContext
+  ): Promise<RoutingResult> {
     const traceId = context.traceId ?? "unknown";
     const log = logger.withTrace(traceId);
 
@@ -37,12 +40,12 @@ export class RouterAgent {
     if (brandMatch) {
       log.info(TAG, "Brand URL detected, routing to BrandExtractor.");
       const result = await extractBrandTokens(brandMatch[1]);
-      return { 
-        status: "brand_tokens_extracted", 
-        intent: "vision", 
-        traceId, 
-        domains: ["shared"], 
-        payload: result 
+      return {
+        status: "brand_tokens_extracted",
+        intent: "vision",
+        traceId,
+        domains: ["shared"],
+        payload: result,
       };
     }
 
@@ -50,11 +53,11 @@ export class RouterAgent {
     const needsExcel = /excel|spreadsheet|sheet|formula|pivot|cell range|table data/i.test(query);
     const needsPPT = /ppt|powerpoint|slide|presentation|deck/i.test(query);
     const needsWord = /word|document|memo|write|paragraph|report/i.test(query);
-    
+
     const domains: string[] = [];
     if (needsExcel) domains.push("expert-excel");
-    if (needsPPT)   domains.push("expert-ppt");
-    if (needsWord)  domains.push("expert-word");
+    if (needsPPT) domains.push("expert-ppt");
+    if (needsWord) domains.push("expert-word");
 
     // 3. Dynamic Intent Classification for more specific routing
     const intent = await classifyIntent(query, { token: context.token });
@@ -63,10 +66,18 @@ export class RouterAgent {
     // If no specific domains found via keywords, use the classifier's primary mapping
     if (domains.length === 0) {
       switch (intent) {
-        case "excel": domains.push("expert-excel"); break;
-        case "word":  domains.push("expert-word"); break;
-        case "ppt":   domains.push("expert-ppt"); break;
-        default:      domains.push("shared"); break;
+        case "excel":
+          domains.push("expert-excel");
+          break;
+        case "word":
+          domains.push("expert-word");
+          break;
+        case "ppt":
+          domains.push("expert-ppt");
+          break;
+        default:
+          domains.push("shared");
+          break;
       }
     }
 
@@ -81,7 +92,7 @@ export class RouterAgent {
       status: "routed",
       intent,
       domains,
-      traceId
+      traceId,
     };
   }
 }

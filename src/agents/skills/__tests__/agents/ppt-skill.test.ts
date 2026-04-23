@@ -1,4 +1,3 @@
-import { pptSkill } from "@agents/expert-ppt/index.js";
 import { PPTSkillInvoker } from "@agents/expert-ppt/domain/ppt-invoker.js";
 
 jest.mock("@agents/expert-ppt/domain/ppt-invoker.js", () => ({
@@ -7,6 +6,8 @@ jest.mock("@agents/expert-ppt/domain/ppt-invoker.js", () => ({
     getPromptPath: jest.fn(() => "/mock/path/ppt-master.md"),
   },
 }));
+
+import { pptSkill } from "@agents/expert-ppt/index.js";
 
 describe("PPTSkill", () => {
   const mockInvoke = PPTSkillInvoker.invokePPTExpert as jest.Mock;
@@ -31,11 +32,9 @@ describe("PPTSkill", () => {
 
     expect(result.ok).toBe(true);
     expect(result.data).toEqual({ status: "success", file: "/tmp/deck.pptx" });
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "",
-      "/tmp/deck.pptx",
-      [{ op: "add_slide", layout: "title_content", title: "Intro" }]
-    );
+    expect(mockInvoke).toHaveBeenCalledWith("", "/tmp/deck.pptx", [
+      { op: "add_slide", layout: "title_content", title: "Intro" },
+    ]);
   });
 
   it("should pass input_path when provided", async () => {
@@ -48,11 +47,7 @@ describe("PPTSkill", () => {
       changes,
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "/data/template.pptx",
-      "/tmp/themed.pptx",
-      changes
-    );
+    expect(mockInvoke).toHaveBeenCalledWith("/data/template.pptx", "/tmp/themed.pptx", changes);
   });
 
   it("should handle empty changes gracefully", async () => {
@@ -79,10 +74,7 @@ describe("PPTSkill", () => {
     mockInvoke.mockResolvedValue({});
 
     const ctx = { traceId: "ppt-123" };
-    const result = await pptSkill.execute(
-      { output_path: "/tmp/t.pptx", changes: [] },
-      ctx
-    );
+    const result = await pptSkill.execute({ output_path: "/tmp/t.pptx", changes: [] }, ctx);
 
     expect(result.meta?.skillName).toBe("ppt_expert");
     expect(result.meta?.traceId).toBe("ppt-123");

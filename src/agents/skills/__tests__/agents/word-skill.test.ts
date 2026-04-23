@@ -2,7 +2,9 @@
  * Unit tests: WordSkill agent interface
  */
 
-jest.mock("@agents/expert-word/index.js", () => ({
+import { WordSkillInvoker } from "@agents/expert-word/domain/word-invoker.js";
+
+jest.mock("@agents/expert-word/domain/word-invoker.js", () => ({
   WordSkillInvoker: {
     invokeWordExpert: jest.fn(),
     getPromptPath: jest.fn().mockReturnValue("/fake/word-expert.md"),
@@ -10,7 +12,6 @@ jest.mock("@agents/expert-word/index.js", () => ({
 }));
 
 import { wordSkill } from "@agents/expert-word/index.js";
-import { WordSkillInvoker } from "@agents/expert-word/index.js";
 
 const mockInvoke = WordSkillInvoker.invokeWordExpert as jest.Mock;
 
@@ -60,11 +61,7 @@ describe("WordSkill (agent interface)", () => {
       changes,
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "/data/template.docx",
-      "/data/report.docx",
-      changes,
-    );
+    expect(mockInvoke).toHaveBeenCalledWith("/data/template.docx", "/data/report.docx", changes);
   });
 
   it("defaults input_path to empty string when omitted", async () => {
@@ -93,7 +90,7 @@ describe("WordSkill (agent interface)", () => {
 
     const result = await wordSkill.execute(
       { output_path: "/tmp/trace.docx", changes: [] },
-      { traceId: "trace-word-42" },
+      { traceId: "trace-word-42" }
     );
 
     expect(result.meta?.traceId).toBe("trace-word-42");

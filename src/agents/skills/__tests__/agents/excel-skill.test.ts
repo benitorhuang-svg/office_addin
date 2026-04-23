@@ -2,7 +2,9 @@
  * Unit tests: ExcelSkill agent interface
  */
 
-jest.mock("@agents/expert-excel/index.js", () => ({
+import { ExcelSkillInvoker } from "@agents/expert-excel/domain/excel-invoker.js";
+
+jest.mock("@agents/expert-excel/domain/excel-invoker.js", () => ({
   ExcelSkillInvoker: {
     invokeExcelExpert: jest.fn(),
     getPromptPath: jest.fn().mockReturnValue("/fake/excel-expert.md"),
@@ -10,7 +12,6 @@ jest.mock("@agents/expert-excel/index.js", () => ({
 }));
 
 import { excelSkill } from "@agents/expert-excel/index.js";
-import { ExcelSkillInvoker } from "@agents/expert-excel/index.js";
 
 const mockInvoke = ExcelSkillInvoker.invokeExcelExpert as jest.Mock;
 
@@ -59,11 +60,7 @@ describe("ExcelSkill (agent interface)", () => {
       changes: [],
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "/data/source.xlsx",
-      "/data/output.xlsx",
-      [],
-    );
+    expect(mockInvoke).toHaveBeenCalledWith("/data/source.xlsx", "/data/output.xlsx", []);
   });
 
   it("defaults input_path to empty string when omitted", async () => {
@@ -92,7 +89,7 @@ describe("ExcelSkill (agent interface)", () => {
 
     const result = await excelSkill.execute(
       { output_path: "/tmp/trace.xlsx", changes: [] },
-      { traceId: "trace-excel-001" },
+      { traceId: "trace-excel-001" }
     );
 
     expect(result.meta?.traceId).toBe("trace-excel-001");
