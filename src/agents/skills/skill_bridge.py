@@ -23,10 +23,11 @@ from pydantic import BaseModel, field_validator
 
 # Ensure the shared skills directory is on the path
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_AGENTS_DIR = os.path.join(_BASE_DIR, "..")
 sys.path.insert(0, _BASE_DIR)
-sys.path.insert(0, os.path.join(_BASE_DIR, "parts", "excel"))
-sys.path.insert(0, os.path.join(_BASE_DIR, "parts", "ppt"))
-sys.path.insert(0, os.path.join(_BASE_DIR, "parts", "word"))
+sys.path.insert(0, os.path.join(_AGENTS_DIR, "expert-excel", "domain"))
+sys.path.insert(0, os.path.join(_AGENTS_DIR, "expert-ppt", "domain"))
+sys.path.insert(0, os.path.join(_AGENTS_DIR, "expert-word", "domain"))
 sys.path.insert(0, os.path.join(_BASE_DIR, "shared"))
 
 logging.basicConfig(

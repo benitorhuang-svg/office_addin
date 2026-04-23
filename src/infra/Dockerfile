@@ -16,9 +16,7 @@ RUN npm config set fetch-retry-mintimeout 20000 && \
     npm install --legacy-peer-deps --include=dev
 
 # 2. Build Industrial Assets (Cache-Busting Force)
-# Explicitly invalidate cache for the assets folder
 COPY . .
-# We remove any internal cache that might skew the build
 RUN rm -rf node_modules/.cache
 RUN npm run build:server
 RUN npm run build -- --mode production
@@ -56,16 +54,22 @@ COPY --chown=nexus:nexus --from=builder /app/dist-server ./dist-server
 COPY --chown=nexus:nexus --from=builder /app/dist ./dist
 COPY --chown=nexus:nexus --from=builder /app/package*.json ./
 COPY --chown=nexus:nexus --from=builder /app/src/infra/mocks ./src/infra/mocks
-COPY --chown=nexus:nexus --from=builder /app/src/skills ./src/skills
-COPY --chown=nexus:nexus --from=builder /app/src/scripts ./src/scripts
+COPY --chown=nexus:nexus --from=builder /app/src/agents/skills ./src/agents/skills
+COPY --chown=nexus:nexus --from=builder /app/src/infra/scripts ./src/infra/scripts
+COPY --chown=nexus:nexus --from=builder /app/src/agents/expert-excel ./src/agents/expert-excel
+COPY --chown=nexus:nexus --from=builder /app/src/agents/expert-ppt ./src/agents/expert-ppt
+COPY --chown=nexus:nexus --from=builder /app/src/agents/expert-word ./src/agents/expert-word
+COPY --chown=nexus:nexus --from=builder /app/src/shared ./src/shared
 COPY --chown=nexus:nexus --from=builder /app/manifest.xml ./
 
 # 6. Environment Matrix
 ENV NODE_ENV=production
 ENV PORT=4000
+ENV SKILL_BRIDGE_PORT=8765
 EXPOSE 4000
 
 USER nexus
 
 # 7. Execute Command HUD
-CMD ["sh", "-c", "node src/infra/scripts/core/patch-copilot-sdk.mjs && node dist-server/index.mjs"]
+# Starts the FastAPI Skill Bridge in the background and then the main Node.js server.
+CMD ["sh", "-c", "node src/infra/scripts/core/patch-copilot-sdk.mjs && (python3 -m uvicorn skill_bridge:app --host 127.0.0.1 --port ${SKILL_BRIDGE_PORT} --app-dir src/agents/skills &) && node dist-server/index.mjs"]
