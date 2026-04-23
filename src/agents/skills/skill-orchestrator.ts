@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
 
 import { ExcelSkillInvoker } from "@agents/expert-excel/index.js";
 import { PPTSkillInvoker } from "@agents/expert-ppt/index.js";
@@ -10,16 +9,17 @@ import { SharedSkillInvoker } from "@agents/skills/shared/shared-invoker.js";
 import { classifyIntent } from "@agents/skills/atoms/intent-classifier.js";
 import { extractBrandTokens } from "@agents/skills/atoms/brand-extractor.js";
 import { chunkAndRetrieve } from "@agents/skills/molecules/context-chunker.js";
+import { reviewDesign } from "@agents/skills/molecules/design-reviewer.js";
 import { logger } from "@shared/logger/index.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __skillsDir = path.resolve(process.cwd(), "src", "agents", "skills");
 const TAG = "SkillOrchestrator";
 
 /**
  * Resolve the skills directory correctly.
  * 🔴 2. Fix path and ensure single source of truth.
  */
-const SKILLS_MANIFEST_PATH = path.join(__dirname, "skills-manifest.json");
+const SKILLS_MANIFEST_PATH = path.join(__skillsDir, "skills-manifest.json");
 
 /**
  * SkillOrchestrator: Legacy Orchestrator (Maintained for backward compatibility).
@@ -113,7 +113,8 @@ export class SkillOrchestrator {
 
       case "ppt": {
         const prompt = await this.loadPrompt(PPTSkillInvoker.getPromptPath());
-        return { status: "prompt_augmented", category: "ppt_design", prompt };
+        const designReview = reviewDesign(prompt, { domain: "ppt" });
+        return { status: "prompt_augmented", category: "ppt_design", prompt, designReview };
       }
 
       case "excel": {
@@ -123,7 +124,8 @@ export class SkillOrchestrator {
 
       case "word": {
         const prompt = await this.loadPrompt(WordSkillInvoker.getPromptPath());
-        return { status: "prompt_augmented", category: "word_creative", prompt };
+        const designReview = reviewDesign(prompt, { domain: "word" });
+        return { status: "prompt_augmented", category: "word_creative", prompt, designReview };
       }
 
       case "cross_app": {

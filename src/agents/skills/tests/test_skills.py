@@ -7,8 +7,10 @@ import sys
 import os
 import pytest
 
-# Ensure src/skills is on the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Ensure src/skills and its shared folder are on the path
+base_dir = os.path.join(os.path.dirname(__file__), '..')
+sys.path.insert(0, base_dir)
+sys.path.insert(0, os.path.join(base_dir, 'shared'))
 
 # ── VectorNexus unit test (no external API call) ───────────────────────────
 

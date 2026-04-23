@@ -3,10 +3,8 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const __currentDir =
-  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const __currentDir = path.resolve(process.cwd(), "src", "agents", "expert-word");
 
 export * from "./word.tools.js";
 export { WordSkillInvoker } from "./domain/word-invoker.js";

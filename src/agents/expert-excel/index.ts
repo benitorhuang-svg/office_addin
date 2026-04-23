@@ -3,10 +3,8 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const __currentDir =
-  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const __currentDir = path.resolve(process.cwd(), "src", "agents", "expert-excel");
 
 export * from "./excel.tools.js";
 export { ExcelSkillInvoker } from "./domain/excel-invoker.js";

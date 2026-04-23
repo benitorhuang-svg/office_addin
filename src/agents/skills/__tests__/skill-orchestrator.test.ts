@@ -116,7 +116,7 @@ describe("SkillOrchestrator", () => {
       expect(result).toHaveProperty("designReview");
       const dr = result.designReview as Record<string, unknown>;
       expect(dr.passed).toBe(true);
-      expect(typeof dr.score).toBe("number");
+      expect(typeof dr.totalScore).toBe("number");
     });
 
     it('routes "word" intent with designReview', async () => {

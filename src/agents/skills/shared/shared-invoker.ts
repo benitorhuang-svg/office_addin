@@ -1,8 +1,7 @@
 ﻿import { spawn } from "child_process";
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __currentDir = path.resolve(process.cwd(), "src", "agents", "skills", "shared");
 
 /**
  * Shared Skill Invoker
@@ -10,62 +9,62 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * TurboSearch, TripleTierSearch, VisionExpert, CrossHostBridge.
  */
 export class SharedSkillInvoker {
-    private static spawn(scriptName: string, payload: unknown): Promise<unknown> {
-        const pythonScript = path.join(__dirname, scriptName);
+  private static spawn(scriptName: string, payload: unknown): Promise<unknown> {
+    const pythonScript = path.join(__currentDir, scriptName);
 
-        return new Promise((resolve, reject) => {
-            const pyProcess = spawn("python3", [pythonScript]);
+    return new Promise((resolve, reject) => {
+      const pyProcess = spawn("python3", [pythonScript]);
 
-            let stdout = "";
-            let stderr = "";
+      let stdout = "";
+      let stderr = "";
 
-            pyProcess.stdin.write(JSON.stringify(payload));
-            pyProcess.stdin.end();
+      pyProcess.stdin.write(JSON.stringify(payload));
+      pyProcess.stdin.end();
 
-            pyProcess.stdout.on("data", (data) => (stdout += data.toString()));
-            pyProcess.stderr.on("data", (data) => (stderr += data.toString()));
+      pyProcess.stdout.on("data", (data) => (stdout += data.toString()));
+      pyProcess.stderr.on("data", (data) => (stderr += data.toString()));
 
-            pyProcess.on("close", (code) => {
-                if (code !== 0) {
-                    reject(new Error(`Shared Skill Error [${scriptName}]: ${stderr}`));
-                } else {
-                    try {
-                        const parsed = JSON.parse(stdout);
-                        if (parsed.error) reject(new Error(parsed.error));
-                        else resolve(parsed.results ?? parsed);
-                    } catch {
-                        reject(new Error(`Failed to parse ${scriptName} output JSON`));
-                    }
-                }
-            });
-        });
-    }
+      pyProcess.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Shared Skill Error [${scriptName}]: ${stderr}`));
+        } else {
+          try {
+            const parsed = JSON.parse(stdout);
+            if (parsed.error) reject(new Error(parsed.error));
+            else resolve(parsed.results ?? parsed);
+          } catch {
+            reject(new Error(`Failed to parse ${scriptName} output JSON`));
+          }
+        }
+      });
+    });
+  }
 
-    static invokeVectorSearch(apiKey: string, query: string, docs: string[]): Promise<unknown> {
-        return SharedSkillInvoker.spawn("vector_nexus.py", { apiKey, query, docs });
-    }
+  static invokeVectorSearch(apiKey: string, query: string, docs: string[]): Promise<unknown> {
+    return SharedSkillInvoker.spawn("vector_nexus.py", { apiKey, query, docs });
+  }
 
-    static invokeGalaxyGraph(query: string, repo?: string): Promise<unknown> {
-        return SharedSkillInvoker.spawn("galaxy_graph.py", { query, repo });
-    }
+  static invokeGalaxyGraph(query: string, repo?: string): Promise<unknown> {
+    return SharedSkillInvoker.spawn("galaxy_graph.py", { query, repo });
+  }
 
-    static invokeTripleTierSearch(query: string, docs: string[]): Promise<unknown> {
-        return SharedSkillInvoker.spawn("triple_tier_search.py", { query, docs });
-    }
+  static invokeTripleTierSearch(query: string, docs: string[]): Promise<unknown> {
+    return SharedSkillInvoker.spawn("triple_tier_search.py", { query, docs });
+  }
 
-    static invokeTurboSearch(query: string, docs: string[]): Promise<unknown> {
-        return SharedSkillInvoker.spawn("turbo_search.py", { query, docs });
-    }
+  static invokeTurboSearch(query: string, docs: string[]): Promise<unknown> {
+    return SharedSkillInvoker.spawn("turbo_search.py", { query, docs });
+  }
 
-    static invokeVisionExpert(imagePath: string): Promise<unknown> {
-        return SharedSkillInvoker.spawn("vision_expert.py", { imagePath });
-    }
+  static invokeVisionExpert(imagePath: string): Promise<unknown> {
+    return SharedSkillInvoker.spawn("vision_expert.py", { imagePath });
+  }
 
-    static invokeCrossHostBridge(payload: unknown): Promise<unknown> {
-        return SharedSkillInvoker.spawn("cross_host_bridge.py", { payload });
-    }
+  static invokeCrossHostBridge(payload: unknown): Promise<unknown> {
+    return SharedSkillInvoker.spawn("cross_host_bridge.py", { payload });
+  }
 
-    static getOmniBridgePromptPath(): string {
-        return path.join(__dirname, "prompts", "omni-bridge.md");
-    }
+  static getOmniBridgePromptPath(): string {
+    return path.join(__currentDir, "prompts", "omni-bridge.md");
+  }
 }

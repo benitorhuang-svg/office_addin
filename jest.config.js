@@ -34,10 +34,11 @@ const config = {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
+        useESM: true,
         diagnostics: false,
         tsconfig: {
-          module: 'CommonJS',
-          moduleResolution: 'node',
+          module: 'ESNext',
+          moduleResolution: 'node16',
           esModuleInterop: true,
         },
       },
