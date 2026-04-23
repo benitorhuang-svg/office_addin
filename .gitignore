@@ -5,6 +5,7 @@ typings/
 
 # Build outputs
 dist/
+dist-server/
 build/
 bin/
 obj/
@@ -20,6 +21,24 @@ release/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Runtime diagnostic outputs (entire reports/ is generated at runtime)
+reports/
+
+# Runtime-generated log files in scripts
+scripts/**/*.log
+scripts/gemini-wrapper-v2.log
+
+# Secrets / tokens
+backend/local-agent/.agent_token
+backend/local-agent/*.token
+
+# Test fixtures (binary Office files used for manual testing only)
+backend/specs/fixtures/*.pptx
+backend/specs/fixtures/*.docx
+backend/specs/fixtures/*.xlsx
+
+# Vector index persistence (auto-generated; re-built from Gemini API on first run)
+backend/skills/output/vector_index.json
 
 # IDEs and Tools
 .vscode/

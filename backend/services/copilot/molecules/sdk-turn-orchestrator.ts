@@ -9,7 +9,7 @@ import { AdaptiveWatchdog } from './adaptive-watchdog.js';
 import { NexusSocketRelay } from '../../molecules/nexus-socket.js';
 import { GlobalSystemState } from '../../molecules/system-state-store.js';
 import type { CopilotSession, SessionEvent } from '@github/copilot-sdk';
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 /**
  * Molecule: SDK Turn Orchestrator
@@ -52,7 +52,15 @@ export class SdkTurnOrchestrator {
       }
     };
 
-    const { session } = await createSession(client, augmentedOptions, method, sessionId, onChunk, signal);
+    const { session } = await createSession(
+      client,
+      augmentedOptions,
+      method,
+      sessionId,
+      onChunk,
+      signal,
+      acpConfig.officeContext,
+    );
 
     const turnId = crypto.randomUUID();
 
@@ -186,7 +194,7 @@ export class SdkTurnOrchestrator {
     let ttftRecorded = false;
     const unsubscribeHandlers: Array<() => void> = [];
 
-    // SDK spec: use typed event shape — data.deltaContent for streaming deltas
+    // SDK spec: use typed event shape ??data.deltaContent for streaming deltas
     type SdkEvent = { data?: { deltaContent?: string; content?: string } };
 
     unsubscribeHandlers.push(session.on("assistant.message_delta", (event: SdkEvent) => {

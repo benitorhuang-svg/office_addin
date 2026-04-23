@@ -3,7 +3,7 @@
  * Periodically scans for idle CopilotClient instances and cleans them up.
  */
 
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 const DEFAULT_IDLE_MINUTES = 30;
 const SCAN_INTERVAL_MS = 5 * 60_000; // 5 minutes

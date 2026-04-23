@@ -1,4 +1,4 @@
-import { fetch } from '../../atoms/fetcher.js';
+import { fetch } from '../../core/atoms/fetcher.js';
 import config from '../../config/env.js';
 import { SESSION_STORE } from '../molecules/session-store.js';
 

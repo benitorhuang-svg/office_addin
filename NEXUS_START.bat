@@ -28,7 +28,7 @@ echo [1/2] Initiating Host-Bridge Protocol (SSL & Network)...
 echo [Nexus] Current Root: %cd%
 
 :: Run PowerShell script with Bypass policy (using short path for script to avoid space errors)
-powershell -ExecutionPolicy Bypass -File "scripts\trust-ssl.ps1"
+powershell -ExecutionPolicy Bypass -File "backend\scripts\trust-ssl.ps1"
 if %errorLevel% neq 0 (
     echo [Nexus] ERROR: PowerShell execution failed.
     echo.

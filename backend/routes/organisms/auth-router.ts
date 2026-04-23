@@ -3,7 +3,7 @@ import config from '../../config/env.js';
 import { renderStatusHTML } from '../atoms/status-html.js';
 import { SESSION_STORE } from '../molecules/session-store.js';
 import { OAuthService } from './oauth-service.js';
-import { logger } from '../../atoms/logger.js';
+import { logger } from '../../core/atoms/logger.js';
 
 interface GeminiModelsResponse {
   models?: unknown[];

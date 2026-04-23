@@ -5,7 +5,7 @@ import config from '../../../../config/env.js';
 
 import { handleCopilotPermissionRequest } from '../../atoms/permission-policy.js';
 import type { ACPSessionConfig, ACPOptions } from "../../atoms/types.js";
-import { logger } from '../../../../atoms/logger.js';
+import { logger } from '../../../../core/atoms/logger.js';
 
 const projectRoot = process.cwd();
 
@@ -15,7 +15,7 @@ const projectRoot = process.cwd();
  * speak ACP v2/v3 while Gemini CLI remains on its native protocol.
  */
 export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
-  const wrapperEntry = path.join(projectRoot, 'scripts/gemini-wrapper-v2.js');
+  const wrapperEntry = path.join(projectRoot, 'backend/scripts/gemini-wrapper-v2.js');
   const availableModels = config.AVAILABLE_MODELS_GEMINI.map((modelId) => ({
     id: modelId,
     name: modelId,

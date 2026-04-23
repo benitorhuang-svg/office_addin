@@ -4,8 +4,8 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { logger } from '../../atoms/logger.js';
-import { getClientIp } from '../../atoms/client-ip.js';
+import { logger } from '../../core/atoms/logger.js';
+import { getClientIp } from '../../core/atoms/client-ip.js';
 
 interface WindowEntry {
   timestamps: number[];

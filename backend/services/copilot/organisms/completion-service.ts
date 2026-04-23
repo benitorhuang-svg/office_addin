@@ -6,7 +6,7 @@ import { GitHubModelsService } from './github-models-service.js';
 import { PromptOrchestrator } from './prompt-orchestrator.js';
 import { FallbackChain } from '../molecules/fallback-chain.js';
 import { sendPromptViaCopilotSdk } from './sdk-provider.js';
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 export interface CompletionRequest {
   prompt: string;
@@ -68,6 +68,7 @@ export const CompletionService = {
         undefined, // azure info
         isExplicitGeminiCli ? 'gemini_cli' : undefined,
         req.geminiKey,
+        req.officeContext,
         signal
       );
 
@@ -86,7 +87,8 @@ export const CompletionService = {
           undefined,
           'gemini_cli',
           req.geminiKey,
-          signal  // propagate abort to fallback — avoids resource leak on disconnect
+          req.officeContext,
+          signal  // propagate abort to fallback ??avoids resource leak on disconnect
         );
 
         if (fallbackText && onChunk) {
@@ -122,7 +124,17 @@ export const CompletionService = {
           const fallbackResult = await chain.execute(async (fallbackModel) => {
             const { system: _s, user: u } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, fallbackModel, req.presetId || 'general');
             // Use Copilot SDK for fallback models
-            const text = await sendPromptViaCopilotSdk(u, onChunk, false, fallbackModel, undefined, undefined, undefined, signal);
+            const text = await sendPromptViaCopilotSdk(
+              u,
+              onChunk,
+              false,
+              fallbackModel,
+              undefined,
+              undefined,
+              undefined,
+              req.officeContext,
+              signal,
+            );
             return text;
           });
           if (fallbackResult.fallbackUsed) {

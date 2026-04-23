@@ -1,7 +1,13 @@
 import type { PermissionHandler, PermissionRequestResult } from "@github/copilot-sdk";
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
-const SAFE_CUSTOM_TOOLS = new Set(['google_search', 'create_excel_chart']);
+const SAFE_CUSTOM_TOOLS = new Set([
+  'google_search',
+  'create_excel_chart',
+  'word_skill',
+  'excel_skill',
+  'powerpoint_skill',
+]);
 const AUTO_APPROVE_ALL_PERMISSIONS = process.env.COPILOT_AUTO_APPROVE_ALL_PERMISSIONS === 'true';
 const AUTO_APPROVE_PYTHON_TOOL = process.env.COPILOT_AUTO_APPROVE_PYTHON_TOOL === 'true';
 

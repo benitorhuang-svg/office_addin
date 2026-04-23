@@ -78,6 +78,15 @@ docker-compose stop
 - **Data Science**: NetworkX, Pandas, NumPy, Statsmodels
 - **Aesthetics**: Pro-Max Glassmorphism, HUD System
 
+## 📁 Project Layout
+
+- `client/`: Office add-in UI, taskpane entrypoints, commands, and frontend services.
+- `backend/`: Express server, provider orchestration, routes, backend skills, and modular Copilot SDK tools (including Word / Excel / PowerPoint agent-callable skills).
+- `shared/`: Shared types, enums, and locale primitives used across layers.
+- `scripts/`: Operational tooling, with one-off cleanup utilities grouped under `scripts/maintenance/`.
+- `specs/`: Architecture notes and local fixtures used by exploratory skills and manual testing.
+- `reports/diagnostics/`: Archived lint and typecheck snapshots that should stay out of the project root.
+
 ---
 
 _“Nexus isn’t just a tool; it’s an omniscient bridge between human intention and machine precision.”_

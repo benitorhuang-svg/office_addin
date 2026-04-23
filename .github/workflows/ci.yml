@@ -1,0 +1,184 @@
+name: Nexus Center CI
+
+on:
+  push:
+    branches: [main, gemini, develop]
+  pull_request:
+    branches: [main, gemini]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '25'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Job 1: TypeScript Type Check + Lint
+  # ─────────────────────────────────────────────
+  typecheck:
+    name: TypeScript & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: TypeCheck (frontend)
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: TypeCheck (backend)
+        run: npx tsc --noEmit -p backend/tsconfig.json
+
+      - name: ESLint
+        run: npm run lint
+
+  # ─────────────────────────────────────────────
+  # Job 2: Backend Unit Tests (Jest)
+  # ─────────────────────────────────────────────
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run backend unit tests
+        run: npm run test:backend
+        env:
+          NODE_ENV: test
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage/
+
+  # ─────────────────────────────────────────────
+  # Job 3: Office Manifest Validation
+  # ─────────────────────────────────────────────
+  validate-manifest:
+    name: Manifest Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Validate manifest.xml
+        run: npx office-addin-manifest validate manifest.xml
+
+      - name: Check version sync (package.json ↔ manifest.xml)
+        run: node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const manifest = fs.readFileSync('manifest.xml', 'utf8');
+          const versionMatch = manifest.match(/Version=\"([^\"]+)\"/);
+          if (versionMatch && versionMatch[1] !== pkg.version) {
+            console.error('Version mismatch: package.json=' + pkg.version + ' manifest.xml=' + versionMatch[1]);
+            process.exit(1);
+          }
+          console.log('Version sync OK:', pkg.version);
+        "
+
+  # ─────────────────────────────────────────────
+  # Job 4: Build Verification
+  # ─────────────────────────────────────────────
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build server (esbuild)
+        run: npm run build:server
+
+      - name: Build frontend (webpack)
+        run: npm run build
+
+      - name: Verify dist artifacts
+        run: |
+          test -f dist-server/index.mjs || (echo "dist-server/index.mjs missing" && exit 1)
+          test -d dist || (echo "dist/ missing" && exit 1)
+          echo "Build artifacts OK"
+
+  # ─────────────────────────────────────────────
+  # Job 5: Python Skill Layer Tests
+  # ─────────────────────────────────────────────
+  test-python:
+    name: Python Skill Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/infra/requirements.txt
+          pip install pytest pytest-asyncio httpx
+
+      - name: Run Python skill tests
+        run: python -m pytest backend/skills/tests/ -v --tb=short
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHONPATH: backend/skills
+
+  # ─────────────────────────────────────────────
+  # Job 6: Docker Build Check
+  # ─────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/infra/Dockerfile
+          push: false
+          tags: nexus-center:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

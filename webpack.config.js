@@ -43,9 +43,9 @@ module.exports = async (env, options) => {
       name: `${mode}-cache`,
     },
     entry: {
-      taskpane: ["./client/organisms/taskpane-entry.ts"],
-      commands: "./client/commands/molecules/office-commands.ts",
-      monitor: "./client/organisms/monitor-entry.ts"
+      taskpane: ["./client/entries/taskpane-entry.ts"],
+      commands: "./client/entries/commands-entry.ts",
+      monitor: "./client/entries/monitor-entry.ts"
     },
     output: {
       clean: true,
@@ -54,7 +54,7 @@ module.exports = async (env, options) => {
     resolve: {
       extensions: [".ts", ".html", ".js", ".css"],
       alias: {
-        "@shared": path.resolve(__dirname, "shared"),
+        "@shared": path.resolve(__dirname, "backend/shared"),
         "@components": path.resolve(__dirname, "client/components"),
         "@services": path.resolve(__dirname, "client/services"),
         "@atoms": path.resolve(__dirname, "client/components/atoms"),
@@ -75,7 +75,18 @@ module.exports = async (env, options) => {
           test: /\.ts$/,
           exclude: /node_modules/,
           use: {
-            loader: "babel-loader"
+            loader: "babel-loader",
+            options: {
+              presets: [
+                ["@babel/preset-env", {
+                  targets: "last 2 Chrome versions, last 2 Edge versions",
+                  useBuiltIns: "usage",
+                  corejs: 3,
+                  shippedProposals: true,
+                }],
+                "@babel/preset-typescript",
+              ],
+            },
           },
         },
         {
@@ -110,18 +121,18 @@ module.exports = async (env, options) => {
     plugins: [
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
-        template: "./client/organisms/taskpane.html",
+        template: "./client/entries/taskpane.html",
         chunks: ["taskpane"],
       }),
       new HtmlWebpackPlugin({
         filename: "monitor.html",
-        template: "./client/organisms/monitor.html",
+        template: "./client/entries/monitor.html",
         chunks: ["monitor"],
       }),
       new CopyWebpackPlugin({
         patterns: [
           {
-            from: "assets/*",
+            from: "client/assets/*",
             to: "assets/[name][ext][query]",
           },
           {
@@ -140,7 +151,7 @@ module.exports = async (env, options) => {
       }),
       new HtmlWebpackPlugin({
         filename: "commands.html",
-        template: "./client/commands/molecules/office-commands.html",
+        template: "./client/entries/commands.html",
         chunks: ["commands"],
       }),
     ],
@@ -188,7 +199,7 @@ module.exports = async (env, options) => {
     if (!global.__WB_INJECT_MANIFEST_ADDED__) {
       config.plugins.push(
         new InjectManifest({
-          swSrc: "./client/sw.ts",
+          swSrc: "./client/entries/sw.ts",
           swDest: "sw.js",
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for office.js
         })

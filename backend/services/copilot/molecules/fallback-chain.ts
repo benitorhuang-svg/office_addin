@@ -3,7 +3,7 @@
  * Executes an async operation with sequential model fallback on failure.
  */
 
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 interface FallbackResult<T> {
   result: T;

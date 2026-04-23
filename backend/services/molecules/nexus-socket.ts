@@ -3,7 +3,7 @@ import type { Server } from 'node:http';
 import type { Server as HttpsServer } from 'node:https';
 import { GlobalSystemState } from './system-state-store.js';
 import type { ACPConnectionMethod } from '../copilot/atoms/types.js';
-import { logger } from '../../atoms/logger.js';
+import { logger } from '../../core/atoms/logger.js';
 /**
  * Molecule: Nexus Socket Relay
  * Handles real-time state broadcasts between PWA and Taskpane.

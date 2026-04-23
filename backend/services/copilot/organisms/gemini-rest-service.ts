@@ -1,8 +1,8 @@
-import { fetch } from '../../../atoms/fetcher.js';
+import { fetch } from '../../../core/atoms/fetcher.js';
 import config from '../../../config/env.js';
 import type { PromptPayload } from '../atoms/types.js';
 import { SSE_PARSER } from '../molecules/sse-parser.js';
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 interface GeminiContentPart {
   text?: string;

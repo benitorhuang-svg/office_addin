@@ -4,7 +4,7 @@
     "moduleResolution": "NodeNext",
     "target": "ESNext",
     "esModuleInterop": true,
-    "types": ["node", "express", "cors"],
+    "types": ["node", "express", "cors", "jest"],
     "typeRoots": ["../node_modules/@types"],
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

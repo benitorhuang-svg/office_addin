@@ -4,7 +4,7 @@
  * Note: Since copilot-sdk now dynamically spawns the CLI via stdio, we don't
  * need to artificially maintain a background process on a port.
  */
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 export function startGeminiCli() {
   logger.info('GeminiCliOrchestrator', 'Gemini CLI is managed dynamically by Copilot SDK; no manual startup required');

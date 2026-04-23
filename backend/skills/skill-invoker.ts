@@ -1,91 +1,36 @@
-import { spawn } from "child_process";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 /**
- * Elegant Skill Invoker (ESI)
- * Dispatches AI agent requests to specialized Python sub-systems.
+ * ElegantSkillInvoker — Central façade that delegates to domain-specific invokers.
+ * Import from the individual domain modules for direct access.
  */
+// Domain entrypoints (via parts layer)
+
+// Re-export through the new `parts` layer for clearer domain separation.
+export { ExcelSkillInvoker } from "./parts/excel/index.js";
+export { PPTSkillInvoker }   from "./parts/ppt/index.js";
+export { WordSkillInvoker }  from "./parts/word/index.js";
+export { SharedSkillInvoker } from "./shared/shared-invoker.js";
+
+// Agent-callable skill registry (OpenAI / Copilot tool-call compatible)
+export {
+  excelSkill,
+  pptSkill,
+  wordSkill,
+  findSkill,
+  getAllSkills,
+  getToolDefinitions,
+} from "./agents/index.js";
+export type { AgentSkill, AgentSkillContext, AgentSkillResult } from "./agents/index.js";
+
+// ---- Legacy imports for backward compatibility within this module ----
+import { WordSkillInvoker }   from "./parts/word/index.js";
+import { SharedSkillInvoker } from "./shared/shared-invoker.js";
+
 export class ElegantSkillInvoker {
-    /**
-     * Invoke the WordExpert skill for high-fidelity document transformation.
-     */
-    static async invokeWordExpert(inputPath: string, outputPath: string, changes: unknown[]) {
-        const pythonScript = path.join(__dirname, "word_expert.py");
-        
-        return new Promise((resolve, reject) => {
-            const pyProcess = spawn("python3", [pythonScript]);
-            
-            let stdout = "";
-            let stderr = "";
-            
-            // Standard ACP Protocol Data Pipe
-            const payload = JSON.stringify({
-                input: inputPath,
-                output: outputPath,
-                changes: changes
-            });
-            
-            pyProcess.stdin.write(payload);
-            pyProcess.stdin.end();
-            
-            pyProcess.stdout.on("data", (data) => (stdout += data.toString()));
-            pyProcess.stderr.on("data", (data) => (stderr += data.toString()));
-            
-            pyProcess.on("close", (code) => {
-                if (code !== 0) {
-                    reject(new Error(`Python Skill Error: ${stderr}`));
-                } else {
-                    try {
-                        resolve(JSON.parse(stdout));
-                    } catch (_e) {
-                        reject(new Error("Failed to parse Skill Output JSON"));
-                    }
-                }
-            });
-        });
+    static invokeWordExpert(inputPath: string, outputPath: string, changes: unknown[]) {
+        return WordSkillInvoker.invokeWordExpert(inputPath, outputPath, changes);
     }
 
-    /**
-     * Elegant RAG: Invoke VectorNexus for high-fidelity semantic retrieval.
-     */
-    static async invokeVectorSearch(apiKey: string, query: string, docs: string[]) {
-        const pythonScript = path.join(__dirname, "vector_nexus.py");
-        
-        return new Promise((resolve, reject) => {
-            const pyProcess = spawn("python3", [pythonScript]);
-            
-            let stdout = "";
-            let stderr = "";
-            
-            // Industrial-grade JSON-over-STDIN protocol
-            const payload = JSON.stringify({
-                apiKey: apiKey,
-                query: query,
-                docs: docs
-            });
-            
-            pyProcess.stdin.write(payload);
-            pyProcess.stdin.end();
-            
-            pyProcess.stdout.on("data", (data) => (stdout += data.toString()));
-            pyProcess.stderr.on("data", (data) => (stderr += data.toString()));
-            
-            pyProcess.on("close", (code) => {
-                if (code !== 0) {
-                    reject(new Error(`RAG Skill Error: ${stderr}`));
-                } else {
-                    try {
-                        const parsed = JSON.parse(stdout);
-                        if (parsed.error) reject(new Error(parsed.error));
-                        else resolve(parsed.results);
-                    } catch (_e) {
-                        reject(new Error("Failed to parse Vector Output JSON"));
-                    }
-                }
-            });
-        });
+    static invokeVectorSearch(apiKey: string, query: string, docs: string[]) {
+        return SharedSkillInvoker.invokeVectorSearch(apiKey, query, docs);
     }
 }

@@ -1,5 +1,5 @@
 import config from '../../../config/molecules/server-config.js';
-import type { ACPConnectionMethod, AzureInfo, ACPSessionConfig } from '../atoms/types.js';
+import type { ACPConnectionMethod, AzureInfo, ACPSessionConfig, OfficeContext } from '../atoms/types.js';
 import { resolveMethodFromContext } from '../molecules/option-resolver.js';
 import { stopAllClients } from '../molecules/client-manager.js';
 import { clearAllPendingInputs, resolveInput as resolveInputFromQueue } from '../molecules/pending-input-queue.js';
@@ -31,6 +31,7 @@ export class ModernSDKOrchestrator {
     azureInfo?: AzureInfo,
     methodOverride?: ACPConnectionMethod,
     geminiKey?: string,
+    officeContext?: OfficeContext,
     signal?: AbortSignal
   ): Promise<string> {
     // Throw a proper AbortError so callers (retry engine, SSE handler) can
@@ -47,7 +48,8 @@ export class ModernSDKOrchestrator {
       streaming: !!onChunk,
       azure: azureInfo,
       remotePort: config.COPILOT_AGENT_PORT || undefined,
-      geminiKey
+      geminiKey,
+      officeContext,
     };
 
     // Orchestrate execution via specialized molecules

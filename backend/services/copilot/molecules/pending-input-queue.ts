@@ -1,5 +1,5 @@
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 /**
  * Molecule: Pending Input Queue

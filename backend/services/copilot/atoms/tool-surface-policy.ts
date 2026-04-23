@@ -1,5 +1,5 @@
 import type { SessionConfig } from "@github/copilot-sdk";
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 const ENABLE_BUILTIN_TOOLS = process.env.COPILOT_ENABLE_BUILTIN_TOOLS === 'true';
 

@@ -1,7 +1,7 @@
 import { CORE_SDK_CONFIG } from '../atoms/core-config.js';
 import type { ACPConnectionMethod, ACPSessionConfig } from '../atoms/types.js';
 import { resolveACPOptions } from './option-resolver.js';
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 /**
  * Molecule: SDK Retry Engine
@@ -21,7 +21,7 @@ export class SdkRetryEngine {
       try {
         return await operation();
       } catch (error: unknown) {
-        // SDK spec: never retry an AbortError â€” the client explicitly cancelled.
+        // SDK spec: never retry an AbortError ??the client explicitly cancelled.
         if (error instanceof DOMException && error.name === 'AbortError') {
           throw error;
         }
@@ -39,7 +39,7 @@ export class SdkRetryEngine {
         await this.handleClientCleanup(method, acpConfig);
 
         if (retryCount > maxRetries) {
-          const fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (æ–¹å¼ï¼š${method})ã€‚\n\néŒ¯èª¤è©³æƒ…ï¼š${errorMessage}`;
+          const fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (?¹å?ï¼?{method})?‚\n\n?¯èª¤è©³æ?ï¼?{errorMessage}`;
           if (onChunk) onChunk(fallbackText);
           return fallbackText;
         }

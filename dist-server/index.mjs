@@ -277,7 +277,7 @@ var CORE_SDK_CONFIG, init_core_config = __esm({
   }
 });
 
-// backend/atoms/logger.ts
+// backend/core/atoms/logger.ts
 function sanitizeValue(value, seen = /* @__PURE__ */ new WeakSet()) {
   if (value == null)
     return value;
@@ -326,7 +326,7 @@ function writeLog(level, tag, message, data) {
   }
 }
 var REDACTED_KEYS, logger, init_logger = __esm({
-  "backend/atoms/logger.ts"() {
+  "backend/core/atoms/logger.ts"() {
     "use strict";
     REDACTED_KEYS = /token|api[_-]?key|authorization|bearer|password|secret/i;
     logger = {
@@ -1133,9 +1133,18 @@ var SdkTurnOrchestrator, init_sdk_turn_orchestrator = __esm({
     init_logger();
     SdkTurnOrchestrator = class {
       static async executeTurn(prompt, modelName, method, acpConfig, onChunk, signal) {
-        let { clientOptions, sessionOptions } = resolveACPOptions(acpConfig), client = await getOrCreateClient(method, clientOptions), sessionId = generateSessionId(), augmentedOptions = {
+        let { clientOptions, sessionOptions } = resolveACPOptions(acpConfig), client = await getOrCreateClient(method, clientOptions), sessionId = generateSessionId(), originalOnEvent = sessionOptions.onEvent, augmentedOptions = {
           ...sessionOptions,
           onEvent: (event) => {
+            try {
+              originalOnEvent?.(event);
+            } catch (originalHandlerError) {
+              logger.warn("SdkTurn", "Original session onEvent handler threw", {
+                sessionId,
+                eventType: event.type,
+                error: originalHandlerError
+              });
+            }
             event.type === "session.error" && logger.error("SdkTurn", "Received session error event during turn setup", {
               sessionId,
               eventType: event.type,
@@ -1255,9 +1264,9 @@ var SdkRetryEngine, init_sdk_retry_engine = __esm({
               method,
               error: errorMessage
             }), await this.handleClientCleanup(method, acpConfig), retryCount > maxRetries) {
-              let fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (\u65B9\u5F0F\uFF1A${method})\u3002
+              let fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (?\uFFFD\uFFFD?\uFFFD\uFFFD?{method})?\uFFFD
 
-\u932F\u8AA4\u8A73\u60C5\uFF1A${errorMessage}`;
+?\uFFFD\u8AA4\u8A73\uFFFD?\uFFFD\uFFFD?{errorMessage}`;
               return onChunk && onChunk(fallbackText), fallbackText;
             }
             let baseDelay = this.extractRetryAfterMs(error) ?? Math.min(500 * Math.pow(2, retryCount), 8e3), jitter = Math.random() * baseDelay;
@@ -1488,13 +1497,13 @@ var sendPromptViaCopilotSdk, init_sdk_provider = __esm({
   }
 });
 
-// backend/organisms/server-orchestrator.ts
+// backend/core/organisms/server-orchestrator.ts
 init_server_config();
 init_sdk_provider();
 import http from "node:http";
 import https from "node:https";
 
-// backend/molecules/app-factory.ts
+// backend/core/molecules/app-factory.ts
 import express2 from "express";
 import cors from "cors";
 import path6 from "node:path";
@@ -1553,7 +1562,7 @@ var SessionStore = class {
   }
 }, SESSION_STORE = new SessionStore();
 
-// backend/atoms/fetcher.ts
+// backend/core/atoms/fetcher.ts
 async function fetch2(input, init) {
   if (typeof globalThis.fetch != "function")
     throw new Error("No fetch implementation available. Ensure you are using Node 18+");
@@ -2054,7 +2063,7 @@ ${user}`, streamedText = await sendPromptViaCopilotSdk(
           "gemini_cli",
           req.geminiKey,
           signal
-          // propagate abort to fallback — avoids resource leak on disconnect
+          // propagate abort to fallback ??avoids resource leak on disconnect
         );
         return fallbackText && onChunk && await emitChunks(fallbackText, onChunk), fallbackText;
       }
@@ -2111,7 +2120,7 @@ var ResponseParser = {
   }
 };
 
-// backend/atoms/latency-tracker.ts
+// backend/core/atoms/latency-tracker.ts
 var marks = /* @__PURE__ */ new Map(), MAX_MARKS = 1e3;
 function markStart(label) {
   if (marks.size > MAX_MARKS) {
@@ -2127,16 +2136,16 @@ function markEnd(label) {
   return marks.delete(label), console.log(`[Perf] ${label}: ${elapsed}ms`), elapsed;
 }
 
-// backend/atoms/request-logger.ts
+// backend/core/atoms/request-logger.ts
 import crypto3 from "node:crypto";
 
-// backend/atoms/client-ip.ts
+// backend/core/atoms/client-ip.ts
 function getClientIp(req) {
   let forwarded = req.headers["x-forwarded-for"];
   return typeof forwarded == "string" ? forwarded.split(",")[0].trim() : req.ip || req.socket.remoteAddress || "unknown";
 }
 
-// backend/atoms/request-logger.ts
+// backend/core/atoms/request-logger.ts
 init_logger();
 function createRequestLog(req, requestId = crypto3.randomUUID()) {
   let ip = getClientIp(req);
@@ -2510,7 +2519,7 @@ apiRouter.post("/system/quit", (req, res) => {
 });
 var api_router_default = apiRouter;
 
-// backend/molecules/telemetry-middleware.ts
+// backend/core/molecules/telemetry-middleware.ts
 import crypto4 from "node:crypto";
 init_nexus_socket();
 function telemetryMiddleware(req, res, next) {
@@ -2534,7 +2543,7 @@ function telemetryMiddleware(req, res, next) {
   res.once("finish", finalize), res.once("close", finalize), next();
 }
 
-// backend/molecules/app-factory.ts
+// backend/core/molecules/app-factory.ts
 var AppFactory = {
   create() {
     let app = express2(), distPath = path6.resolve(process.cwd(), "dist"), defaultOrigins = [
@@ -2575,7 +2584,7 @@ var AppFactory = {
   }
 };
 
-// backend/molecules/https-server-options.ts
+// backend/core/molecules/https-server-options.ts
 import fs2 from "node:fs";
 import path7 from "node:path";
 async function resolveHttpsServerOptions() {
@@ -2603,7 +2612,7 @@ async function resolveHttpsServerOptions() {
   }
 }
 
-// backend/molecules/lifecycle-manager.ts
+// backend/core/molecules/lifecycle-manager.ts
 init_sdk_provider();
 var LifecycleManager = class {
   static shutdownHandlers = [];
@@ -2652,7 +2661,7 @@ LifecycleManager.onShutdown(async () => {
   await stopAllClients();
 });
 
-// backend/organisms/server-orchestrator.ts
+// backend/core/organisms/server-orchestrator.ts
 init_idle_cleaner();
 init_sdk_provider();
 init_nexus_socket();
@@ -2678,7 +2687,7 @@ var ServerOrchestrator = {
   }
 };
 
-// backend/ecosystems/server-entry.ts
+// backend/server.ts
 process.env.NODE_NO_WARNINGS = "1";
 ServerOrchestrator.start().catch((err) => {
   console.error("[Critical] Core Server Orchestration Failed:", err), process.exit(1);

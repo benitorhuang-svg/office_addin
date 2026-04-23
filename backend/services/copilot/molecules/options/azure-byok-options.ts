@@ -28,7 +28,7 @@ export const buildAzureByokOptions = (cfg: ACPSessionConfig): ACPOptions => {
       cliPath: process.execPath,
       useStdio: true,
       cliArgs: [
-        path.join(projectRoot, 'scripts/acp-adaptive-shim.cjs'),
+        path.join(projectRoot, 'backend/scripts/core/acp-adaptive-shim.cjs'),
         path.join(projectRoot, 'node_modules/@github/copilot/index.js')
       ], 
     },

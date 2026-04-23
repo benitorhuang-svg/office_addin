@@ -2,7 +2,7 @@ import config from '../../../config/env.js';
 import type { ACPConnectionMethod, ACPHealthResult } from '../atoms/types.js';
 import { resolveACPOptions } from '../molecules/option-resolver.js';
 import { getOrCreateClient } from '../molecules/client-manager.js';
-import { logger } from '../../../atoms/logger.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 // Atomized Health Checkers
 import { checkRemoteHealth } from '../molecules/health/remote-checker.js';

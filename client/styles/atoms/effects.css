@@ -45,3 +45,38 @@
 .nexus-shadow-lg { box-shadow: var(--shadow-lg); }
 .nexus-shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
 .nexus-shadow-ask-user { box-shadow: 0 25px 60px -15px rgba(37, 99, 235, 0.15); }
+
+/* ─────────────────────────────────────────────
+   Glassmorphism (Huashu — High-Fidelity UI)
+   ───────────────────────────────────────────── */
+.nexus-glass {
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.nexus-glass-dark {
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.nexus-glass-brand {
+    background: rgba(37, 99, 235, 0.08);
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    box-shadow: 0 4px 24px rgba(37, 99, 235, 0.12);
+}
+
+/* Brand Intelligence overrides — injected at runtime by BrandExtractor */
+.nexus-glass-brand-ci {
+    background: color-mix(in srgb, var(--brand-extracted-primary, #2563eb) 8%, transparent);
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
+    border: 1px solid color-mix(in srgb, var(--brand-extracted-primary, #2563eb) 20%, transparent);
+}

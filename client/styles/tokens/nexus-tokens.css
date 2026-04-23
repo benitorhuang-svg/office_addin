@@ -1,0 +1,176 @@
+/* 
+ * Nexus UI: Design Tokens (Global Genesis)
+ */
+
+:root {
+    /* --- COLOR SYSTEM (Prime Genesis) --- */
+    --color-brand-primary: hsl(221, 83%, 53%);
+    --color-brand-secondary: hsl(221, 83%, 43%);
+    --color-accent: hsl(243, 75%, 59%);
+    
+    --color-nexus-depth: hsl(210, 40%, 98%);
+    --color-nexus-surface: hsl(0, 0%, 100%);
+    --color-nexus-border: hsla(0, 0%, 0%, 0.06);
+    
+    /* Legacy Brand Refs & Palette Expansion */
+    --color-brand-blue: #2563eb;
+    --color-brand-blue-600: #2563eb;
+    --color-brand-blue-500: #3b82f6;
+    --color-brand-blue-400: #60a5fa;
+    --color-brand-blue-soft: #eff6ff;
+    
+    --color-brand-sky: #0ea5e9;
+    --color-brand-sky-500: #0ea5e9;
+    
+    --color-brand-emerald: #10b981;
+    --color-brand-emerald-500: #10b981;
+    --color-brand-emerald-600: #059669;
+    
+    --color-brand-leaf: #718355; 
+    
+    --color-brand-violet: #8b5cf6;
+    --color-brand-violet-500: #8b5cf6;
+    --color-brand-violet-600: #7c3aed;
+    
+    --color-brand-rose: #f43f5e;
+    --color-brand-red-400: #f87171;
+    --color-brand-red-500: #ef4444;
+    
+    --color-brand-amber-500: #f59e0b;
+
+    /* ─── Fluent UI Design Token Bridge ───────────────────────────────
+     * Maps Nexus design tokens onto Fluent Web Component CSS variables.
+     * Reference: https://fluent2.microsoft.design/design-tokens
+     * ----------------------------------------------------------------- */
+    --colorBrandBackground:          var(--color-brand-primary);
+    --colorBrandBackgroundHover:     var(--color-brand-secondary);
+    --colorBrandBackgroundPressed:   hsl(221, 83%, 38%);
+    --colorBrandForeground1:         var(--color-brand-primary);
+    --colorBrandForeground2:         var(--color-brand-secondary);
+    --colorNeutralBackground1:       var(--color-nexus-surface);
+    --colorNeutralBackground2:       var(--color-nexus-depth);
+    --colorNeutralForeground1:       var(--color-text-dark);
+    --colorNeutralForeground2:       var(--color-text-main);
+    --colorNeutralForeground3:       var(--color-text-dim);
+    --colorNeutralStroke1:           var(--color-nexus-border);
+    --colorNeutralStroke2:           var(--color-slate-200);
+    --colorNeutralStrokeAccessible:  var(--color-slate-400);
+    --colorNeutralShadowAmbient:     rgba(0, 0, 0, 0.06);
+    --colorNeutralShadowKey:         rgba(0, 0, 0, 0.14);
+    /* Border radius alignment */
+    --borderRadiusMedium:            6px;
+    --borderRadiusLarge:             8px;
+    --borderRadiusXLarge:            12px;
+    /* Font family alignment */
+    --fontFamilyBase:                'Segoe UI', system-ui, -apple-system, sans-serif;
+    --fontWeightRegular:             400;
+    --fontWeightMedium:              500;
+    --fontWeightSemibold:            600;
+    --color-text-main: hsl(215, 25%, 27%);
+    --color-text-dim: hsl(215, 16%, 47%);
+    --color-text-dark: hsl(222, 47%, 11%);
+    --color-text-accent: hsl(221, 83%, 53%);
+    
+    /* Neutral Matrix */
+    --color-white: #ffffff;
+    --color-slate-50: #f8fafc;
+    --color-slate-100: #f1f5f9;
+    --color-slate-200: #e2e8f0;
+    --color-slate-300: #cbd5e1;
+    --color-slate-400: #94a3b8;
+    --color-slate-500: #64748b;
+    --color-slate-600: #475569;
+    --color-slate-700: #334155;
+    --color-slate-800: #1e293b;
+    --color-slate-900: #0f172a;
+
+    /* --- SPACING (Nexus Fluid System) --- */
+    --space-0: 0;
+    --space-0-5: 2px;
+    --space-1: 4px;
+    --space-1-5: 6px;
+    --space-2: 8px;
+    --space-2-5: 10px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-14: 56px;
+    --space-16: 64px;
+    --space-18: 72px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-32: 128px;
+    --space-40: 160px;
+    --space-fluid-1: clamp(0.5rem, 1vw, 1rem);
+
+    /* --- RADIUS --- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-2xl: 28px;
+    --radius-32px: 32px;
+    --radius-full: 9999px;
+
+    /* --- SHADOWS --- */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-zen: 0 10px 40px rgba(0, 0, 0, 0.03);
+    --shadow-primary: 0 15px 30px rgba(37, 99, 235, 0.25);
+    --shadow-blue-glow: 0 0 30px rgba(37, 99, 235, 0.4);
+    --shadow-blue-pulse: 0 25px 60px -15px rgba(59, 130, 246, 0.25);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.03);
+
+    /* --- TYPOGRAPHY --- */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Outfit', 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    
+    --text-tiny: 10px;
+    --text-meta: 12px;
+    --text-xs: 11px;
+    --text-sm: 13px;
+    --text-base: 14px;
+    --text-lg: 16px;
+    --text-xl: 18px;
+    --text-2xl: 24px;
+    --text-32px: 32px;
+    
+    --text-h1: 22px;
+    --text-h2: 17px;
+    --text-h3: 15px;
+    --text-body: 14px;
+
+    /* Easing Functions */
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Glassmorphism */
+    --background-glass: hsla(0, 0%, 100%, 0.7);
+    --border-glass: hsla(0, 0%, 0%, 0.05);
+    --blur-glass: 24px;
+
+    /* ── Brand Intelligence CI Tokens (Huashu — overridable at runtime) ──
+       Defaults match Nexus brand blue. BrandExtractor injects real values
+       via a <style> tag when the user provides a company URL.             */
+    --brand-extracted-primary:    #2563eb;
+    --brand-extracted-secondary:  #1d4ed8;
+    --brand-extracted-accent:     #8b5cf6;
+    --brand-extracted-background: #ffffff;
+    --brand-extracted-text:       #1e293b;
+
+    /* ── Glassmorphism Tokens ── */
+    --glass-bg-light:   rgba(255, 255, 255, 0.62);
+    --glass-bg-brand:   rgba(37, 99, 235, 0.08);
+    --glass-blur:       blur(18px) saturate(180%);
+    --glass-border:     rgba(255, 255, 255, 0.45);
+    --glass-shadow:     0 8px 32px rgba(37, 99, 235, 0.08);
+}

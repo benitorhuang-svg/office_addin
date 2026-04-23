@@ -1,5 +1,5 @@
 import config from '../../../config/env.js';
-import { fetch } from '../../../atoms/fetcher.js';
+import { fetch } from '../../../core/atoms/fetcher.js';
 import type { PromptPayload, ChatCompletionResponse } from '../atoms/types.js';
 import { SSE_PARSER } from '../molecules/sse-parser.js';
 

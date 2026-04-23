@@ -7,7 +7,8 @@ import { handleCopilotPermissionRequest } from '../atoms/permission-policy.js';
 import { applyLeastPrivilegeToolSurface } from '../atoms/tool-surface-policy.js';
 import { getSessionTools } from './tool-registry.js';
 import { waitForUserInput, deletePendingInput } from './pending-input-queue.js';
-import { logger } from '../../../atoms/logger.js';
+import type { OfficeContext } from '../atoms/types.js';
+import { logger } from '../../../core/atoms/logger.js';
 
 /**
  * Molecule: Session Lifecycle Manager
@@ -23,10 +24,10 @@ const activeSessions = new Map<string, ManagedSession>();
 
 type SessionTool = NonNullable<SessionConfig['tools']>[number];
 
-function mergeSessionTools(sessionTools?: SessionTool[]): SessionTool[] {
+function mergeSessionTools(sessionOfficeContext?: OfficeContext, sessionTools?: SessionTool[]): SessionTool[] {
   const merged = new Map<string, SessionTool>();
 
-  for (const tool of getSessionTools()) {
+  for (const tool of getSessionTools(sessionOfficeContext)) {
     merged.set(tool.name, tool);
   }
 
@@ -47,7 +48,8 @@ export async function createSession(
   method: ACPConnectionMethod,
   sessionId: string,
   onChunk?: (chunk: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  officeContext?: OfficeContext,
 ): Promise<{ session: CopilotSession; sessionId: string }> {
   let sessionTimeout: ReturnType<typeof setTimeout> | undefined;
   const originalPreToolUse = sessionOptions.hooks?.onPreToolUse;
@@ -60,7 +62,7 @@ export async function createSession(
     sessionId,
     ...toolSurface,
     onPermissionRequest: sessionOptions.onPermissionRequest || handleCopilotPermissionRequest,
-    tools: mergeSessionTools(sessionOptions.tools),
+    tools: mergeSessionTools(officeContext, sessionOptions.tools),
     hooks: {
       ...sessionOptions.hooks,
       onPreToolUse: async (input, invocation) => {

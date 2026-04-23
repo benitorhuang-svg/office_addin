@@ -16,6 +16,5 @@ brain
 *.md
 *.docx
 specs
-addin_test.docx
 .office-addin-dev-certs
 Thumbs.db

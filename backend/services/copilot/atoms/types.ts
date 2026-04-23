@@ -53,6 +53,7 @@ export interface ACPSessionConfig {
   remotePort?: string;
   geminiKey?: string;
   githubToken?: string;
+  officeContext?: OfficeContext;
 }
 
 export interface ACPHealthResult {
@@ -87,8 +88,14 @@ export interface WritingPreset {
 
 export interface OfficeContext {
   host?: string;
+  selectedText?: string;
   selectionText?: string;
+  selection?: string;
   documentText?: string;
+  fullBody?: string;
+  surroundingContent?: string;
+  platform?: string;
+  documentId?: string;
 }
 
 export interface CopilotEvent {

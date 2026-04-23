@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { logger } from '../../atoms/logger.js';
+import { logger } from '../../core/atoms/logger.js';
 
 export interface ValidationResult {
     valid: boolean;

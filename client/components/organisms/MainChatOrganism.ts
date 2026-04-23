@@ -6,6 +6,7 @@ import { createHistoryContainer } from "@organisms/history-container";
 import { createPromptGroup } from "@molecules/prompt-group";
 import { createLayoutBox } from "@atoms/LayoutBox";
 import { NexusStateStore } from "@services/molecules/global-state";
+import { createZenithInsightButton } from "@molecules/ZenithInsightButton";
 
 export interface ChatOrganismProps {
     auth: AuthController | null;
@@ -54,8 +55,15 @@ export function createMainChatOrganism({ auth, provider, isConnected }: ChatOrga
         dataset: { provider: provider || "" }
     });
 
+    // 4. Zenith FAB — mounts directly to the taskpane body (fixed position)
+    const insightFab = createZenithInsightButton();
+    document.body.appendChild(insightFab);
+
     return {
         element: container,
-        destroy: () => historyComp.destroy?.()
+        destroy: () => {
+            historyComp.destroy?.();
+            insightFab.remove();
+        }
     };
 }

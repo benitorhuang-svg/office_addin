@@ -5,7 +5,7 @@ services:
   nexus-master:
     build:
       context: .
-      dockerfile: ./infra/Dockerfile
+      dockerfile: ./backend/infra/Dockerfile
     image: nexus-center:latest
     container_name: nexus-center-master
     ports:

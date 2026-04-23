@@ -2,11 +2,11 @@ import type { Request, Response } from 'express';
 import config from '../../config/env.js';
 import { CompletionService } from '../../services/copilot/organisms/completion-service.js';
 import { ResponseParser } from '../../services/copilot/molecules/response-parser.js';
-import { markStart, markEnd } from '../../atoms/latency-tracker.js';
-import { createRequestLog, logCompletion } from '../../atoms/request-logger.js';
+import { markStart, markEnd } from '../../core/atoms/latency-tracker.js';
+import { createRequestLog, logCompletion } from '../../core/atoms/request-logger.js';
 import { GlobalSystemState } from '../../services/molecules/system-state-store.js';
 import { NexusSocketRelay } from '../../services/molecules/nexus-socket.js';
-import { logger } from '../../atoms/logger.js';
+import { logger } from '../../core/atoms/logger.js';
 
 /**
  * Organism: Copilot Route Handler
@@ -18,6 +18,7 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
   markStart(requestId);
   let firstTokenTracked = false;
   let chunkCount = 0;
+  let streamStartMs = 0;
   const { prompt, officeContext, model, stream, authProvider, presetId, systemPrompt } = req.body;
   const geminiKey = (req.headers['x-gemini-key'] as string) || config.GEMINI_API_KEY;
   const streamingRes = res as Response & {
@@ -50,8 +51,11 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
 
       const onChunk = (chunk: string) => {
         if (!firstTokenTracked) {
-          markEnd(`${requestId}:first-token`);
+          const ttft = markEnd(`${requestId}:first-token`);
           firstTokenTracked = true;
+          streamStartMs = performance.now();
+          GlobalSystemState.update({ ttft });
+          NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', GlobalSystemState.getState());
         }
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
         streamingRes.flush?.();
@@ -89,6 +93,12 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
       if (isClientConnected) {
         res.write('data: [DONE]\n\n');
         const streamLatency = markEnd(requestId);
+        // Compute tokens/sec: rough approximation (4 chars per token)
+        const elapsedSec = streamStartMs > 0 ? (performance.now() - streamStartMs) / 1000 : 1;
+        const estimatedTokens = Math.round(chunkCount * 8); // avg chunk ≈ 8 tokens
+        const tokensPerSec = elapsedSec > 0 ? Math.round(estimatedTokens / elapsedSec) : 0;
+        GlobalSystemState.update({ tokensPerSec, activePersona: presetId || 'General' });
+        NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', GlobalSystemState.getState());
         logCompletion(reqLog, { latencyMs: streamLatency, status: 'ok', chunks: chunkCount });
         res.end();
         return;
@@ -123,7 +133,7 @@ export const handleCopilotRequest = async (req: Request, res: Response): Promise
       return;
     }
   } catch (err: unknown) {
-    // Client disconnected mid-stream — not an error, just close cleanly.
+    // Client disconnected mid-stream ??not an error, just close cleanly.
     if (err instanceof DOMException && err.name === 'AbortError') {
       if (!res.headersSent) res.status(499).end();
       else res.end();

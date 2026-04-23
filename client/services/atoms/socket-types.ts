@@ -9,6 +9,12 @@ export interface SocketEventMap {
         provider?: NexusProvider;
         status?: string;
         isStreaming?: boolean;
+        /** Live tokens/sec broadcast from the backend after a streaming turn. */
+        tokensPerSec?: number;
+        /** Time-to-first-token in ms. */
+        ttft?: number;
+        /** Active persona label. */
+        activePersona?: string;
     };
     'COMMAND_EXECUTED': {
         command: string;

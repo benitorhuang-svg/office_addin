@@ -4,16 +4,17 @@
  */
 
 /* 1. Global Tokens (Design Language) */
-@import "./nexus-tokens.css";
+@import "./tokens/nexus-tokens.css";
 
 /* 2. Atomic Layer (Utilities & Base) */
-@import "./nexus-atoms.css";
+@import "./atoms/nexus-atoms.css";
 
 /* 3. Molecule Layer (Component Patterns) */
-@import "./nexus-molecules.css";
+@import "./molecules/nexus-molecules.css";
 
 /* 4. Structural Layer (Global Layout Props) */
 @import "./templates/nexus-slots.css";
+@import "./templates/nexus-layout.css";
 
 /* 5. Tooling/Misc Layer */
 /* Add future utility layers here */

@@ -17,9 +17,9 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "types": ["node", "office-js", "office-runtime"],
+    "types": ["node", "office-js", "office-runtime", "jest"],
     "paths": {
-      "@shared/*": ["./shared/*"],
+      "@shared/*": ["./backend/shared/*"],
       "@components/*": ["./client/components/*"],
       "@services/*": ["./client/services/*"],
       "@atoms/*": ["./client/components/atoms/*"],
@@ -27,6 +27,6 @@
       "@organisms/*": ["./client/components/organisms/*"]
     }
   },
-  "include": ["client/**/*.ts", "backend/**/*.ts", "shared/**/*.ts"],
+  "include": ["client/**/*.ts", "backend/**/*.ts"],
   "exclude": ["node_modules", "dist", "dist-server"]
 }
