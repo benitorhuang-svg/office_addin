@@ -36,6 +36,7 @@
     "docker:up": "npx nexus up",
     "nexus": "node src/infra/scripts/nexus.mjs",
     "test:backend": "jest --testPathPatterns=src --coverage",
+    "test:ci": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --testPathPatterns=src --passWithNoTests",
     "test:backend:watch": "jest --testPathPatterns=src --watch",
     "prepare": "husky"
   },

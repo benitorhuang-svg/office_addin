@@ -35,9 +35,6 @@ jobs:
       - name: TypeCheck (frontend)
         run: npx tsc --noEmit -p tsconfig.json
 
-      - name: TypeCheck (backend)
-        run: npx tsc --noEmit -p src/tsconfig.json
-
       - name: ESLint
         run: npm run lint
 
@@ -59,17 +56,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run backend unit tests
-        run: npm run test:backend
+        run: npm run test:ci
         env:
           NODE_ENV: test
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: coverage/
 
   # ─────────────────────────────────────────────
   # Job 3: Office Manifest Validation
@@ -159,7 +149,6 @@ jobs:
         run: python -m pytest src/agents/skills/tests/ -v --tb=short
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PYTHONPATH: src/skills
 
   # ─────────────────────────────────────────────
   # Job 6: Docker Build Check

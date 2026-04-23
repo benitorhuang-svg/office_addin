@@ -9,12 +9,6 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Nexus Center" />
   <Description DefaultValue="Industrial Precision Workspace Orchestrator" />
-  <Id>b7a1e2f3-c4d5-6e7f-8a90-b1c2d3e4f5a7</Id>
-  <Version>1.0.0.1</Version>
-  <ProviderName>Nexus</ProviderName>
-  <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Nexus Center" />
-  <Description DefaultValue="Industrial Precision Workspace Orchestrator" />
   <IconUrl DefaultValue="https://nexus-center-349886752487.asia-east1.run.app/assets/logo-premium.png"/>
   <HighResolutionIconUrl DefaultValue="https://nexus-center-349886752487.asia-east1.run.app/assets/logo-premium.png"/>
   <SupportUrl DefaultValue="https://www.contoso.com/help"/>
