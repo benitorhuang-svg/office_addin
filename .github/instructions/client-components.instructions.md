@@ -1,8 +1,8 @@
 ---
-applyTo: "client/components/**"
+applyTo: "src/client/components/**"
 ---
 
-# client/components — UI Component Library (Atomic Design)
+# src/client/components — UI Component Library (Atomic Design)
 
 All components are pure DOM factories — no framework, no virtual DOM.
 Every factory function returns an `HTMLElement` and is prefixed `create*`.

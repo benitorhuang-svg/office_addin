@@ -5,7 +5,7 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 - **Backend**: Node.js + TypeScript, Express 5, `"type":"module"` (NodeNext resolution)
 - **Frontend**: Vanilla TypeScript compiled via Webpack, mounted in Office task pane
 - **Design System**: Atomic Design (atoms → molecules → organisms → templates)
-- **Test Stack**: Jest 29 + ts-jest CJS mode, pattern `**/backend/**/__tests__/**/*.test.ts`
+- **Test Stack**: Jest 29 + ts-jest CJS mode, pattern `**/src/**/__tests__/**/*.test.ts`
 
 ---
 
@@ -14,18 +14,18 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 ### Backend Entry Points
 | File | Purpose |
 |------|---------|
-| `backend/server.ts` | Express app bootstrap, mounts all routers |
-| `backend/config/env.ts` | Environment variable schema & defaults |
-| `backend/shared/types.ts` | Shared interfaces: `NexusState`, `NexusSystemState` |
+| `src/server.ts` | Express app bootstrap, mounts all routers |
+| `src/config/env.ts` | Environment variable schema & defaults |
+| `src/shared/types.ts` | Shared interfaces: `NexusState`, `NexusSystemState` |
 
-### `backend/core/` — Infrastructure Primitives
+### `src/infra/` — Infrastructure Primitives
 | Layer | Files | Responsibility |
 |-------|-------|---------------|
 | atoms | `logger.ts`, `app-error.ts`, `latency-tracker.ts`, `fetcher.ts` | Logging, error classes, HTTP helpers |
 | molecules | `app-factory.ts`, `lifecycle-manager.ts`, `telemetry-middleware.ts` | Express factory, graceful shutdown, request timing |
 | organisms | `server-orchestrator.ts` | Wires HTTP/HTTPS server + lifecycle |
 
-### `backend/routes/` — HTTP API Layer
+### `src/routes/` — HTTP API Layer
 | Layer | Files | Responsibility |
 |-------|-------|---------------|
 | atoms | `request-validator.ts`, `status-html.ts` | Input validation middleware, status page |
@@ -34,14 +34,14 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 
 > **`copilot-handler.ts`** is the most important route: handles `/api/chat`, streams Copilot responses, tracks TTFT + tokens/sec, broadcasts `SYSTEM_STATE_UPDATED` via WebSocket.
 
-### `backend/services/` — Business Services
-#### `backend/services/molecules/`
+### `src/services/` — Business Services
+#### `src/services/molecules/`
 | File | Responsibility |
 |------|---------------|
 | `nexus-socket.ts` | WebSocket relay (`NexusSocketRelay.broadcast()`) |
 | `system-state-store.ts` | Singleton: `power`, `provider`, `isWarming`, `isStreaming`, `tokensPerSec`, `ttft`, `activePersona` |
 
-#### `backend/services/copilot/atoms/`
+#### `src/services/copilot/atoms/`
 | File | Responsibility |
 |------|---------------|
 | `presets.ts` | Persona definitions (Excel Analyst, PPT Designer, etc.) |
@@ -51,7 +51,7 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 | `core-config.ts` | SDK client config factory |
 | `types.ts` | Internal Copilot service types |
 
-#### `backend/services/copilot/molecules/`
+#### `src/services/copilot/molecules/`
 | File | Responsibility |
 |------|---------------|
 | `sdk-turn-orchestrator.ts` | Single chat turn lifecycle |
@@ -63,7 +63,7 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 | `adaptive-config.ts` | Runtime config hot-swap |
 | `session-lifecycle.ts` | Session open/close hooks |
 
-#### `backend/services/copilot/organisms/`
+#### `src/services/copilot/organisms/`
 | File | Responsibility |
 |------|---------------|
 | `completion-orchestrator.ts` | Top-level completion entry (chooses provider) |
@@ -73,7 +73,7 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 | `github-models-service.ts` | GitHub Models (Azure OpenAI) service |
 | `health-prober.ts` | Provider health checks |
 
-#### `backend/services/copilot/tools/`
+#### `src/services/copilot/tools/`
 | Folder | Files | Responsibility |
 |--------|-------|---------------|
 | `core/` | `python-executor-tool.ts`, `google-search-tool.ts` | Python sandbox, Google search |
@@ -81,20 +81,20 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 | `shared/` | _(shared tool helpers)_ | Common tool utilities |
 | `index.ts` | — | `getSessionTools(host)` — builds tool list by Office host |
 
-### `backend/skills/` — AI Skill Pipeline
+### `src/agents/skills/` — AI Skill Pipeline
 | File / Folder | Responsibility |
 |---------------|---------------|
 | `skill-orchestrator.ts` | **Main router** — classifies intent → dispatches to correct skill branch |
 | `skill-invoker.ts` | Invokes individual skills from manifest |
 | `skills-manifest.json` | Skill registry (name, description, entry) |
 
-#### `backend/skills/atoms/`
+#### `src/agents/skills/atoms/`
 | File | Responsibility |
 |------|---------------|
 | `intent-classifier.ts` | Keyword + LLM hybrid classifier → `IntentLabel` (`excel`, `word`, `ppt`, `recap`, `insight`, `general`) |
 | `brand-extractor.ts` | Extracts brand/color tokens from document context |
 
-#### `backend/skills/molecules/`
+#### `src/agents/skills/molecules/`
 | File | Responsibility |
 |------|---------------|
 | `design-reviewer.ts` | 5-dimension heuristic scorer (InfoArch/VisualPoetry/Emotional/Usability/Brand). Pass ≥ 70/100 |
@@ -102,7 +102,7 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 | `self-corrector.ts` | Auto-Healing Loop: first-pass → review → if score < threshold → inject issues → second-pass |
 | `context-chunker.ts` | TF-IDF smart truncation: chunks text > 4,000 chars, returns top-K within char budget |
 
-#### `backend/skills/agents/`
+#### `src/agents/skills/agents/`
 | File | Responsibility |
 |------|---------------|
 | `agent-skill.ts` | `AgentSkill` interface + base class |
@@ -111,7 +111,7 @@ Office Add-in (Word / Excel / PowerPoint) powered by GitHub Copilot SDK.
 | `ppt-skill.ts` | PowerPoint-specific skill implementation |
 | `index.ts` | Agent skill registry — `getAgentSkill(host)` |
 
-#### `backend/skills/parts/`
+#### `src/agents/skills/parts/`
 Prompt markdown files and sub-skill fragments. Organized by Office host (excel/, word/, ppt/).
 
 ---
@@ -119,11 +119,11 @@ Prompt markdown files and sub-skill fragments. Organized by Office host (excel/,
 ### Frontend Entry Points
 | File | Purpose |
 |------|---------|
-| `client/entries/taskpane-entry.ts` | Main task pane bootstrap, mounts `AppOrchestrator` |
-| `client/entries/monitor-entry.ts` | Monitor panel entry |
-| `client/sw.ts` | Service worker |
+| `src/client/entries/taskpane-entry.ts` | Main task pane bootstrap, mounts `AppOrchestrator` |
+| `src/client/entries/monitor-entry.ts` | Monitor panel entry |
+| `src/client/sw.ts` | Service worker |
 
-### `client/components/` — UI Components (Atomic Design)
+### `src/client/components/` — UI Components (Atomic Design)
 #### atoms — Primitive UI Elements
 `Button`, `Input`, `LayoutBox`, `NexusCard`, `Typography`, `Icon`, `FluentButton`, `FluentInput`, `Divider`, `status-badge`, `status-dot`, `status-icon`, `StepItem`
 
@@ -154,7 +154,7 @@ Prompt markdown files and sub-skill fragments. Organized by Office host (excel/,
 | `history-container.ts` | Chat history scroller |
 | `monitor.ts` | Monitor panel organism |
 
-### `client/services/` — Frontend Services (Atomic Design)
+### `src/client/services/` — Frontend Services (Atomic Design)
 #### atoms — Primitive Services
 | File | Responsibility |
 |------|---------------|
@@ -244,7 +244,7 @@ copilot-handler (server)
 ## Conventions
 - **Import paths**: Always use `.js` extension in imports (NodeNext resolution), e.g. `import { x } from './foo.js'`
 - **Module system**: Backend is ESM (`"type":"module"`). Jest uses ts-jest in CJS mode (inline tsconfig override)
-- **Tests**: Place in `backend/**/  __tests__/*.test.ts`, import with `../` relative paths (no `.js` extension in test imports)
+- **Tests**: Place in `src/**/  __tests__/*.test.ts`, import with `../` relative paths (no `.js` extension in test imports)
 - **Atomic Design rule**: atoms have zero dependencies on molecules/organisms; molecules can use atoms only; organisms can use anything
 - **State mutations**: Always go through `NexusStateStore.update()` on client, `SystemStateStore.update()` on server
-- **Socket events**: Defined in `client/services/atoms/socket-types.ts` — add new events there first
+- **Socket events**: Defined in `src/client/services/atoms/socket-types.ts` — add new events there first

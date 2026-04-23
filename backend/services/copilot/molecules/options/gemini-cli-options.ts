@@ -15,7 +15,7 @@ const projectRoot = process.cwd();
  * speak ACP v2/v3 while Gemini CLI remains on its native protocol.
  */
 export const buildGeminiCliOptions = (cfg: ACPSessionConfig): ACPOptions => {
-  const wrapperEntry = path.join(projectRoot, 'backend/scripts/gemini-wrapper-v2.js');
+  const wrapperEntry = path.join(projectRoot, 'src/infra/scripts/gemini-wrapper-v2.js');
   const availableModels = config.AVAILABLE_MODELS_GEMINI.map((modelId) => ({
     id: modelId,
     name: modelId,

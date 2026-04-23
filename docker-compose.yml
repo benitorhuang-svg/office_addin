@@ -5,7 +5,7 @@ services:
   nexus-master:
     build:
       context: .
-      dockerfile: ./backend/infra/Dockerfile
+      dockerfile: ./src/infra/Dockerfile
     image: nexus-center:latest
     container_name: nexus-center-master
     ports:
@@ -18,9 +18,12 @@ services:
       - COPILOT_GITHUB_TOKEN=${COPILOT_GITHUB_TOKEN:-}
       - AUTO_CONNECT_CLI=${AUTO_CONNECT_CLI:-true}
       - DEFAULT_RESPONSE_LANGUAGE=${DEFAULT_RESPONSE_LANGUAGE:-zh-TW}
+      - CHROMA_URL=http://chroma-db:8000
     volumes:
-      - shared_data:/app/backend/skills/output
+      - shared_data:/app/src/agents/skills/output
       - ./certs:/app/certs:ro
+    depends_on:
+      - chroma-db
     networks:
       - nexus-network
     restart: unless-stopped
@@ -30,10 +33,27 @@ services:
       timeout: 10s
       retries: 3
 
+  # --- Chroma Vector Database (AI Team Memory) ---
+  chroma-db:
+    image: chromadb/chroma:latest
+    container_name: nexus-chroma-db
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
 networks:
   nexus-network:
     driver: bridge
 
 volumes:
   shared_data:
+    driver: local
+  chroma_data:
     driver: local

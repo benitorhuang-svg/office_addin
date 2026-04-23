@@ -80,8 +80,8 @@ docker-compose stop
 
 ## 📁 Project Layout
 
-- `client/`: Office add-in UI, taskpane entrypoints, commands, and frontend services.
-- `backend/`: Express server, provider orchestration, routes, backend skills, and modular Copilot SDK tools (including Word / Excel / PowerPoint agent-callable skills).
+- `src/client/`: Office add-in UI, taskpane entrypoints, commands, and frontend services.
+- `src/`: Express server, provider orchestration, routes, backend skills, and modular Copilot SDK tools (including Word / Excel / PowerPoint agent-callable skills).
 - `shared/`: Shared types, enums, and locale primitives used across layers.
 - `scripts/`: Operational tooling, with one-off cleanup utilities grouped under `scripts/maintenance/`.
 - `specs/`: Architecture notes and local fixtures used by exploratory skills and manual testing.

@@ -1,8 +1,8 @@
 ---
-applyTo: "backend/skills/**"
+applyTo: "src/agents/skills/**"
 ---
 
-# backend/skills — AI Skill Pipeline
+# src/skills — AI Skill Pipeline
 
 Receives a classified intent from the orchestrator and returns a structured prompt or result.
 All skill output feeds back to `copilot-handler.ts` which sends it to the Copilot SDK.

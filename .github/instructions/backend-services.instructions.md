@@ -1,8 +1,8 @@
 ---
-applyTo: "backend/services/**"
+applyTo: "src/services/**"
 ---
 
-# backend/services — Business Services Layer
+# src/services — Business Services Layer
 
 Provides stateful singletons and the full Copilot SDK integration.
 

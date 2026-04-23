@@ -36,7 +36,7 @@ jobs:
         run: npx tsc --noEmit -p tsconfig.json
 
       - name: TypeCheck (backend)
-        run: npx tsc --noEmit -p backend/tsconfig.json
+        run: npx tsc --noEmit -p src/tsconfig.json
 
       - name: ESLint
         run: npm run lint
@@ -92,17 +92,18 @@ jobs:
         run: npx office-addin-manifest validate manifest.xml
 
       - name: Check version sync (package.json ↔ manifest.xml)
-        run: node -e "
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          const manifest = fs.readFileSync('manifest.xml', 'utf8');
-          const versionMatch = manifest.match(/Version=\"([^\"]+)\"/);
-          if (versionMatch && versionMatch[1] !== pkg.version) {
-            console.error('Version mismatch: package.json=' + pkg.version + ' manifest.xml=' + versionMatch[1]);
-            process.exit(1);
-          }
-          console.log('Version sync OK:', pkg.version);
-        "
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const manifest = fs.readFileSync('manifest.xml', 'utf8');
+            const versionMatch = manifest.match(/Version=\"([^\"]+)\"/);
+            if (versionMatch && versionMatch[1] !== pkg.version) {
+              console.error('Version mismatch: package.json=' + pkg.version + ' manifest.xml=' + versionMatch[1]);
+              process.exit(1);
+            }
+            console.log('Version sync OK:', pkg.version);
+          "
 
   # ─────────────────────────────────────────────
   # Job 4: Build Verification
@@ -151,14 +152,14 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/infra/requirements.txt
+          pip install -r src/infra/requirements.txt
           pip install pytest pytest-asyncio httpx
 
       - name: Run Python skill tests
-        run: python -m pytest backend/skills/tests/ -v --tb=short
+        run: python -m pytest src/agents/skills/tests/ -v --tb=short
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PYTHONPATH: backend/skills
+          PYTHONPATH: src/skills
 
   # ─────────────────────────────────────────────
   # Job 6: Docker Build Check
@@ -177,7 +178,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: backend/infra/Dockerfile
+          file: src/infra/Dockerfile
           push: false
           tags: nexus-center:ci-${{ github.sha }}
           cache-from: type=gha

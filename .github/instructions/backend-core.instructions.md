@@ -1,8 +1,8 @@
 ---
-applyTo: "backend/core/**"
+applyTo: "src/infra/**"
 ---
 
-# backend/core — Infrastructure Primitives
+# src/core — Infrastructure Primitives
 
 This layer provides zero-dependency infrastructure used by ALL other backend layers.
 **Atomic Design rule**: atoms have no imports from molecules or organisms.

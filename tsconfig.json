@@ -19,14 +19,21 @@
     "skipLibCheck": true,
     "types": ["node", "office-js", "office-runtime", "jest"],
     "paths": {
-      "@shared/*": ["./backend/shared/*"],
-      "@components/*": ["./client/components/*"],
-      "@services/*": ["./client/services/*"],
-      "@atoms/*": ["./client/components/atoms/*"],
-      "@molecules/*": ["./client/components/molecules/*"],
-      "@organisms/*": ["./client/components/organisms/*"]
+      "@shared/*": ["./src/shared/*"],
+      "@components/*": ["./src/client/components/*"],
+      "@services/*": ["./src/client/services/*"],
+      "@atoms/*": ["./src/client/components/atoms/*"],
+      "@molecules/*": ["./src/client/components/molecules/*"],
+      "@organisms/*": ["./src/client/components/organisms/*"],
+      "@infra/*": ["./src/infra/*"],
+      "@agents/*": ["./src/agents/*"],
+      "@adapters/*": ["./src/adapters/*"],
+      "@orchestrator/*": ["./src/orchestrator/*"],
+      "@api/*": ["./src/api/*"],
+      "@config/*": ["./src/config/*"],
+      "@tools/*": ["./src/tools/*"]
     }
   },
-  "include": ["client/**/*.ts", "backend/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "dist-server"]
 }

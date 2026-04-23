@@ -1,8 +1,8 @@
 ---
-applyTo: "client/services/**"
+applyTo: "src/client/services/**"
 ---
 
-# client/services — Frontend Service Layer (Atomic Design)
+# src/client/services — Frontend Service Layer (Atomic Design)
 
 Pure TypeScript services — no DOM manipulation here.
 All services follow Atomic Design; organisms are the only layer that calls backend APIs.

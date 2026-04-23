@@ -1,8 +1,8 @@
 ---
-applyTo: "backend/routes/**"
+applyTo: "src/routes/**"
 ---
 
-# backend/routes — HTTP API Layer
+# src/routes — HTTP API Layer
 
 Handles all incoming HTTP requests, validation, rate limiting, and auth flows.
 

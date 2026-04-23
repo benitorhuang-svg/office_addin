@@ -82,7 +82,7 @@ export default tseslint.config(
 
   // ─── Server-specific overrides ────────────────────────
   {
-    files: ["backend/**/*.ts"],
+    files: ["src/**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -97,7 +97,7 @@ export default tseslint.config(
 
   // ─── Frontend-specific overrides ──────────────────────
   {
-    files: ["client/**/*.ts"],
+    files: ["src/client/**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.browser,

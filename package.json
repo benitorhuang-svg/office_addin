@@ -15,33 +15,34 @@
     "dev_server_port": 3001
   },
   "bin": {
-    "nexus": "./backend/scripts/nexus.mjs"
+    "nexus": "./src/infra/scripts/nexus.mjs"
   },
   "scripts": {
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
-    "build:server": "esbuild backend/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-server/index.mjs --packages=external --tree-shaking=true --minify-syntax",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p backend/tsconfig.json",
+    "build:server": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-server/index.mjs --packages=external --tree-shaking=true --minify-syntax",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
     "dev-server": "webpack serve --mode development",
-    "lint": "eslint .",
+    "lint": "eslint src",
     "prettier": "office-addin-lint prettier",
     "start": "npm run dev",
-    "start:prod": "node backend/scripts/core/patch-copilot-sdk.mjs && node dist-server/index.mjs",
+    "start:prod": "node src/infra/scripts/core/patch-copilot-sdk.mjs && node dist-server/index.mjs",
     "start:addin": "office-addin-debugging start manifest.xml",
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
-    "start:server": "node --watch --experimental-transform-types backend/server.ts",
-    "dev": "node backend/scripts/core/patch-copilot-sdk.mjs && node backend/scripts/dev-win.mjs",
+    "start:server": "node --watch --experimental-transform-types src/server.ts",
+    "dev": "node src/infra/scripts/core/patch-copilot-sdk.mjs && node src/infra/scripts/dev-win.mjs",
     "docker:up": "npx nexus up",
-    "nexus": "node backend/scripts/nexus.mjs",
-    "test:backend": "jest --testPathPatterns=backend --coverage",
-    "test:backend:watch": "jest --testPathPatterns=backend --watch"
+    "nexus": "node src/infra/scripts/nexus.mjs",
+    "test:backend": "jest --testPathPatterns=src --coverage",
+    "test:backend:watch": "jest --testPathPatterns=src --watch"
   },
   "dependencies": {
     "@fluentui/web-components": "^2.6.1",
     "@github/copilot-sdk": "^0.2.0",
     "@google/gemini-cli": "^0.35.1",
+    "chromadb": "^3.4.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -128,10 +129,10 @@
     "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.4.15",
     "inflight": "^1.0.6",
     "source-map": "0.7.4",
-    "node-domexception": "file:./backend/infra/mocks/node-domexception",
-    "domexception": "file:./backend/infra/mocks/node-domexception",
-    "deep-diff": "file:./backend/infra/mocks/deep-diff",
-    "keytar": "file:./backend/infra/mocks/keytar",
+    "node-domexception": "file:./src/infra/mocks/node-domexception",
+    "domexception": "file:./src/infra/mocks/node-domexception",
+    "deep-diff": "file:./src/infra/mocks/deep-diff",
+    "keytar": "file:./src/infra/mocks/keytar",
     "@types/express": "^4.17.25",
     "@tootallnate/once": "^3.0.1"
   }
