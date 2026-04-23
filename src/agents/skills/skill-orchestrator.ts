@@ -113,7 +113,7 @@ export class SkillOrchestrator {
 
       case "ppt": {
         const prompt = await this.loadPrompt(PPTSkillInvoker.getPromptPath());
-        const designReview = reviewDesign(prompt, { domain: "ppt" });
+        const designReview = reviewDesign(prompt, "ppt");
         return { status: "prompt_augmented", category: "ppt_design", prompt, designReview };
       }
 
@@ -124,10 +124,9 @@ export class SkillOrchestrator {
 
       case "word": {
         const prompt = await this.loadPrompt(WordSkillInvoker.getPromptPath());
-        const designReview = reviewDesign(prompt, { domain: "word" });
+        const designReview = reviewDesign(prompt, "word");
         return { status: "prompt_augmented", category: "word_creative", prompt, designReview };
       }
-
       case "cross_app": {
         const expertPrompt = await this.loadPrompt(SharedSkillInvoker.getOmniBridgePromptPath());
         return { status: "prompt_augmented", category: "omni_bridge", prompt: expertPrompt };
