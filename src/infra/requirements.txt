@@ -10,4 +10,4 @@ fastapi
 scipy
 statsmodels
 uvicorn
-google-generativeai
+openai

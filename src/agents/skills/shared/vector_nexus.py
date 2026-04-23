@@ -4,8 +4,11 @@ import hashlib
 import os
 import time
 import numpy as np
-import google.generativeai as genai
+from openai import OpenAI
 from typing import List, Optional
+
+# GitHub Models API — same backend used by github-models-service.ts
+_GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 
 # Default persistence path: src/agents/skills/output/vector_index.json
 _DEFAULT_INDEX_PATH = os.path.join(
@@ -16,9 +19,13 @@ _DEFAULT_INDEX_PATH = os.path.join(
 # Industrial-grade Semantic Search Engine with Incremental Indexing (2026 Edition)
 class VectorNexus:
     def __init__(self, api_key: str, index_path: Optional[str] = None):
-        if api_key:
-            genai.configure(api_key=api_key)
-        self.model = "models/text-embedding-004"  # 2026 Stable GEMINI V4 Embedding
+        token = api_key or os.environ.get("GITHUB_TOKEN", "")
+        # Build client only when a token is available; otherwise run in offline mode
+        self._client: Optional[OpenAI] = (
+            OpenAI(base_url=_GITHUB_MODELS_BASE_URL, api_key=token)
+            if token else None
+        )
+        self.model = "text-embedding-3-small"  # OpenAI model via GitHub Models
         self._index_path = index_path or _DEFAULT_INDEX_PATH
         # Cache: { sha256_hex -> {"embedding": [...], "timestamp": float} }
         self._cache: dict = {}
@@ -52,18 +59,21 @@ class VectorNexus:
     # ── Embedding with cache ───────────────────────────────────────────────
 
     def get_embedding(self, text: str) -> np.ndarray:
-        """Return embedding from cache if hash matches; otherwise call Gemini API."""
+        """Return embedding from cache if hash matches; otherwise call GitHub Models API."""
         h = self._compute_hash(text)
         if h in self._cache:
             return np.array(self._cache[h]["embedding"])
 
-        # Cache miss — call Gemini and persist
-        result = genai.embed_content(
+        if self._client is None:
+            # Offline mode — no token available; return zero vector (dim=1536)
+            return np.zeros(1536)
+
+        # Cache miss — call GitHub Models embeddings endpoint and persist
+        response = self._client.embeddings.create(
             model=self.model,
-            content=text,
-            task_type="retrieval_document"
+            input=text,
         )
-        embedding = result["embedding"]
+        embedding = response.data[0].embedding
         self._cache[h] = {"embedding": embedding, "timestamp": time.time()}
         self._save_index()
         return np.array(embedding)
