@@ -12,21 +12,21 @@ export class ElegantSkillInvoker {
      * Invoke the ExcelExpert skill.
      */
     static async invokeExcel(inputPath: string, outputPath: string, changes: unknown[], officeContext?: unknown) {
-        return ExcelSkillInvoker.invokeExcelExpert(inputPath, outputPath, changes, officeContext);
+        return ExcelSkillInvoker.invokeExcelExpert(inputPath, outputPath, changes, officeContext as any);
     }
 
     /**
      * Invoke the PPTExpert skill.
      */
     static async invokePPT(inputPath: string, outputPath: string, changes: unknown[], officeContext?: unknown) {
-        return PPTSkillInvoker.invokePPTExpert(inputPath, outputPath, changes, officeContext);
+        return PPTSkillInvoker.invokePPTExpert(inputPath, outputPath, changes, officeContext as any);
     }
 
     /**
      * Invoke the WordExpert skill.
      */
     static async invokeWord(inputPath: string, outputPath: string, changes: unknown[], officeContext?: unknown) {
-        return WordSkillInvoker.invokeWordExpert(inputPath, outputPath, changes, officeContext);
+        return WordSkillInvoker.invokeWordExpert(inputPath, outputPath, changes, officeContext as any);
     }
 
     /**
