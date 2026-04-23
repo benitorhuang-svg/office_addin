@@ -1,7 +1,7 @@
 /**
  * Multi-Agent Workflow Graph (System Brain)
  * Coordinates high-level AI tasks using a directed graph/state machine approach.
- * 
+ *
  * Flow: User Request -> Router Agent -> Execution (Expert) -> QA Review -> Egress
  */
 
@@ -14,11 +14,19 @@ import { randomUUID } from "crypto";
 import { SdkTurnOrchestrator } from "@shared/molecules/ai-core/sdk-turn-orchestrator.js";
 import { SdkRetryEngine } from "@shared/molecules/ai-core/sdk-retry-engine.js";
 import { resolveMethodFromContext } from "@shared/molecules/ai-core/option-resolver.js";
-import { resolveInput, clearAllPendingInputs } from "@shared/molecules/ai-core/pending-input-queue.js";
+import {
+  resolveInput,
+  clearAllPendingInputs,
+} from "@shared/molecules/ai-core/pending-input-queue.js";
 import { stopAllClients } from "@shared/molecules/ai-core/client-manager.js";
 import { cleanupAllSessions } from "@shared/molecules/ai-core/session-lifecycle.js";
 import { checkAgentHealth } from "@shared/molecules/ai-core/organisms/health-prober.js";
-import type { ACPConnectionMethod, AzureInfo, ACPSessionConfig, OfficeContext } from "@shared/atoms/ai-core/types.js";
+import type {
+  ACPConnectionMethod,
+  AzureInfo,
+  ACPSessionConfig,
+  OfficeContext,
+} from "@shared/atoms/ai-core/types.js";
 import config from "@config/molecules/server-config.js";
 
 // Import Expert Getters
@@ -55,24 +63,25 @@ export class WorkflowGraph {
     if (!state) {
       state = globalStateManager.createState(sessionId, officeContext);
     }
-    
+
     globalStateManager.updateState(sessionId, { status: "planning", currentTask: prompt });
 
     try {
       // 2. Routing: Analyze intent and break down task (Parallel Optimization)
       const routeResult = await RouterAgent.analyzeIntent(prompt, { query: prompt, traceId });
-      
+
       globalStateManager.recordAction(sessionId, {
         agent: "router",
         action: "analyze_intent",
         payload: { query: prompt },
-        result: routeResult
+        result: routeResult,
       });
 
       globalStateManager.updateState(sessionId, { status: "executing" });
 
       // 3. Execution (With QA Review Loop)
-      const method = methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli);
+      const method =
+        methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli);
 
       const acpConfig: ACPSessionConfig = {
         method,
@@ -93,16 +102,27 @@ export class WorkflowGraph {
       });
 
       const instructions = (await Promise.all(instructionTasks)).filter(Boolean);
-      const compositeSystemPrompt = instructions.length > 0 
-        ? `[NEXUS MULTI-AGENT COMPOSITE SYSTEM PROMPT]\n\n${instructions.join("\n\n---\n\n")}`
-        : "";
+      const compositeSystemPrompt =
+        instructions.length > 0
+          ? `[NEXUS MULTI-AGENT COMPOSITE SYSTEM PROMPT]\n\n${instructions.join("\n\n---\n\n")}`
+          : "";
 
       const generator = async (p: string) => {
         // We prepend the composite instructions if available
-        const finalPrompt = compositeSystemPrompt ? `${compositeSystemPrompt}\n\nUSER REQUEST: ${p}` : p;
-        
+        const finalPrompt = compositeSystemPrompt
+          ? `${compositeSystemPrompt}\n\nUSER REQUEST: ${p}`
+          : p;
+
         const result = await SdkRetryEngine.executeWithRetry(
-          () => SdkTurnOrchestrator.executeTurn(finalPrompt, modelName, method, acpConfig, onChunk, signal),
+          () =>
+            SdkTurnOrchestrator.executeTurn(
+              finalPrompt,
+              modelName,
+              method,
+              acpConfig,
+              onChunk,
+              signal
+            ),
           method,
           acpConfig,
           onChunk
@@ -121,45 +141,45 @@ export class WorkflowGraph {
       if (qaDomains.length > 0) {
         log.info(TAG, `Routing through QA Reviewer for domains [${qaDomains.join(", ")}]`);
         globalStateManager.updateState(sessionId, { status: "reviewing" });
-        
-        // Currently QAReviewer handles one domain at a time in its logic, 
-        // we use the first primary domain for design-heavy reviews.
-        const primaryDomain = qaDomains[0]; 
-        const qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, { domain: primaryDomain, traceId });
+
+        const primaryDomain = qaDomains[0];
+        // 修正這裡：傳入真正的 generator (LLM 呼叫函式)，而非原本的 prompt 字串
+        const qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, {
+          domain: primaryDomain,
+          traceId,
+        });
         finalContent = qaResult.content;
-        
+
         globalStateManager.recordAction(sessionId, {
           agent: "qa-reviewer",
           action: "review_design",
           payload: { domains: qaDomains },
-          result: qaResult
+          result: qaResult,
         });
       } else {
         log.info(TAG, `Direct execution for generic intent (no specific QA gating)`);
+        // 修正這裡：直接呼叫 generator
         finalContent = await generator(prompt);
-        
+
         globalStateManager.recordAction(sessionId, {
           agent: "expert",
           action: "execute",
           payload: { domains: routeResult.domains, prompt },
-          result: "success"
+          result: "success",
         });
       }
-
-      // 4. Egress
       globalStateManager.updateState(sessionId, { status: "completed", currentTask: undefined });
       log.info(TAG, `Task execution completed successfully`);
-      
+
       await eventBus.emit("TASK_COMPLETED", { sessionId, traceId });
       return finalContent;
-
     } catch (error) {
       log.error(TAG, "Workflow Graph encountered an error", error);
-      globalStateManager.updateState(sessionId, { 
-        status: "error", 
-        error: error instanceof Error ? error.message : String(error) 
+      globalStateManager.updateState(sessionId, {
+        status: "error",
+        error: error instanceof Error ? error.message : String(error),
       });
-      
+
       await eventBus.emit("TASK_FAILED", { sessionId, error: String(error), traceId });
       throw error;
     }
@@ -180,7 +200,7 @@ export class ModernSDKOrchestrator {
 
   public static async healthCheck(): Promise<Record<string, boolean>> {
     const health = await checkAgentHealth();
-    return { [health.type || 'unknown']: !!health.ok };
+    return { [health.type || "unknown"]: !!health.ok };
   }
 
   public static async sendPrompt(
@@ -198,7 +218,16 @@ export class ModernSDKOrchestrator {
     // Generate an ephemeral session ID if none provided
     const targetSession = sessionId || randomUUID();
     return WorkflowGraph.executeTask(
-      targetSession, prompt, onChunk, isExplicitCli, modelName, azureInfo, methodOverride, geminiKey, officeContext, signal
+      targetSession,
+      prompt,
+      onChunk,
+      isExplicitCli,
+      modelName,
+      azureInfo,
+      methodOverride,
+      geminiKey,
+      officeContext,
+      signal
     );
   }
 }

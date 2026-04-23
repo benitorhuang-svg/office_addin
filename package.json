@@ -36,7 +36,8 @@
     "docker:up": "npx nexus up",
     "nexus": "node src/infra/scripts/nexus.mjs",
     "test:backend": "jest --testPathPatterns=src --coverage",
-    "test:backend:watch": "jest --testPathPatterns=src --watch"
+    "test:backend:watch": "jest --testPathPatterns=src --watch",
+    "prepare": "husky"
   },
   "dependencies": {
     "@fluentui/web-components": "^2.6.1",
@@ -85,15 +86,14 @@
     "eslint-plugin-office-addins": "^4.0.6",
     "external-editor": "^3.1.0",
     "file-loader": "^6.2.0",
-    "framer-motion": "^12.38.0",
     "globals": "^17.4.0",
     "html-loader": "^5.1.0",
     "html-webpack-plugin": "^5.6.6",
+    "husky": "^9.1.7",
     "jest": "^30.3.0",
     "jest-environment-node": "^30.3.0",
-    "lucide-react": "^1.7.0",
+    "lint-staged": "^16.4.0",
     "marked": "^17.0.5",
-    "mocha": "^11.7.5",
     "office-addin-cli": "^2.0.6",
     "office-addin-debugging": "^6.0.6",
     "office-addin-dev-certs": "^2.0.6",
@@ -135,5 +135,14 @@
     "keytar": "file:./src/infra/mocks/keytar",
     "@types/express": "^4.17.25",
     "@tootallnate/once": "^3.0.1"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "src/**/*.{js,mjs,cjs}": [
+      "eslint --fix --max-warnings=0"
+    ]
   }
 }

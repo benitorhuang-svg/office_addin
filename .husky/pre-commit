@@ -1,0 +1,2 @@
+# --- pre-commit: 檢查暫存檔案 ---
+npx lint-staged

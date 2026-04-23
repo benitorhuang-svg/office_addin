@@ -1,36 +1,47 @@
-﻿import { Router } from 'express';
-import config from '@config/env.js';
-import { GeminiRestService } from '@adapters/ai-providers/gemini-adapter.js';
-import { handleCopilotRequest } from '@api/organisms/copilot-handler.js';
-import { resolveACPOptions } from '@shared/molecules/ai-core/option-resolver.js';
-import { getOrCreateClient } from '@shared/molecules/ai-core/client-manager.js';
-import { ModernSDKOrchestrator } from '@orchestrator/workflow-graph.js';
-import { NexusSocketRelay } from '@infra/services/molecules/nexus-socket.js';
-import { GlobalSystemState } from '@infra/services/molecules/system-state-store.js';
-import type { ACPConnectionMethod } from '@shared/atoms/ai-core/types.js';
-import { createRateLimiter } from '@api/molecules/rate-limiter.js';
-import { validateCopilotRequest } from '@api/atoms/request-validator.js';
-import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { Router } from "express";
+import config from "@config/env.js";
+import { GeminiRestService } from "@adapters/ai-providers/gemini-adapter.js";
+import { handleCopilotRequest } from "@api/organisms/copilot-handler.js";
+import { resolveACPOptions } from "@shared/molecules/ai-core/option-resolver.js";
+import {
+  getOrCreateClient,
+  removeClientByParams,
+} from "@shared/molecules/ai-core/client-manager.js";
+import { ModernSDKOrchestrator } from "@orchestrator/workflow-graph.js";
+import { NexusSocketRelay } from "@infra/services/molecules/nexus-socket.js";
+import { GlobalSystemState } from "@infra/services/molecules/system-state-store.js";
+import type { ACPConnectionMethod } from "@shared/atoms/ai-core/types.js";
+import { createRateLimiter } from "@api/molecules/rate-limiter.js";
+import { validateCopilotRequest } from "@api/atoms/request-validator.js";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const limiter = createRateLimiter();
 const ACP_VALIDATION_METHODS: Record<string, ACPConnectionMethod> = {
-  azure: 'azure_byok',
-  azure_openai: 'azure_byok',
-  azure_byok: 'azure_byok',
-  gemini: 'gemini_cli',
-  gemini_cli: 'gemini_cli',
-  copilot: 'copilot_cli',
-  copilot_cli: 'copilot_cli',
+  azure: "azure_byok",
+  azure_openai: "azure_byok",
+  azure_byok: "azure_byok",
+  gemini: "gemini_cli",
+  gemini_cli: "gemini_cli",
+  copilot: "copilot_cli",
+  copilot_cli: "copilot_cli",
 };
-
-
 
 const apiRouter = Router();
 
+// 🟠 4. Helper to restrict system controls to local or verified environment
+const isLocalRequest = (req: import("express").Request) => {
+  const ip = req.ip || req.socket.remoteAddress || "";
+  return (
+    ip === "127.0.0.1" ||
+    ip === "::1" ||
+    ip === "::ffff:127.0.0.1" ||
+    process.env.NODE_ENV !== "production"
+  );
+};
+
 // Endpoint: Get Server Configuration
-apiRouter.get('/config', (_req, res) => {
-  console.log(`[API] Serving config, AUTO_CONNECT_CLI: ${config.AUTO_CONNECT_CLI}`);
+apiRouter.get("/config", (_req, res) => {
   res.json({
     COPILOT_MODEL: config.COPILOT_MODEL,
     AVAILABLE_MODELS_GITHUB: config.AVAILABLE_MODELS_GITHUB,
@@ -44,196 +55,146 @@ apiRouter.get('/config', (_req, res) => {
 });
 
 // Endpoint: Validate Gemini Direct API Key
-apiRouter.post('/gemini/validate', async (req, res) => {
+apiRouter.post("/gemini/validate", async (req, res) => {
   try {
     const { apiKey } = req.body;
-    if (typeof apiKey !== 'string' || !apiKey.trim()) {
-      res.status(400).json({ status: 400, detail: 'apiKey missing' });
+    if (typeof apiKey !== "string" || !apiKey.trim()) {
+      res.status(400).json({ status: 400, detail: "apiKey missing" });
       return;
     }
     await GeminiRestService.validate(apiKey);
-    res.json({ status: 200, detail: 'Gemini Key is valid' });
+    res.json({ status: 200, detail: "Gemini Key is valid" });
   } catch (err: unknown) {
     const error = err as { status?: number; detail?: string };
     const status = error.status || 401;
-    res.status(status).json({ status, detail: error.detail || 'Gemini Key is invalid' });
+    res.status(status).json({ status, detail: error.detail || "Gemini Key is invalid" });
   }
 });
 
-// Unified Endpoint: Validate ANY login method via Native ACP Spec (GitHub Copilot SDK)
-apiRouter.post('/acp/validate', async (req, res) => {
-  let client: Awaited<ReturnType<typeof getOrCreateClient>> | undefined;
+// Unified Endpoint: Validate ANY login method via Native ACP Spec
+apiRouter.post("/acp/validate", async (req, res) => {
+  let client: import("@github/copilot-sdk").CopilotClient | undefined = undefined;
   let validationTimer: ReturnType<typeof setTimeout> | undefined;
+  let acpMethod: ACPConnectionMethod | undefined;
+  let clientOptions: import("@github/copilot-sdk").CopilotClientOptions | undefined;
 
   try {
     const { method, token, endpoint, deployment } = req.body;
-    if (typeof method !== 'string' || !method.trim()) {
-      res.status(400).json({ detail: 'Method missing' });
-      return;
-    }
-
-    const acpMethod = ACP_VALIDATION_METHODS[method];
+    acpMethod = ACP_VALIDATION_METHODS[method];
     if (!acpMethod) {
-      res.status(400).json({ detail: `Unsupported ACP validation method: ${method}` });
+      res.status(400).json({ detail: `Unsupported method: ${method}` });
       return;
     }
 
-    console.log(`[API] Validating ${method} via ${acpMethod}...`);
-    
-    // Natively build Copilot Client Options with the injected tokens for the specific ACP agent
-    const { clientOptions } = resolveACPOptions({
+    const resolved = resolveACPOptions({
       method: acpMethod,
-      model: acpMethod === 'gemini_cli' ? 'gemini-1.5-flash' : 'github-models',
+      model: acpMethod === "gemini_cli" ? "gemini-1.5-flash" : "github-models",
       streaming: false,
-      githubToken: acpMethod === 'copilot_cli' ? (token || undefined) : undefined,
-      geminiKey: acpMethod === 'gemini_cli' ? token : undefined,
-      azure: acpMethod === 'azure_byok' ? { apiKey: token, endpoint, deployment } : undefined
+      githubToken: acpMethod === "copilot_cli" ? token || undefined : undefined,
+      geminiKey: acpMethod === "gemini_cli" ? token : undefined,
+      azure: acpMethod === "azure_byok" ? { apiKey: token, endpoint, deployment } : undefined,
     });
-    
-    // Spawn and start the client to explicitly validate credentials via ACP JSON-RPC handshake
+
+    clientOptions = resolved.clientOptions;
     client = await getOrCreateClient(acpMethod, clientOptions);
-    
-    // Explicit health check with timeout
+
     const validationTimeoutMs = 15_000;
-    const pingPromise = client.ping('health-check');
+    const pingPromise = client.ping("health-check");
     const timeoutPromise = new Promise<never>((_, reject) => {
-      validationTimer = setTimeout(() => {
-        reject(new Error('ACP Handshake Timeout: Agent did not respond to ping within 15s'));
-      }, validationTimeoutMs);
+      validationTimer = setTimeout(
+        () => reject(new Error("ACP Handshake Timeout")),
+        validationTimeoutMs
+      );
     });
 
     await Promise.race([pingPromise, timeoutPromise]);
-    res.json({ status: 200, detail: `${method} session is valid via ACP` });
+    res.json({ status: 200, detail: `${method} valid` });
   } catch (err: unknown) {
-    console.error(`[ACP Token Validation Error]`, err);
-    const detail = err instanceof Error ? err.message : `Invalid credentials or ACP failure`;
-    const status = detail.includes('Timeout') ? 504 : 401;
-    res.status(status).json({ status, detail });
+    const detail = err instanceof Error ? err.message : `ACP failure`;
+    res.status(401).json({ status: 401, detail });
   } finally {
-    if (validationTimer) {
-      clearTimeout(validationTimer);
+    if (validationTimer) clearTimeout(validationTimer);
+    // 🟠 8. Fix: Remove validation client from pool to prevent process leaks
+    if (client && acpMethod && clientOptions) {
+      removeClientByParams(acpMethod, clientOptions).catch(() => {});
     }
   }
 });
 
-
-// Endpoint: Health Checks & Connection Status
-apiRouter.get('/health', async (_req, res) => {
+// Endpoint: Health Checks
+apiRouter.get("/health", async (_req, res) => {
   try {
     const health = await ModernSDKOrchestrator.healthCheck();
-    
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      clients: health,
-      uptime: process.uptime()
-    });
+    res.json({ status: "ok", clients: health, uptime: process.uptime() });
   } catch (err: unknown) {
-    res.status(500).json({ 
-      status: 'error', 
-      detail: err instanceof Error ? err.message : String(err),
-      timestamp: new Date().toISOString()
-    });
+    res.status(500).json({ status: "error", detail: String(err) });
   }
 });
 
-// Endpoint: Handle Human-in-the-loop (Ask User) Response
-apiRouter.post('/copilot/response', async (req, res): Promise<void> => {
+// Endpoint: Main Copilot Generation
+apiRouter.post("/copilot", limiter, validateCopilotRequest, handleCopilotRequest);
+
+// --- 🟠 5. AUTH PROTECTED SYSTEM CONTROLS ---
+
+apiRouter.post("/system/patch", async (req, res) => {
+  if (!isLocalRequest(req)) {
+    res.status(403).json({ detail: "Restricted" });
+    return;
+  }
   try {
-    const { sessionId, answer } = req.body;
-    if (!sessionId || typeof sessionId !== 'string') {
-      res.status(400).json({ status: 400, detail: 'Missing or invalid sessionId' });
-      return;
-    }
-    
-    const resolved = ModernSDKOrchestrator.resolveInput(sessionId, answer);
-    if (!resolved) {
-      res.status(404).json({ status: 404, detail: 'Session not found or already resolved' });
-      return;
-    }
-    res.json({ status: 200, detail: 'Response received' });
+    const patcherPath = path.resolve(
+      process.cwd(),
+      "src",
+      "infra",
+      "scripts",
+      "core",
+      "patch-copilot-sdk.mjs"
+    );
+    await import(pathToFileURL(patcherPath).href);
+    res.json({ status: 200, detail: "SDK Patched" });
   } catch (err: unknown) {
     res.status(500).json({ status: 500, detail: String(err) });
   }
 });
 
-// Endpoint: Main Copilot Generation (Streaming supported)
-apiRouter.post('/copilot', limiter, validateCopilotRequest, handleCopilotRequest);
-
-
-// --- SYSTEM CONTROLS (PWA Managed) ---
-
-// Endpoint: Trigger SDK Patching
-apiRouter.post('/system/patch', async (_req, res) => {
-  try {
-    console.log('[API] Triggering SDK Patching...');
-    const patcherPath = path.resolve(process.cwd(), 'scripts', 'patch-copilot-sdk.mjs');
-    const patcherUrl = `${pathToFileURL(patcherPath).href}?t=${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    await import(patcherUrl); 
-    res.json({ status: 200, detail: 'SDK Patched successfully' });
-  } catch (err: unknown) {
-    res.status(500).json({ status: 500, detail: String(err) });
-  }
-});
-
-// Endpoint: Stop All AI Gateways
-apiRouter.post('/gateway/stop', async (_req, res) => {
-  try {
-    const { stopAllClients } = (await import('@shared/molecules/ai-core/client-manager.js')) as { stopAllClients: () => Promise<void> };
-    await stopAllClients();
-    res.json({ status: 200, detail: 'All AI gateways disconnected' });
-  } catch (err: unknown) {
-    res.status(500).json({ status: 500, detail: String(err) });
-  }
-});
-
-// --- SESSION SYNC (Cross-Environment Bridge) ---
-apiRouter.get('/system/state', (_req, res) => {
+apiRouter.get("/system/state", (_req, res) => {
   res.json(GlobalSystemState.getState());
 });
 
-apiRouter.post('/system/state', (req, res) => {
+apiRouter.post("/system/state", (req, res) => {
+  if (!isLocalRequest(req)) {
+    res.status(403).json({ detail: "Restricted" });
+    return;
+  }
   const { power, provider, isWarming, isStreaming } = req.body;
-  const origin = req.headers.origin || 'unknown';
-  
+
+  // 🟡 10. Basic body validation
+  if (provider && !ACP_VALIDATION_METHODS[provider]) {
+    res.status(400).json({ detail: "Invalid provider" });
+    return;
+  }
+
   GlobalSystemState.update({ power, provider, isWarming, isStreaming });
   const newState = GlobalSystemState.getState();
-  
-  console.log(`[Sync] Update from ${origin} -> Power: ${newState.power}, Provider: ${newState.provider}, Streaming: ${newState.isStreaming}`);
-  
-  NexusSocketRelay.broadcast('SYSTEM_STATE_UPDATED', newState);
+  NexusSocketRelay.broadcast("SYSTEM_STATE_UPDATED", newState);
   res.json({ status: 200, ...newState });
 });
 
-apiRouter.get('/system/warmup', async (_req, res) => {
-    GlobalSystemState.update({ isWarming: true });
-    console.log('[API] Warming up AI Gateways...');
-    try {
-        const { warmUpClient } = (await import('@shared/molecules/ai-core/client-manager.js')) as { warmUpClient: (method: ACPConnectionMethod) => Promise<void> };
-        await warmUpClient(GlobalSystemState.getState().provider);
-        GlobalSystemState.update({ isWarming: false });
-        res.json({ status: 200, detail: 'Warming complete' });
-    } catch (e) {
-        GlobalSystemState.update({ isWarming: false });
-        res.status(500).json({ status: 500, detail: String(e) });
-    }
-});
-
-// Helper to restrict system controls to local environment
-const isLocalRequest = (req: import('express').Request) => {
-  const ip = req.ip || req.socket.remoteAddress || '';
-  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || process.env.NODE_ENV !== 'production';
-};
-
-// Endpoint: Force System Shutdown (TaskPane Quit)
-apiRouter.post('/system/quit', (req, res) => {
+apiRouter.get("/system/warmup", async (req, res) => {
   if (!isLocalRequest(req)) {
-      res.status(403).json({ detail: 'System controls are restricted.' });
-      return;
+    res.status(403).json({ detail: "Restricted" });
+    return;
   }
-  console.log('[API] System Shutdown Triggered.');
-  res.json({ status: 200, detail: 'Shutting down...' });
-  setTimeout(() => process.exit(0), 1000); 
+  GlobalSystemState.update({ isWarming: true });
+  try {
+    const { warmUpClient } = await import("@shared/molecules/ai-core/client-manager.js");
+    await warmUpClient(GlobalSystemState.getState().provider);
+    GlobalSystemState.update({ isWarming: false });
+    res.json({ status: 200, detail: "Warming complete" });
+  } catch (e) {
+    GlobalSystemState.update({ isWarming: false });
+    res.status(500).json({ status: 500, detail: String(e) });
+  }
 });
 
 export default apiRouter;

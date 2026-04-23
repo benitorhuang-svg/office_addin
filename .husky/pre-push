@@ -1,0 +1,17 @@
+# --- pre-push: push 前完整檢查 ---
+
+echo "▶ TypeScript 型別檢查..."
+npm run typecheck
+if [ $? -ne 0 ]; then
+  echo "✖ TypeScript 型別錯誤，push 已取消。"
+  exit 1
+fi
+
+echo "▶ 執行測試..."
+npm run test:backend -- --passWithNoTests
+if [ $? -ne 0 ]; then
+  echo "✖ 測試失敗，push 已取消。"
+  exit 1
+fi
+
+echo "✔ 所有檢查通過，允許 push。"
