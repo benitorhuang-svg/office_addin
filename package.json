@@ -142,11 +142,11 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
-      "eslint --fix --max-warnings=0",
+      "eslint --fix --fix-type problem,suggestion,layout --report-unused-disable-directives --max-warnings=0",
       "prettier --write"
     ],
     "src/**/*.{js,mjs,cjs}": [
-      "eslint --fix --max-warnings=0"
+      "eslint --fix --fix-type problem,suggestion,layout --report-unused-disable-directives --max-warnings=0"
     ]
   }
 }

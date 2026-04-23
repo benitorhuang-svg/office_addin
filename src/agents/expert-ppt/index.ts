@@ -26,7 +26,6 @@ export async function getCoreInstructions(): Promise<string> {
     cachedInstructions = content;
     return content;
   } catch (err: any) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     logger.warn("PPTExpertIndex", "Failed to load core instructions from disk", { error: err.message });
     cachedInstructions = ""; // Cache failure
     return "";

@@ -1,5 +1,12 @@
 # --- pre-push: push 前完整檢查 ---
 
+echo "▶ ESLint 全量掃描（含 warnings）..."
+npx eslint src --fix --fix-type problem,suggestion,layout --report-unused-disable-directives --max-warnings=0
+if [ $? -ne 0 ]; then
+  echo "✖ ESLint 檢查失敗，push 已取消。"
+  exit 1
+fi
+
 echo "▶ TypeScript 型別檢查..."
 npm run typecheck
 if [ $? -ne 0 ]; then
