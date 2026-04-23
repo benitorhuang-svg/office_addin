@@ -9,6 +9,7 @@ import { LifecycleManager } from '@infra/molecules/lifecycle-manager.js';
 import { markStart, markEnd } from '@infra/atoms/latency-tracker.js';
 import { IdleCleaner } from '@shared/molecules/ai-core/idle-cleaner.js';
 import { NexusSocketRelay } from '@infra/services/molecules/nexus-socket.js';
+import { logger } from '@shared/logger/index.js';
 
 /**
  * Organism: Enhanced Server Orchestrator
@@ -17,6 +18,12 @@ import { NexusSocketRelay } from '@infra/services/molecules/nexus-socket.js';
 export const ServerOrchestrator = {
   async start() {
     markStart('server-startup');
+
+    // Register log hook for real-time monitoring
+    logger.setHook((entry) => {
+      NexusSocketRelay.broadcast('LOG_ENTRY', entry);
+    });
+
     const app = AppFactory.create();
 
     const { isHttps, options } = await resolveHttpsServerOptions();

@@ -42,16 +42,27 @@ export class LifecycleManager {
         
         console.log(`\n[Lifecycle] ${sig} received. Commencing unified cleanup...`);
         
-        for (const handler of this.shutdownHandlers) {
-          try {
-            await handler();
-          } catch (err) {
-            console.error('[Lifecycle] Cleanup handler failed:', err);
+        // Timeout mechanism: force exit after 10 seconds
+        const timeout = setTimeout(() => {
+          console.error('[Lifecycle] Cleanup timed out after 10s. Force exiting.');
+          process.exit(1);
+        }, 10000);
+
+        try {
+          for (const handler of this.shutdownHandlers) {
+            try {
+              await handler();
+            } catch (err) {
+              console.error('[Lifecycle] Cleanup handler failed:', err);
+            }
           }
+          console.log('[Lifecycle] Cleanup complete. Exiting.');
+          clearTimeout(timeout);
+          process.exit(0);
+        } catch (err) {
+          console.error('[Lifecycle] Unexpected error during cleanup:', err);
+          process.exit(1);
         }
-        
-        console.log('[Lifecycle] Cleanup complete. Exiting.');
-        process.exit(0);
       });
     });
   }

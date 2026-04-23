@@ -20,6 +20,7 @@ COPY . .
 RUN rm -rf node_modules/.cache
 RUN npm run build:server
 RUN npm run build -- --mode production
+RUN npm prune --production
 
 # --- Stage 2: Final Production Environment ---
 FROM node:24-bookworm-slim
@@ -53,14 +54,14 @@ COPY --chown=nexus:nexus --from=builder /app/node_modules ./node_modules
 COPY --chown=nexus:nexus --from=builder /app/dist-server ./dist-server
 COPY --chown=nexus:nexus --from=builder /app/dist ./dist
 COPY --chown=nexus:nexus --from=builder /app/package*.json ./
+COPY --chown=nexus:nexus --from=builder /app/manifest.xml ./
 COPY --chown=nexus:nexus --from=builder /app/src/infra/mocks ./src/infra/mocks
-COPY --chown=nexus:nexus --from=builder /app/src/agents/skills ./src/agents/skills
 COPY --chown=nexus:nexus --from=builder /app/src/infra/scripts ./src/infra/scripts
+COPY --chown=nexus:nexus --from=builder /app/src/agents/skills ./src/agents/skills
 COPY --chown=nexus:nexus --from=builder /app/src/agents/expert-excel ./src/agents/expert-excel
 COPY --chown=nexus:nexus --from=builder /app/src/agents/expert-ppt ./src/agents/expert-ppt
 COPY --chown=nexus:nexus --from=builder /app/src/agents/expert-word ./src/agents/expert-word
 COPY --chown=nexus:nexus --from=builder /app/src/shared ./src/shared
-COPY --chown=nexus:nexus --from=builder /app/manifest.xml ./
 
 # 6. Environment Matrix
 ENV NODE_ENV=production

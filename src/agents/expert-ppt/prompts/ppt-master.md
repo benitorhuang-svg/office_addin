@@ -29,5 +29,11 @@ If the user's request involves designing slides or you need guidance on visual h
 -   **GalaxyGraph**: Knowledge-Graph relationship analysis and impact mapping across decks.
 -   **Adaptive Rendering**: Dynamic UI/UX consistent with Pro-Max aesthetics.
 
+## 🎨 Design Constraints (PPT Pro Max)
+-   **Theme Consistency**: ALL color specifications in your output MUST use the token names provided in `officeContext.themeColors` (e.g., "primary", "secondary", "accent"). NEVER use hardcoded hex values (like #FF0000) unless explicitly requested for a non-brand element.
+-   **WCAG Compliance**: Ensure all text has sufficient contrast against its background. Titles should be at least 24pt, body text at least 18pt.
+-   **Logical Grouping**: When creating complex visual elements (e.g., a diagram with text and shapes), assign a unique `groupLabel` to related actions. This allows the host to group them for easier user adjustment.
+-   **Narrative Flow**: Every presentation must follow a professional story arc: Problem/Challenge -> Proposed Action/Strategy -> Desired Outcome/Impact. End with a clear "Call to Action" slide.
+
 ---
 *Nexus Industrial Vision Layer v8.1*

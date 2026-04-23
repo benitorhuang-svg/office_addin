@@ -8,13 +8,19 @@
   },
   "domains": {
     "excel": {
-      "engine": "python3 src/agents/skills/parts/excel/excel_expert.py",
-      "prompt": "src/agents/skills/parts/excel/prompts/excel-expert.md",
+      "engine": "python3 src/agents/expert-excel/domain/excel_expert.py",
+      "prompt": "src/agents/expert-excel/prompts/excel-expert.md",
       "skills": {
         "ExcelExpert": {
           "trigger": "Industrial data manipulation and spreadsheet automation.",
           "logic": "Use when query involves spreadsheets, formulas, data tables, pivot analysis, charts, or numeric reporting.",
-          "intent_labels": ["excel", "spreadsheet", "data_analysis", "chart", "formula"],
+          "intent_labels": [
+            "excel",
+            "spreadsheet",
+            "data_analysis",
+            "chart",
+            "formula"
+          ],
           "example_inputs": [
             "Add a SUM formula to column D rows 2 through 50",
             "Create a pivot table from Sheet1 grouped by Category",
@@ -30,13 +36,19 @@
       }
     },
     "ppt": {
-      "engine": "python3 src/agents/skills/parts/ppt/ppt_expert.py",
-      "prompt": "src/agents/skills/parts/ppt/prompts/ppt-master.md",
+      "engine": "python3 src/agents/expert-ppt/domain/ppt_expert.py",
+      "prompt": "src/agents/expert-ppt/prompts/ppt-master.md",
       "skills": {
         "PPT-Master": {
           "trigger": "High-fidelity slide layout and UI/UX logic.",
           "logic": "Use when user refers to slides, presentations, decks, visual layouts, or PowerPoint design.",
-          "intent_labels": ["ppt", "slide", "presentation", "deck", "visual_design"],
+          "intent_labels": [
+            "ppt",
+            "slide",
+            "presentation",
+            "deck",
+            "visual_design"
+          ],
           "example_inputs": [
             "Add a title slide with the company logo on the right",
             "Create a 3-column comparison layout for slide 4",
@@ -52,13 +64,20 @@
       }
     },
     "word": {
-      "engine": "python3 src/agents/skills/parts/word/word_expert.py",
-      "prompt": "src/agents/skills/parts/word/prompts/word-expert.md",
+      "engine": "python3 src/agents/expert-word/domain/word_expert.py",
+      "prompt": "src/agents/expert-word/prompts/word-expert.md",
       "skills": {
         "WordExpert": {
           "trigger": "Document writing, editing, and high-fidelity formatting.",
           "logic": "Use when query involves Word documents, reports, memos, structured text editing, or formatting.",
-          "intent_labels": ["word", "document", "writing", "editing", "memo", "report"],
+          "intent_labels": [
+            "word",
+            "document",
+            "writing",
+            "editing",
+            "memo",
+            "report"
+          ],
           "example_inputs": [
             "Write an executive summary for this quarterly report",
             "Format all H2 headings in the document as bold with 14pt font",
@@ -79,7 +98,11 @@
         "VectorNexus": {
           "trigger": "General semantic search across development docs.",
           "logic": "Use when user asks 'What is X?' or 'Find documentation about Y' with no Office-specific context.",
-          "intent_labels": ["vector_search", "documentation", "knowledge_base"],
+          "intent_labels": [
+            "vector_search",
+            "documentation",
+            "knowledge_base"
+          ],
           "engine": "python3 src/agents/skills/shared/vector_nexus.py",
           "example_inputs": [
             "What does the XLOOKUP function do?",
@@ -93,7 +116,10 @@
         "TripleTierSearch": {
           "trigger": "High-precision technical retrieval.",
           "logic": "Use when query contains specific variable names, function signatures, or terminal commands requiring reranking.",
-          "intent_labels": ["technical_search", "code_lookup"],
+          "intent_labels": [
+            "technical_search",
+            "code_lookup"
+          ],
           "engine": "python3 src/agents/skills/shared/triple_tier_search.py",
           "example_inputs": [
             "Find all usages of context.workbook.getSelectedRange()",
@@ -107,7 +133,10 @@
         "TurboSearch": {
           "trigger": "Fast keyword-level document scan.",
           "logic": "Use when speed is prioritised over precision, or as fallback when VectorNexus is unavailable.",
-          "intent_labels": ["fast_search", "keyword_scan"],
+          "intent_labels": [
+            "fast_search",
+            "keyword_scan"
+          ],
           "engine": "python3 src/agents/skills/shared/turbo_search.py",
           "example_inputs": [
             "Quick search for 'rate limiter' in the backend source"
@@ -119,7 +148,12 @@
         "GalaxyGraph": {
           "trigger": "Impact analysis and entity relationship mapping.",
           "logic": "Use when user asks 'What is related to X?' or 'If I change Y, what breaks?' or needs dependency analysis.",
-          "intent_labels": ["graph", "impact", "relationship", "dependency"],
+          "intent_labels": [
+            "graph",
+            "impact",
+            "relationship",
+            "dependency"
+          ],
           "engine": "python3 src/agents/skills/shared/galaxy_graph.py",
           "example_inputs": [
             "If I rename the ClientManager class, what files will break?",
@@ -134,7 +168,11 @@
         "VisionExpert": {
           "trigger": "Visual content analysis of slides and diagrams.",
           "logic": "Use when document contains unparsed images, flowcharts, architecture diagrams, or screenshots that need interpretation.",
-          "intent_labels": ["vision", "image_analysis", "diagram"],
+          "intent_labels": [
+            "vision",
+            "image_analysis",
+            "diagram"
+          ],
           "engine": "python3 src/agents/skills/shared/vision_expert.py",
           "example_inputs": [
             "Describe the architecture diagram in slide 3",
@@ -149,7 +187,13 @@
         "CrossHostBridge": {
           "trigger": "Cross-app sync: Excel → PPT, Excel → Word, PPT → Word, etc.",
           "logic": "Use when user wants to transfer, mirror, or synchronise data across Office applications.",
-          "intent_labels": ["cross_app", "sync", "bridge", "export", "transfer"],
+          "intent_labels": [
+            "cross_app",
+            "sync",
+            "bridge",
+            "export",
+            "transfer"
+          ],
           "engine": "python3 src/agents/skills/shared/cross_host_bridge.py",
           "example_inputs": [
             "Take the sales data from Sheet1 in Excel and create a PPT bar chart",
@@ -164,7 +208,12 @@
         "DesignReviewer": {
           "trigger": "5-Dimension Expert Panel review gate for PPT and Word output quality.",
           "logic": "Automatically applied to ppt/word skill outputs. Scores across Information Architecture (25), Visual Poetry (20), Emotional Resonance (20), Usability & Legibility (20), Brand Consistency (15). Pass threshold: 70/100. On fail, returns structured issues for refinement.",
-          "intent_labels": ["design_review", "quality_gate", "ppt_review", "word_review"],
+          "intent_labels": [
+            "design_review",
+            "quality_gate",
+            "ppt_review",
+            "word_review"
+          ],
           "engine": "src/agents/skills/molecules/design-reviewer.ts (in-process, no subprocess)",
           "example_inputs": [
             "Review this PPT output for design quality",
@@ -181,7 +230,13 @@
         "BrandExtractor": {
           "trigger": "Extract corporate brand color palette from a company URL for CI-aligned slide and document generation.",
           "logic": "Use when user provides a company website URL and wants the AI output to match their brand colors. Supports query prefix 'brand: https://...'",
-          "intent_labels": ["brand_intel", "brand_colors", "ci", "corporate_identity", "brand_extract"],
+          "intent_labels": [
+            "brand_intel",
+            "brand_colors",
+            "ci",
+            "corporate_identity",
+            "brand_extract"
+          ],
           "engine": "src/agents/skills/atoms/brand-extractor.ts (in-process, HTTPS fetch)",
           "example_inputs": [
             "brand: https://www.apple.com",

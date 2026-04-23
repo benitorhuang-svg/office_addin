@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import authRouter from '@api/organisms/auth-router.js';
 import apiRouter from '@api/organisms/api-router.js';
+import config from '@config/env.js';
 import { telemetryMiddleware } from '@infra/molecules/telemetry-middleware.js';
 
 /**
@@ -24,10 +25,7 @@ export const AppFactory = {
       .map((origin) => origin.trim())
       .filter(Boolean);
     const allowedOrigins = new Set([...defaultOrigins, ...configuredOrigins]);
-    // PR-003: Only allow all origins when CORS_ALLOW_ALL_ORIGINS=true is explicitly set.
-    // Removed the unsafe `|| NODE_ENV !== 'production'` fallback.
     const allowAllOrigins = process.env.CORS_ALLOW_ALL_ORIGINS === 'true';
-    const allowedPatterns = [/\.run\.app$/];
 
     // 1. Logging & Telemetry
     app.use(telemetryMiddleware);
@@ -49,8 +47,11 @@ export const AppFactory = {
 
         const isAllowed = allowAllOrigins
           || allowedOrigins.has(origin)
-          || allowedPatterns.some((pattern) => pattern.test(origin));
-
+          || (origin && Array.isArray(config.CORS_ALLOWED_ORIGINS) 
+              ? config.CORS_ALLOWED_ORIGINS.some((pattern: RegExp | string) => 
+                  pattern instanceof RegExp ? pattern.test(origin) : pattern === origin
+                ) 
+              : false); 
         if (isAllowed) {
           callback(null, true);
         } else {

@@ -9,14 +9,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Dispatches AI agent requests to the FastAPI Skill Bridge (HTTP).
  * Eliminates cold-start latency vs. spawning a new Python process per call.
  */
-export class PPTSkillInvoker {
+export class PPTExpertInvoker {
     /**
      * Invoke the PPTExpert skill via the skill bridge HTTP API.
      */
     static async invokePPTExpert(
         inputPath: string,
         outputPath: string,
-        changes: unknown[]
+        changes: unknown[],
+        _officeContext?: unknown
     ): Promise<unknown> {
         return invokePPTSkill({
             input_path: inputPath,

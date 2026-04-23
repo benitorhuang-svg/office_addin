@@ -1,5 +1,6 @@
 ﻿import { spawn } from "child_process";
 import path from "node:path";
+import { invokeVectorSearch as bridgeVectorSearch } from "@infra/services/bridge-client";
 
 const __currentDir = path.resolve(process.cwd(), "src", "agents", "skills", "shared");
 
@@ -13,35 +14,71 @@ export class SharedSkillInvoker {
     const pythonScript = path.join(__currentDir, scriptName);
 
     return new Promise((resolve, reject) => {
-      const pyProcess = spawn("python3", [pythonScript]);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30_000); // 30s timeout
+
+      const pyProcess = spawn("python3", [pythonScript], { signal: controller.signal });
 
       let stdout = "";
       let stderr = "";
+      const MAX_OUTPUT_SIZE = 2 * 1024 * 1024; // 2MB limit
 
       pyProcess.stdin.write(JSON.stringify(payload));
       pyProcess.stdin.end();
 
-      pyProcess.stdout.on("data", (data) => (stdout += data.toString()));
-      pyProcess.stderr.on("data", (data) => (stderr += data.toString()));
+      pyProcess.stdout.on("data", (data) => {
+        if (stdout.length < MAX_OUTPUT_SIZE) {
+          stdout += data.toString();
+          if (stdout.length > MAX_OUTPUT_SIZE) {
+            stdout = stdout.substring(0, MAX_OUTPUT_SIZE) + '...[TRUNCATED]';
+          }
+        }
+      });
+
+      pyProcess.stderr.on("data", (data) => {
+        if (stderr.length < MAX_OUTPUT_SIZE) {
+          stderr += data.toString();
+          if (stderr.length > MAX_OUTPUT_SIZE) {
+            stderr = stderr.substring(0, MAX_OUTPUT_SIZE) + '...[TRUNCATED]';
+          }
+        }
+      });
 
       pyProcess.on("close", (code) => {
+        clearTimeout(timeoutId);
+        if (controller.signal.aborted) {
+          return reject(new Error(`Shared Skill Error [${scriptName}]: Execution timeout after 30s`));
+        }
         if (code !== 0) {
           reject(new Error(`Shared Skill Error [${scriptName}]: ${stderr}`));
         } else {
           try {
-            const parsed = JSON.parse(stdout);
-            if (parsed.error) reject(new Error(parsed.error));
-            else resolve(parsed.results ?? parsed);
-          } catch {
-            reject(new Error(`Failed to parse ${scriptName} output JSON`));
+            // Parse only the last line of stdout as JSON
+            const lines = stdout.trim().split('\n');
+            const lastLine = lines[lines.length - 1];
+            const parsed = JSON.parse(lastLine || "{}");
+            if (parsed && typeof parsed === 'object' && 'error' in parsed && parsed.error) {
+              reject(new Error(String(parsed.error)));
+            } else {
+              resolve(parsed?.results ?? parsed);
+            }
+          } catch (e) {
+            reject(new Error(`Failed to parse ${scriptName} output JSON: ${(e as Error).message}`));
           }
         }
+      });
+
+      pyProcess.on("error", (err) => {
+        clearTimeout(timeoutId);
+        if (controller.signal.aborted) return;
+        reject(new Error(`Shared Skill Process Error [${scriptName}]: ${err.message}`));
       });
     });
   }
 
-  static invokeVectorSearch(apiKey: string, query: string, docs: string[]): Promise<unknown> {
-    return SharedSkillInvoker.spawn("vector_nexus.py", { apiKey, query, docs });
+  static invokeVectorSearch(_apiKey: string, query: string, docs: string[]): Promise<unknown> {
+    // P1 Optimized: Use fast FastAPI bridge instead of cold-start spawn
+    return bridgeVectorSearch({ query, documents: docs });
   }
 
   static invokeGalaxyGraph(query: string, repo?: string): Promise<unknown> {

@@ -106,6 +106,18 @@ function contrastText(bg: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Cache
+// ---------------------------------------------------------------------------
+
+interface CacheEntry {
+  result: BrandExtractResult;
+  timestamp: number;
+}
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const cache = new Map<string, CacheEntry>();
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -113,12 +125,20 @@ function contrastText(bg: string): string {
  * Extract brand tokens from a public URL.
  *
  * @param url - HTTPS URL of a brand homepage or landing page.
+ * @param fallbackColor - Optional fallback primary color (e.g., from officeContext?.themeColors?.Primary).
  * @returns   - BrandExtractResult with tokens or an error message.
  */
-export async function extractBrandTokens(url: string): Promise<BrandExtractResult> {
+export async function extractBrandTokens(url: string, fallbackColor?: string): Promise<BrandExtractResult> {
   // Security: only allow HTTPS
   if (!url.startsWith('https://')) {
     return { ok: false, error: 'Only HTTPS URLs are supported for brand extraction.' };
+  }
+
+  const now = Date.now();
+  const cached = cache.get(url);
+  if (cached && (now - cached.timestamp < CACHE_TTL_MS)) {
+    logger.info(TAG, `Cache hit for ${url}`);
+    return cached.result;
   }
 
   logger.info(TAG, `Extracting brand tokens from ${url}`);
@@ -138,13 +158,17 @@ export async function extractBrandTokens(url: string): Promise<BrandExtractResul
     clearTimeout(timer);
 
     if (!res.ok) {
-      return { ok: false, error: `HTTP ${res.status} from ${url}` };
+      const errorResult = { ok: false, error: `HTTP ${res.status} from ${url}` };
+      cache.set(url, { result: errorResult, timestamp: now });
+      return errorResult;
     }
     html = await res.text();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.warn(TAG, `Fetch failed for ${url}`, { error: message });
-    return { ok: false, error: `Fetch failed: ${message}` };
+    const errorResult = { ok: false, error: `Fetch failed: ${message}` };
+    cache.set(url, { result: errorResult, timestamp: now });
+    return errorResult;
   }
 
   // --- Parse ---
@@ -159,7 +183,7 @@ export async function extractBrandTokens(url: string): Promise<BrandExtractResul
   const top = topColors(allColors, 5);
 
   // Fallback palette when extraction yields nothing
-  const primary   = top[0] ?? '#2563eb';
+  const primary   = top[0] ?? fallbackColor ?? '#2563eb';
   const secondary = top[1] ?? '#1d4ed8';
   const accent    = top[2] ?? '#8b5cf6';
   const background = '#ffffff';
@@ -178,8 +202,10 @@ export async function extractBrandTokens(url: string): Promise<BrandExtractResul
 
   logger.info(TAG, `Brand tokens extracted`, { primary, secondary, accent, colorCandidates: top.length });
 
-  return {
+  const successResult = {
     ok: true,
     tokens: { primary, secondary, accent, background, text, cssBlock, sourceUrl: url },
   };
+  cache.set(url, { result: successResult, timestamp: now });
+  return successResult;
 }

@@ -7,9 +7,10 @@
 export type LogLevel = 'info' | 'warn' | 'error';
 
 const REDACTED_KEYS = /token|api[_-]?key|authorization|bearer|password|secret/i;
+const MAX_DEPTH = 5;
 
-function sanitizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
-  if (value === null || value === undefined) {
+function sanitizeValue(value: unknown, seen = new WeakSet<object>(), depth = 0): unknown {
+  if (value === null || value === undefined || depth >= MAX_DEPTH) {
     return value;
   }
 
@@ -29,7 +30,7 @@ function sanitizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
     };
 
     if ('cause' in value && value.cause !== undefined) {
-      errorShape.cause = sanitizeValue(value.cause, seen);
+      errorShape.cause = sanitizeValue(value.cause, seen, depth + 1);
     }
 
     return errorShape;
@@ -46,16 +47,37 @@ function sanitizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
   seen.add(value);
 
   if (Array.isArray(value)) {
-    return value.map((item) => sanitizeValue(item, seen));
+    return value.map((item) => sanitizeValue(item, seen, depth + 1));
   }
 
   const output: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(value)) {
-    output[key] = REDACTED_KEYS.test(key) ? '[REDACTED]' : sanitizeValue(entry, seen);
+    if (REDACTED_KEYS.test(key)) {
+      output[key] = '[REDACTED]';
+    } else if (typeof entry === 'string' && (REDACTED_KEYS.test(entry) || /^(ghu_|ghp_|gho_|github_pat_|eyJh|bearer\s)/i.test(entry))) {
+      output[key] = '[REDACTED_VALUE]';
+    } else if (typeof entry === 'string' && entry.length > 5000) {
+      output[key] = entry.substring(0, 5000) + '...[TRUNCATED]';
+    } else {
+      output[key] = sanitizeValue(entry, seen, depth + 1);
+    }
   }
 
   return output;
 }
+
+export type LogEntry = {
+  timestamp: string;
+  level: LogLevel;
+  tag: string;
+  message: string;
+  requestId?: string;
+  traceId?: string;
+  data?: unknown;
+};
+
+type LogHook = (entry: LogEntry) => void;
+let logHook: LogHook | null = null;
 
 function writeLog(
   level: LogLevel,
@@ -65,7 +87,7 @@ function writeLog(
   requestId?: string,
   traceId?: string,
 ): void {
-  const entry: Record<string, unknown> = {
+  const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
     tag,
@@ -85,6 +107,16 @@ function writeLog(
   }
 
   const line = JSON.stringify(entry);
+
+  // Invoke hook if registered
+  if (logHook) {
+    try {
+      logHook(entry);
+    } catch {
+      // Silently ignore hook errors to prevent recursion or infinite loops
+    }
+  }
+
   switch (level) {
     case 'warn':
       console.warn(line);
@@ -102,6 +134,13 @@ export const logger = {
   info: (tag: string, message: string, data?: unknown) => writeLog('info', tag, message, data),
   warn: (tag: string, message: string, data?: unknown) => writeLog('warn', tag, message, data),
   error: (tag: string, message: string, data?: unknown) => writeLog('error', tag, message, data),
+
+  /**
+   * Registers a global hook that receives every log entry.
+   */
+  setHook: (hook: LogHook) => {
+    logHook = hook;
+  },
 
   /**
    * Returns a request-scoped logger that automatically includes requestId in every entry.

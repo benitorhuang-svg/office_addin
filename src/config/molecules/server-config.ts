@@ -1,4 +1,5 @@
-﻿import { BASE_ENV, firstDefinedValue } from '@config/atoms/base-env.js';
+import { BASE_ENV, firstDefinedValue } from '@config/atoms/base-env.js';
+import { logger } from '@shared/logger/index.js';
 
 export interface Preset {
   id: string;
@@ -47,13 +48,8 @@ export interface ServerConfig {
   IDLE_CLEANUP_MINUTES: number;
   FALLBACK_MODELS: string;
   LOG_FORMAT: string;
+  CORS_ALLOWED_ORIGINS: (string | RegExp)[];
 }
-
-/**
- * Organism/Molecule: Config Orchestrator
- * Integrates raw atoms (BASE_ENV) and provides logic-based helpers.
- * Derived list values are cached on first access to avoid repeated parsing.
- */
 
 let _cachedFallbackPresets: Preset[] | null = null;
 
@@ -97,21 +93,35 @@ const config: ServerConfig = {
   get APP_TITLE() { return BASE_ENV.APP_TITLE; },
   get FALLBACK_PRESETS() { 
     if (!_cachedFallbackPresets) {
-      try { _cachedFallbackPresets = JSON.parse(BASE_ENV.FALLBACK_PRESETS_JSON); } 
-      catch { _cachedFallbackPresets = []; }
+      try {
+        _cachedFallbackPresets = JSON.parse(BASE_ENV.FALLBACK_PRESETS_JSON);
+        if (!Array.isArray(_cachedFallbackPresets)) throw new Error('Not an array');
+      } catch (e: any) {
+        logger.warn('Failed to parse FALLBACK_PRESETS_JSON, using default:', e?.message || String(e));
+        _cachedFallbackPresets = [
+            { id: "general", name: "General", description: "Default", systemPrompt: "" }
+        ];
+      }
     }
     return _cachedFallbackPresets!;
   },
   get PREVIEW_MODE_GUIDE_MD() { return BASE_ENV.PREVIEW_MODE_GUIDE_MD; },
   get DEFAULT_WORD_FONT_STYLE() { return BASE_ENV.DEFAULT_WORD_FONT_STYLE; },
 
-  getServerPatToken: () => firstDefinedValue(
-    process.env.COPILOT_GITHUB_TOKEN,
-    process.env.GH_TOKEN,
-    process.env.GITHUB_TOKEN,
-    process.env.GITHUB_PAT,
-    process.env.COPILOT_PAT
-  ),
+  getServerPatToken: () => {
+    const token = firstDefinedValue(
+      process.env.COPILOT_GITHUB_TOKEN,
+      process.env.GH_TOKEN,
+      process.env.GITHUB_TOKEN,
+      process.env.GITHUB_PAT,
+      process.env.COPILOT_PAT
+    );
+    if (!token) {
+      logger.error('ServerConfig', 'Failed to find a valid GitHub PAT in environment variables.');
+      throw new Error('FATAL: A GitHub PAT or Copilot token is required but was not provided.');
+    }
+    return token;
+  },
   getModelsToken: () => firstDefinedValue(
     process.env.GITHUB_MODELS_TOKEN,
     process.env.COPILOT_GITHUB_TOKEN,
@@ -130,6 +140,13 @@ const config: ServerConfig = {
   get IDLE_CLEANUP_MINUTES() { return Number(BASE_ENV.IDLE_CLEANUP_MINUTES); },
   get FALLBACK_MODELS() { return BASE_ENV.FALLBACK_MODELS; },
   get LOG_FORMAT() { return BASE_ENV.LOG_FORMAT; },
+  get CORS_ALLOWED_ORIGINS() { 
+    return (process.env.CORS_ALLOWED_ORIGINS || '')
+      .split(',')
+      .map(o => o.trim())
+      .filter(Boolean)
+      .map(o => o.startsWith('/') && o.endsWith('/') ? new RegExp(o.slice(1, -1)) : o);
+  },
 };
 
 export default config;

@@ -4,7 +4,7 @@
  * 🟠 6. Optimized with TTL cleanup to prevent memory leaks.
  */
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { logger } from "@shared/logger/index.js";
 
 const TAG = "StateManager";
@@ -26,11 +26,17 @@ export interface GlobalAgentState {
     activeSheet?: string;
     selectionData?: unknown;
     host?: string;
+    /** P3: Hash of the last successfully synced context to support Delta-updates */
+    contextHash?: string;
   };
   history: AgentAction[];
   activePlan?: string[];
   currentTask?: string;
   status: "idle" | "planning" | "executing" | "reviewing" | "completed" | "error";
+  /** P3: Real-time progress percentage (0-100) */
+  progress?: number;
+  /** P3: Granular status detail (e.g., "Rendering Slide 5/12") */
+  subStatus?: string;
   error?: string;
   lastAccessed: number; // For TTL
 }
@@ -41,6 +47,12 @@ class StateManager {
 
   constructor() {
     this.startCleanupTimer();
+  }
+
+  /** P3: Compute hash of context to detect changes */
+  static computeContextHash(context: any): string {
+    const serialized = JSON.stringify(context);
+    return createHash('md5').update(serialized).digest('hex');
   }
 
   private startCleanupTimer() {

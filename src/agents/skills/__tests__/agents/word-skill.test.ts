@@ -2,29 +2,29 @@
  * Unit tests: WordSkill agent interface
  */
 
-import { WordSkillInvoker } from "@agents/expert-word/domain/word-invoker.js";
+import { WordExpertInvoker } from "@agents/expert-word/domain/word-invoker";
 
-jest.mock("@agents/expert-word/domain/word-invoker.js", () => ({
-  WordSkillInvoker: {
+jest.mock("@agents/expert-word/domain/word-invoker", () => ({
+  WordExpertInvoker: {
     invokeWordExpert: jest.fn(),
     getPromptPath: jest.fn().mockReturnValue("/fake/word-expert.md"),
   },
 }));
 
-import { wordSkill } from "@agents/expert-word/index.js";
+import { wordSkill } from "@agents/expert-word/index";
 
-const mockInvoke = WordSkillInvoker.invokeWordExpert as jest.Mock;
+const mockInvoke = WordExpertInvoker.invokeWordExpert as jest.Mock;
 
 describe("WordSkill (agent interface)", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("has correct name and version", () => {
     expect(wordSkill.name).toBe("word_expert");
-    expect(wordSkill.version).toBe("3.0");
+    expect(wordSkill.version).toBe("4.0 (Style-Aware)");
   });
 
   it("describes when to invoke the skill", () => {
-    expect(wordSkill.description.toLowerCase()).toMatch(/word|document|report/);
+    expect(wordSkill.description.toLowerCase()).toMatch(/word|document|report|style/);
   });
 
   it("declares required parameters in JSON-Schema format", () => {
@@ -32,7 +32,7 @@ describe("WordSkill (agent interface)", () => {
     expect(parameters.type).toBe("object");
     expect(parameters.required).toContain("output_path");
     expect(parameters.required).toContain("changes");
-    expect(parameters.properties).toHaveProperty("input_path");
+    expect(parameters.properties).toHaveProperty("output_path");
     expect(parameters.properties).toHaveProperty("changes");
     expect(parameters.properties).toHaveProperty("officeContext");
   });
@@ -42,7 +42,7 @@ describe("WordSkill (agent interface)", () => {
 
     const result = await wordSkill.execute({
       output_path: "/tmp/doc.docx",
-      changes: [{ op: "insert_heading", level: 1, text: "Executive Summary" }],
+      changes: [{ type: "INSERT_PARAGRAPH", text: "Executive Summary", styleName: "Heading 1" }],
     });
 
     expect(result.ok).toBe(true);
@@ -51,17 +51,16 @@ describe("WordSkill (agent interface)", () => {
     expect(typeof result.meta?.durationMs).toBe("number");
   });
 
-  it("passes input_path and changes to invoker", async () => {
+  it("passes parameters correctly to invoker", async () => {
     mockInvoke.mockResolvedValue({});
-    const changes = [{ op: "find_replace", find: "{{DATE}}", replace: "2026-04-23" }];
+    const changes: import("@shared/domain-actions").WordAction[] = [{ type: "REPLACE_SECTION", sectionId: "{{DATE}}", text: "2026-04-23" }];
 
     await wordSkill.execute({
-      input_path: "/data/template.docx",
       output_path: "/data/report.docx",
       changes,
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith("/data/template.docx", "/data/report.docx", changes);
+    expect(mockInvoke).toHaveBeenCalledWith("", "/data/report.docx", changes, undefined);
   });
 
   it("defaults input_path to empty string when omitted", async () => {
@@ -69,7 +68,7 @@ describe("WordSkill (agent interface)", () => {
 
     await wordSkill.execute({ output_path: "/tmp/new.docx", changes: [] });
 
-    expect(mockInvoke).toHaveBeenCalledWith("", "/tmp/new.docx", []);
+    expect(mockInvoke).toHaveBeenCalledWith("", "/tmp/new.docx", [], undefined);
   });
 
   it("returns ok:false with error message on bridge failure", async () => {
@@ -96,3 +95,4 @@ describe("WordSkill (agent interface)", () => {
     expect(result.meta?.traceId).toBe("trace-word-42");
   });
 });
+

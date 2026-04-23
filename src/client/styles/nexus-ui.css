@@ -1,36 +1,53 @@
-/* 
- * Nexus UI: Master Design Entry
- * Standardized Industrial Architecture with Atomic Structural Grounding.
- */
-
-/* 1. Global Tokens (Design Language) */
-@import "./tokens/nexus-tokens.css";
-
-/* 2. Atomic Layer (Utilities & Base) */
-@import "./atoms/nexus-atoms.css";
-
-/* 3. Molecule Layer (Component Patterns) */
-@import "./molecules/nexus-molecules.css";
-
-/* 4. Structural Layer (Global Layout Props) */
-@import "./templates/nexus-slots.css";
-@import "./templates/nexus-layout.css";
-
-/* 5. Tooling/Misc Layer */
-/* Add future utility layers here */
-
-/* Industrialized Success States */
-.nexus-auth-card-verified {
-    background: #ecfdf5 !important; /* Solid emerald-50 */
-    border-color: #10b981 !important; /* Industrial emerald-500 border */
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06) !important;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+:root {
+  /* Colors */
+  --primary-color: #0078d4;
+  --primary-hover: #005a9e;
+  --bg-color: #ffffff;
+  --text-color: #323130;
+  --border-color: #edebe9;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  
+  /* Spacing */
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
 }
 
-.nexus-auth-card-verified .nexus-text-slate-800 {
-    color: #064e3b !important; /* emerald-900 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-color);
+  background-color: var(--bg-color);
 }
 
-.nexus-auth-card-verified .nexus-text-slate-500 {
-    color: #047857 !important; /* emerald-700 */
+.container {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.button:hover {
+  background-color: var(--primary-hover);
+}
+
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
 }

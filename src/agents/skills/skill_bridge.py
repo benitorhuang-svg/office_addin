@@ -9,12 +9,12 @@ Start: uvicorn skill_bridge:app --host 127.0.0.1 --port 8765 --reload
 from __future__ import annotations
 
 import importlib
-import io
 import json
 import logging
 import os
 import sys
-from typing import Any
+import asyncio
+from typing import Any, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
@@ -36,13 +36,14 @@ logging.basicConfig(
 )
 log = logging.getLogger("skill_bridge")
 
-app = FastAPI(title="Nexus Skill Bridge", version="1.0.0")
+app = FastAPI(title="Nexus Skill Bridge", version="1.1.0")
 
 # ── Request / Response schemas ────────────────────────────────────────────
 
 class ExcelRequest(BaseModel):
-    input_path: str
-    output_path: str
+    # P0: Allow optional paths for flexibility (empty string = new file)
+    input_path: Optional[str] = ""
+    output_path: Optional[str] = "output.xlsx"
     changes: list[dict[str, Any]]
 
     @field_validator("changes")
@@ -54,8 +55,8 @@ class ExcelRequest(BaseModel):
 
 
 class PPTRequest(BaseModel):
-    input_path: str
-    output_path: str
+    input_path: Optional[str] = ""
+    output_path: Optional[str] = "output.pptx"
     slides: list[dict[str, Any]]
 
     @field_validator("slides")
@@ -67,8 +68,8 @@ class PPTRequest(BaseModel):
 
 
 class WordRequest(BaseModel):
-    input_path: str
-    output_path: str
+    input_path: Optional[str] = ""
+    output_path: Optional[str] = "output.docx"
     edits: list[dict[str, Any]]
 
     @field_validator("edits")
@@ -90,6 +91,7 @@ class VectorSearchRequest(BaseModel):
 def _invoke_python_skill(module_name: str, func_name: str, payload: dict[str, Any]) -> Any:
     """Dynamically import a skill module and invoke its main function."""
     try:
+        # P0 Fix: Handle module reload if necessary or ensured path
         mod = importlib.import_module(module_name)
     except ModuleNotFoundError as e:
         log.error(f"Module not found: {module_name} — {e}")
@@ -106,10 +108,9 @@ def _invoke_python_skill(module_name: str, func_name: str, payload: dict[str, An
         raise HTTPException(status_code=500, detail=str(exc))
 
 
-def _pipe_stdin_to_skill(python_module: str, payload: dict[str, Any]) -> Any:
+def _run_expert_skill(python_module: str, payload: dict[str, Any]) -> Any:
     """
-    Run a skill that reads from stdin (legacy compat).
-    Module must have a `run(payload_dict) -> dict` entry point.
+    Run an expert skill dynamically via its `run(payload_dict) -> dict` entry point.
     """
     return _invoke_python_skill(python_module, "run", payload)
 
@@ -122,34 +123,37 @@ async def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "skills": ["excel", "ppt", "word", "vector-search"],
-        "version": "1.0.0",
+        "version": "1.1.0",
     }
 
 
 @app.post("/skills/excel")
 async def invoke_excel(req: ExcelRequest) -> dict[str, Any]:
-    """Invoke ExcelExpert skill synchronously."""
+    """Invoke ExcelExpert skill asynchronously using thread pool."""
     log.info(f"Excel skill: {req.input_path} → {req.output_path}")
     payload = {"input": req.input_path, "output": req.output_path, "changes": req.changes}
-    result = _pipe_stdin_to_skill("excel_expert", payload)
+    # P1: Prevent blocking event loop
+    result = await asyncio.to_thread(_run_expert_skill, "excel_expert", payload)
     return result if isinstance(result, dict) else {"result": result}
 
 
 @app.post("/skills/ppt")
 async def invoke_ppt(req: PPTRequest) -> dict[str, Any]:
-    """Invoke PPTMaster skill synchronously."""
+    """Invoke PPTMaster skill asynchronously using thread pool."""
     log.info(f"PPT skill: {req.input_path} → {req.output_path}")
     payload = {"input": req.input_path, "output": req.output_path, "slides": req.slides}
-    result = _pipe_stdin_to_skill("ppt_expert", payload)
+    # P1: Prevent blocking event loop
+    result = await asyncio.to_thread(_run_expert_skill, "ppt_expert", payload)
     return result if isinstance(result, dict) else {"result": result}
 
 
 @app.post("/skills/word")
 async def invoke_word(req: WordRequest) -> dict[str, Any]:
-    """Invoke WordExpert skill synchronously."""
+    """Invoke WordExpert skill asynchronously using thread pool."""
     log.info(f"Word skill: {req.input_path} → {req.output_path}")
     payload = {"input": req.input_path, "output": req.output_path, "edits": req.edits}
-    result = _pipe_stdin_to_skill("word_expert", payload)
+    # P1: Prevent blocking event loop
+    result = await asyncio.to_thread(_run_expert_skill, "word_expert", payload)
     return result if isinstance(result, dict) else {"result": result}
 
 
@@ -172,8 +176,22 @@ async def invoke_vector_search(req: VectorSearchRequest) -> dict[str, Any]:
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    log.error(f"Unhandled error on {request.url}: {exc}", exc_info=True)
-    return JSONResponse(status_code=500, content={"detail": "Internal skill bridge error"})
+    error_msg = str(exc)
+    import datetime
+    error_payload = {
+        "time": datetime.datetime.now().isoformat(),
+        "level": "ERROR",
+        "msg": f"Unhandled error on {request.url}: {error_msg}",
+        "type": "exception",
+        "url": str(request.url)
+    }
+    sys.stderr.write(json.dumps(error_payload) + "\n")
+    sys.stderr.flush()
+    
+    return JSONResponse(
+        status_code=500, 
+        content={"detail": "Internal skill bridge error", "error": error_msg}
+    )
 
 
 # ── Entry point ───────────────────────────────────────────────────────────

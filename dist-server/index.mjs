@@ -8,7 +8,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: !0 });
 };
 
-// backend/config/atoms/base-env.ts
+// src/config/atoms/base-env.ts
 import path from "path";
 import dotenv from "dotenv";
 function firstDefinedValue(...values) {
@@ -19,7 +19,7 @@ function firstDefinedValue(...values) {
   return "";
 }
 var projectRoot, BASE_ENV, init_base_env = __esm({
-  "backend/config/atoms/base-env.ts"() {
+  "src/config/atoms/base-env.ts"() {
     "use strict";
     projectRoot = path.resolve(process.cwd());
     dotenv.config({ path: path.join(projectRoot, ".env") });
@@ -66,9 +66,10 @@ var projectRoot, BASE_ENV, init_base_env = __esm({
   }
 });
 
-// backend/config/molecules/server-config.ts
-var _cachedFallbackPresets, config, server_config_default, init_server_config = __esm({
-  "backend/config/molecules/server-config.ts"() {
+// src/config/molecules/server-config.ts
+import { z } from "zod";
+var _cachedFallbackPresets, config, configSchema, server_config_default, init_server_config = __esm({
+  "src/config/molecules/server-config.ts"() {
     "use strict";
     init_base_env();
     _cachedFallbackPresets = null, config = {
@@ -198,53 +199,34 @@ var _cachedFallbackPresets, config, server_config_default, init_server_config = 
       get LOG_FORMAT() {
         return BASE_ENV.LOG_FORMAT;
       }
-    }, server_config_default = config;
+    }, configSchema = z.object({
+      GITHUB_MODELS_URL: z.string().url(),
+      GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required for agent skills")
+    });
+    try {
+      configSchema.parse({
+        GITHUB_MODELS_URL: config.GITHUB_MODELS_URL,
+        GEMINI_API_KEY: config.GEMINI_API_KEY
+      });
+    } catch (err) {
+      err instanceof z.ZodError ? console.error("?? Configuration Validation Failed:", err.errors) : console.error("?? Configuration Validation Failed:", err);
+    }
+    server_config_default = config;
   }
 });
 
-// backend/services/copilot/atoms/types.ts
-var init_types = __esm({
-  "backend/services/copilot/atoms/types.ts"() {
-    "use strict";
-  }
-});
-
-// backend/services/copilot/atoms/formatters.ts
-function extractResponseText(event) {
-  if (!event) return "";
-  let e = event, content = e.result?.content || e.data?.content || e.data?.text || e.content;
-  return content || (typeof event == "string" ? event : "");
-}
-async function emitChunks(text, onChunk) {
-  let segments = text.split(/([\s,.!?;]+)/);
-  for (let segment of segments)
-    segment && onChunk(segment), await new Promise((r) => setTimeout(r, 10));
-}
-function describeCopilotSdkError(err) {
-  return {
-    status: err?.status || 502,
-    error: "copilot_sdk_error",
-    detail: err instanceof Error ? err.message : String(err)
-  };
-}
-var init_formatters = __esm({
-  "backend/services/copilot/atoms/formatters.ts"() {
-    "use strict";
-  }
-});
-
-// backend/config/env.ts
+// src/config/env.ts
 var env_default, init_env = __esm({
-  "backend/config/env.ts"() {
+  "src/config/env.ts"() {
     "use strict";
     init_server_config();
     env_default = server_config_default;
   }
 });
 
-// backend/services/copilot/atoms/core-config.ts
+// src/shared/atoms/ai-core/core-config.ts
 var CORE_SDK_CONFIG, init_core_config = __esm({
-  "backend/services/copilot/atoms/core-config.ts"() {
+  "src/shared/atoms/ai-core/core-config.ts"() {
     "use strict";
     init_env();
     CORE_SDK_CONFIG = {
@@ -264,20 +246,20 @@ var CORE_SDK_CONFIG, init_core_config = __esm({
       WATCHDOG_INACTIVITY_MS: Number(process.env.WATCHDOG_INACTIVITY_MS || 45e3),
       USER_INPUT_TIMEOUT_MS: Number(process.env.USER_INPUT_TIMEOUT_MS || 18e4),
       // Localized Strategy & Tool messages
-      MOCK_ACP_SEARCH_RESULT: process.env.MOCK_ACP_SEARCH_RESULT || "\u3010\u641C\u5C0B\u7D50\u679C\u3011\u5728 GitHub Copilot SDK \u8108\u7D61\u4E0B\uFF0CACP \u6307\u7684\u662F\u300EAgent Connection Protocol\u300F\u3002\u9019\u662F\u4E00\u500B\u9023\u63A5 SDK \u8207\u672C\u5730 Agent (CLI) \u7684\u81EA\u5B9A\u7FA9\u901A\u8A0A\u5354\u5B9A\u3002\u5E38\u898B\u9023\u63A5\u65B9\u5F0F\u5305\u62EC\uFF1Acopilot_cli, gemini_cli, azure_byok\u3002",
+      MOCK_ACP_SEARCH_RESULT: process.env.MOCK_ACP_SEARCH_RESULT || "[\u641C\u7D22\u7D50\u679C] \u5728 GitHub Copilot SDK \u8108\u7D61\u4E0B\uFF0CACP \u4EE3\u8868\u300EAgent Connection Protocol\u300F\u3002\u9019\u662F\u4E00\u5957\u5141\u8A31 SDK \u8ABF\u7528\u4E0D\u540C Agent (CLI) \u7684\u81EA\u5B9A\u7FA9\u5354\u8B70\u3002\u5E38\u898B\u7684\u9023\u63A5\u65B9\u5F0F\u5305\u62EC\uFF1Acopilot_cli, gemini_cli, azure_byok\u3002",
       PROGRESS_FEEDBACK_PREFIX: process.env.PROGRESS_FEEDBACK_PREFIX || `
-> \u{1F50D} *AI \u6B63\u5728\u91DD\u5C0D\u300C`,
-      PROGRESS_FEEDBACK_SUFFIX: process.env.PROGRESS_FEEDBACK_SUFFIX || `\u300D\u9032\u884C\u9810\u7814\u8207\u601D\u8003...*
+> \u{1F916} *AI \u6B63\u5728\u601D\u8003...`,
+      PROGRESS_FEEDBACK_SUFFIX: process.env.PROGRESS_FEEDBACK_SUFFIX || `\u6B63\u5728\u5206\u6790\u4E26\u601D\u8003...*
 
 `,
       ERROR_SDK_CONNECTION_FAIL: process.env.ERROR_SDK_CONNECTION_FAIL || "SDK V2 \u9023\u63A5\u5931\u6557",
-      MOCK_SEARCH_NO_RESULT: process.env.MOCK_SEARCH_NO_RESULT || "\u641C\u5C0B\u7D50\u679C\u6458\u8981 ({query})\uFF1A\u672A\u627E\u5230\u8207\u5C08\u6848\u76F4\u63A5\u76F8\u95DC\u7684\u552F\u4E00\u5B9A\u7FA9\u3002\u5EFA\u8B70\u8A62\u554F\u4F7F\u7528\u8005\u662F\u5426\u6307\u67D0\u7A2E\u7279\u5B9A\u7684\u7B56\u7565\u6216\u5354\u5B9A\u3002",
+      MOCK_SEARCH_NO_RESULT: process.env.MOCK_SEARCH_NO_RESULT || "\u641C\u7D22\u7D50\u679C ({query})\uFF1A\u672A\u627E\u5230\u8207\u8A72\u67E5\u8A62\u76F4\u63A5\u76F8\u95DC\u7684\u5B9A\u7FA9\uFF0C\u5EFA\u8B70\u8A62\u554F\u4F7F\u7528\u8005\u662F\u5426\u9700\u8981\u66F4\u8A73\u7D30\u7684\u8AAA\u660E\u3002",
       MAX_SDK_RETRIES: Number(process.env.MAX_SDK_RETRIES || 1)
     };
   }
 });
 
-// backend/core/atoms/logger.ts
+// src/shared/logger/index.ts
 function sanitizeValue(value, seen = /* @__PURE__ */ new WeakSet()) {
   if (value == null)
     return value;
@@ -304,15 +286,20 @@ function sanitizeValue(value, seen = /* @__PURE__ */ new WeakSet()) {
     output[key] = REDACTED_KEYS.test(key) ? "[REDACTED]" : sanitizeValue(entry, seen);
   return output;
 }
-function writeLog(level, tag, message, data) {
+function writeLog(level, tag, message, data, requestId, traceId) {
   let entry = {
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     level,
     tag,
     message
   };
-  data !== void 0 && (entry.data = sanitizeValue(data));
+  requestId && (entry.requestId = requestId), traceId && (entry.traceId = traceId), data !== void 0 && (entry.data = sanitizeValue(data));
   let line = JSON.stringify(entry);
+  if (logHook)
+    try {
+      logHook(entry);
+    } catch {
+    }
   switch (level) {
     case "warn":
       console.warn(line);
@@ -325,21 +312,52 @@ function writeLog(level, tag, message, data) {
       break;
   }
 }
-var REDACTED_KEYS, logger, init_logger = __esm({
-  "backend/core/atoms/logger.ts"() {
+var REDACTED_KEYS, logHook, logger, init_logger = __esm({
+  "src/shared/logger/index.ts"() {
     "use strict";
     REDACTED_KEYS = /token|api[_-]?key|authorization|bearer|password|secret/i;
+    logHook = null;
     logger = {
       info: (tag, message, data) => writeLog("info", tag, message, data),
       warn: (tag, message, data) => writeLog("warn", tag, message, data),
-      error: (tag, message, data) => writeLog("error", tag, message, data)
+      error: (tag, message, data) => writeLog("error", tag, message, data),
+      /**
+       * Registers a global hook that receives every log entry.
+       */
+      setHook: (hook) => {
+        logHook = hook;
+      },
+      /**
+       * Returns a request-scoped logger that automatically includes requestId in every entry.
+       * Usage: const log = logger.withReqId(req.requestId);
+       */
+      withReqId: (requestId) => ({
+        info: (tag, message, data) => writeLog("info", tag, message, data, requestId),
+        warn: (tag, message, data) => writeLog("warn", tag, message, data, requestId),
+        error: (tag, message, data) => writeLog("error", tag, message, data, requestId),
+        /** Attach a traceId to this request-scoped logger for cross-service chain tracing. */
+        withTrace: (traceId) => ({
+          info: (tag, message, data) => writeLog("info", tag, message, data, requestId, traceId),
+          warn: (tag, message, data) => writeLog("warn", tag, message, data, requestId, traceId),
+          error: (tag, message, data) => writeLog("error", tag, message, data, requestId, traceId)
+        })
+      }),
+      /**
+       * Returns a trace-scoped logger (cross-service chain; no specific HTTP request).
+       * Usage: const log = logger.withTrace(traceId);
+       */
+      withTrace: (traceId) => ({
+        info: (tag, message, data) => writeLog("info", tag, message, data, void 0, traceId),
+        warn: (tag, message, data) => writeLog("warn", tag, message, data, void 0, traceId),
+        error: (tag, message, data) => writeLog("error", tag, message, data, void 0, traceId)
+      })
     };
   }
 });
 
-// backend/services/copilot/molecules/idle-cleaner.ts
+// src/shared/molecules/ai-core/idle-cleaner.ts
 var DEFAULT_IDLE_MINUTES, SCAN_INTERVAL_MS, activityLog, scanTimer, IdleCleaner, init_idle_cleaner = __esm({
-  "backend/services/copilot/molecules/idle-cleaner.ts"() {
+  "src/shared/molecules/ai-core/idle-cleaner.ts"() {
     "use strict";
     init_logger();
     DEFAULT_IDLE_MINUTES = 30, SCAN_INTERVAL_MS = 5 * 6e4, activityLog = /* @__PURE__ */ new Map(), scanTimer = null, IdleCleaner = {
@@ -395,125 +413,7 @@ var DEFAULT_IDLE_MINUTES, SCAN_INTERVAL_MS, activityLog, scanTimer, IdleCleaner,
   }
 });
 
-// backend/services/copilot/molecules/client-manager.ts
-var client_manager_exports = {};
-__export(client_manager_exports, {
-  ClientManager: () => ClientManager,
-  getOrCreateClient: () => getOrCreateClient,
-  removeClient: () => removeClient,
-  removeClientByParams: () => removeClientByParams,
-  stopAllClients: () => stopAllClients
-});
-import { CopilotClient } from "@github/copilot-sdk";
-var ClientManager, getOrCreateClient, stopAllClients, removeClientByParams, removeClient, init_client_manager = __esm({
-  "backend/services/copilot/molecules/client-manager.ts"() {
-    "use strict";
-    init_core_config();
-    init_idle_cleaner();
-    init_logger();
-    ClientManager = class {
-      static clients = /* @__PURE__ */ new Map();
-      static pendingClients = /* @__PURE__ */ new Map();
-      static CLIENT_TTL = 1800 * 1e3;
-      // 30 minutes
-      static HEALTH_CHECK_INTERVAL = 300 * 1e3;
-      // 5 minutes
-      static healthCheckTimer;
-      static normalizeCacheKeyPart(value) {
-        return Array.isArray(value) ? value.map((item) => this.normalizeCacheKeyPart(item)) : !value || typeof value != "object" ? typeof value == "function" ? "[function]" : value : Object.keys(value).sort().reduce((normalized, key) => (normalized[key] = this.normalizeCacheKeyPart(value[key]), normalized), {});
-      }
-      static buildClientKey(method, options) {
-        return `${method}-${JSON.stringify(this.normalizeCacheKeyPart(options))}`;
-      }
-      /**
-       * Get or create a client with connection pooling
-       */
-      static async getClient(method, options) {
-        let clientKey = this.buildClientKey(method, options), now = Date.now(), existing = this.clients.get(clientKey);
-        if (existing && existing.healthy && now - existing.created < this.CLIENT_TTL)
-          return existing.lastUsed = now, IdleCleaner.touch(clientKey), existing.client;
-        let pendingPromise = this.pendingClients.get(clientKey);
-        if (pendingPromise)
-          return logger.info("ClientManager", "Waiting for pending client creation", { method }), pendingPromise;
-        existing && await this.cleanupClient(clientKey);
-        let createClientPromise = (async () => {
-          let client, startTimer;
-          try {
-            logger.info("ClientManager", "Starting new Copilot client", { method, clientKey });
-            let startTimeoutMs = method === "gemini_cli" ? CORE_SDK_CONFIG.GEMINI_CLIENT_START_TIMEOUT_MS : CORE_SDK_CONFIG.CLIENT_START_TIMEOUT_MS;
-            client = new CopilotClient(options);
-            let startPromise = client.start(), timeoutPromise = new Promise((_, reject) => {
-              startTimer = setTimeout(
-                () => reject(new Error(`ACP Client Timeout (${method}): Agent failed to start/handshake within ${Math.round(startTimeoutMs / 1e3)}s`)),
-                startTimeoutMs
-              );
-            });
-            return await Promise.race([startPromise, timeoutPromise]), this.clients.set(clientKey, {
-              client,
-              method,
-              created: Date.now(),
-              lastUsed: Date.now(),
-              healthy: !0
-            }), IdleCleaner.touch(clientKey), this.healthCheckTimer || (this.startHealthMonitoring(), IdleCleaner.startScanning((key) => this.cleanupClient(key))), client;
-          } catch (error) {
-            throw client && await client.stop().catch(() => {
-            }), logger.error("ClientManager", "Failed to start Copilot client", { method, clientKey, error }), error;
-          } finally {
-            startTimer && clearTimeout(startTimer), this.pendingClients.delete(clientKey);
-          }
-        })();
-        return this.pendingClients.set(clientKey, createClientPromise), createClientPromise;
-      }
-      static startHealthMonitoring() {
-        this.healthCheckTimer = setInterval(async () => {
-          await this.performHealthCheck();
-        }, this.HEALTH_CHECK_INTERVAL), this.healthCheckTimer.unref();
-      }
-      static async performHealthCheck() {
-        let now = Date.now(), clientsToRemove = [];
-        for (let [key, clientInfo] of this.clients.entries()) {
-          if (now - clientInfo.created > this.CLIENT_TTL) {
-            clientsToRemove.push(key);
-            continue;
-          }
-          try {
-            await clientInfo.client.ping(), clientInfo.healthy = !0;
-          } catch (error) {
-            logger.warn("ClientManager", "Client health check failed", { key, method: clientInfo.method, error }), clientInfo.healthy = !1, now - clientInfo.lastUsed > 6e4 && clientsToRemove.push(key);
-          }
-        }
-        for (let key of clientsToRemove)
-          await this.cleanupClient(key);
-      }
-      static async cleanupClient(key) {
-        let clientInfo = this.clients.get(key);
-        if (clientInfo) {
-          try {
-            await clientInfo.client.stop();
-          } catch (error) {
-            logger.warn("ClientManager", "Failed to stop Copilot client cleanly", {
-              key,
-              method: clientInfo.method,
-              error
-            });
-          }
-          this.clients.delete(key), IdleCleaner.remove(key);
-        }
-      }
-      static async cleanupByParams(method, options) {
-        let key = this.buildClientKey(method, options);
-        await this.cleanupClient(key);
-      }
-      static async cleanupAll() {
-        this.healthCheckTimer && (clearInterval(this.healthCheckTimer), this.healthCheckTimer = void 0), IdleCleaner.stopScanning();
-        let promises = Array.from(this.clients.keys()).map((k) => this.cleanupClient(k));
-        await Promise.allSettled(promises);
-      }
-    }, getOrCreateClient = ClientManager.getClient.bind(ClientManager), stopAllClients = ClientManager.cleanupAll.bind(ClientManager), removeClientByParams = ClientManager.cleanupByParams.bind(ClientManager), removeClient = ClientManager.cleanupClient.bind(ClientManager);
-  }
-});
-
-// backend/services/copilot/atoms/permission-policy.ts
+// src/shared/atoms/ai-core/permission-policy.ts
 function approved() {
   return { kind: "approved" };
 }
@@ -521,10 +421,16 @@ function denied() {
   return { kind: "denied-no-approval-rule-and-could-not-request-from-user" };
 }
 var SAFE_CUSTOM_TOOLS, AUTO_APPROVE_ALL_PERMISSIONS, AUTO_APPROVE_PYTHON_TOOL, handleCopilotPermissionRequest, init_permission_policy = __esm({
-  "backend/services/copilot/atoms/permission-policy.ts"() {
+  "src/shared/atoms/ai-core/permission-policy.ts"() {
     "use strict";
     init_logger();
-    SAFE_CUSTOM_TOOLS = /* @__PURE__ */ new Set(["google_search", "create_excel_chart"]), AUTO_APPROVE_ALL_PERMISSIONS = process.env.COPILOT_AUTO_APPROVE_ALL_PERMISSIONS === "true", AUTO_APPROVE_PYTHON_TOOL = process.env.COPILOT_AUTO_APPROVE_PYTHON_TOOL === "true";
+    SAFE_CUSTOM_TOOLS = /* @__PURE__ */ new Set([
+      "google_search",
+      "create_excel_chart",
+      "word_skill",
+      "excel_skill",
+      "powerpoint_skill"
+    ]), AUTO_APPROVE_ALL_PERMISSIONS = process.env.COPILOT_AUTO_APPROVE_ALL_PERMISSIONS === "true", AUTO_APPROVE_PYTHON_TOOL = process.env.COPILOT_AUTO_APPROVE_PYTHON_TOOL === "true";
     handleCopilotPermissionRequest = (request, invocation) => {
       let toolName = typeof request.toolName == "string" ? request.toolName : void 0;
       if (AUTO_APPROVE_ALL_PERMISSIONS)
@@ -551,210 +457,51 @@ var SAFE_CUSTOM_TOOLS, AUTO_APPROVE_ALL_PERMISSIONS, AUTO_APPROVE_PYTHON_TOOL, h
   }
 });
 
-// backend/services/copilot/molecules/options/copilot-cli-options.ts
-import * as path2 from "node:path";
-var projectRoot2, buildCopilotCliOptions, init_copilot_cli_options = __esm({
-  "backend/services/copilot/molecules/options/copilot-cli-options.ts"() {
+// src/shared/atoms/ai-core/tool-surface-policy.ts
+function applyLeastPrivilegeToolSurface(sessionOptions) {
+  return ENABLE_BUILTIN_TOOLS ? (logger.warn("SDKToolSurface", "Built-in SDK tools are enabled by environment override"), {
+    availableTools: sessionOptions.availableTools,
+    excludedTools: sessionOptions.excludedTools
+  }) : {
+    availableTools: [],
+    excludedTools: void 0
+  };
+}
+var ENABLE_BUILTIN_TOOLS, init_tool_surface_policy = __esm({
+  "src/shared/atoms/ai-core/tool-surface-policy.ts"() {
     "use strict";
-    init_env();
-    init_permission_policy();
-    projectRoot2 = process.cwd(), buildCopilotCliOptions = (cfg) => {
-      let modelsToken = cfg.githubToken || env_default.getModelsToken(), apiBase = env_default.COPILOT_API_URL;
-      return {
-        clientOptions: {
-          // Windows: JS files are not executables! Use node.exe explicitly.
-          cliPath: process.execPath,
-          useStdio: !0,
-          cliArgs: [
-            "--no-warnings",
-            path2.join(projectRoot2, "node_modules/@github/copilot/index.js")
-          ],
-          env: {
-            ...process.env,
-            NODE_NO_WARNINGS: "1",
-            ...apiBase ? {
-              COPILOT_API_URL: apiBase,
-              GITHUB_API_URL: apiBase
-            } : {},
-            GITHUB_MODELS_API_VERSION: env_default.GITHUB_MODELS_API_VERSION,
-            GITHUB_TOKEN: modelsToken || process.env.GITHUB_TOKEN,
-            GH_TOKEN: modelsToken || process.env.GH_TOKEN
-          }
-        },
-        sessionOptions: {
-          model: cfg.model,
-          streaming: cfg.streaming,
-          onPermissionRequest: handleCopilotPermissionRequest,
-          provider: apiBase ? {
-            type: "openai",
-            baseUrl: apiBase,
-            bearerToken: modelsToken || void 0
-          } : void 0
-        }
-      };
-    };
-  }
-});
-
-// backend/services/copilot/molecules/options/gemini-cli-options.ts
-import * as path3 from "node:path";
-import * as fs from "node:fs";
-import * as os from "node:os";
-var projectRoot3, buildGeminiCliOptions, init_gemini_cli_options = __esm({
-  "backend/services/copilot/molecules/options/gemini-cli-options.ts"() {
-    "use strict";
-    init_env();
-    init_permission_policy();
     init_logger();
-    projectRoot3 = process.cwd(), buildGeminiCliOptions = (cfg) => {
-      let wrapperEntry = path3.join(projectRoot3, "scripts/gemini-wrapper-v2.js"), availableModels = env_default.AVAILABLE_MODELS_GEMINI.map((modelId) => ({
-        id: modelId,
-        name: modelId,
-        capabilities: {
-          supports: {
-            vision: !1,
-            reasoningEffort: !1
-          },
-          limits: {
-            max_context_window_tokens: 1048576
-          }
-        }
-      }));
-      return {
-        clientOptions: {
-          cliPath: process.execPath,
-          useStdio: !0,
-          cliArgs: [
-            "--no-warnings",
-            wrapperEntry
-          ],
-          env: (() => {
-            let { GEMINI_API_KEY: _inherited, ...cleanEnv } = process.env, explicitKey = cfg.geminiKey || env_default.GEMINI_API_KEY || "", cloudAuthEnv = {}, authJson = process.env.GEMINI_CLI_AUTH_JSON;
-            if (authJson && !explicitKey)
-              try {
-                let tempAuthPath = path3.join(os.tmpdir(), "gemini-auth-token.json");
-                fs.writeFileSync(tempAuthPath, authJson), logger.info("GeminiCliOptions", "Injected temporary cloud auth credentials for Gemini CLI", {
-                  tempAuthPath
-                }), cloudAuthEnv = {
-                  GOOGLE_APPLICATION_CREDENTIALS: tempAuthPath,
-                  // Force the CLI to use this path instead of ~/.gemini/auth
-                  GEMINI_AUTH_PATH: tempAuthPath
-                };
-              } catch (e) {
-                logger.error("GeminiCliOptions", "Failed to write temporary cloud auth credentials", {
-                  error: e
-                });
-              }
-            return {
-              ...cleanEnv,
-              ...cloudAuthEnv,
-              NODE_NO_WARNINGS: process.env.NODE_NO_WARNINGS || "1",
-              ...explicitKey ? { GEMINI_API_KEY: explicitKey } : {}
-            };
-          })(),
-          onListModels: async () => availableModels
-        },
-        sessionOptions: {
-          streaming: !!cfg.streaming,
-          // Default to gemini-2.5-flash as defined in our ModelManager
-          model: cfg.model || "gemini-2.5-flash",
-          onPermissionRequest: handleCopilotPermissionRequest
-        }
-      };
-    };
+    ENABLE_BUILTIN_TOOLS = process.env.COPILOT_ENABLE_BUILTIN_TOOLS === "true";
   }
 });
 
-// backend/services/copilot/molecules/options/azure-byok-options.ts
-import * as path4 from "node:path";
-var projectRoot4, buildAzureByokOptions, init_azure_byok_options = __esm({
-  "backend/services/copilot/molecules/options/azure-byok-options.ts"() {
-    "use strict";
-    init_env();
-    init_permission_policy();
-    init_core_config();
-    projectRoot4 = process.cwd(), buildAzureByokOptions = (cfg) => {
-      let azureKey = cfg.azure?.apiKey || env_default.AZURE_OPENAI_API_KEY, azureEndpoint = cfg.azure?.endpoint || env_default.AZURE_OPENAI_ENDPOINT, azureDeployment = cfg.azure?.deployment || env_default.AZURE_OPENAI_DEPLOYMENT, provider = {
-        type: "azure",
-        baseUrl: azureEndpoint || "",
-        apiKey: azureKey || void 0,
-        azure: { apiVersion: CORE_SDK_CONFIG.AZURE_API_VERSION }
-      };
-      return {
-        clientOptions: {
-          // Windows: JS files are not executables! Use node.exe explicitly.
-          cliPath: process.execPath,
-          useStdio: !0,
-          cliArgs: [
-            path4.join(projectRoot4, "scripts/acp-adaptive-shim.cjs"),
-            path4.join(projectRoot4, "node_modules/@github/copilot/index.js")
-          ]
-        },
-        sessionOptions: {
-          model: azureDeployment || cfg.model,
-          streaming: cfg.streaming,
-          provider,
-          onPermissionRequest: handleCopilotPermissionRequest
-        }
-      };
-    };
-  }
-});
-
-// backend/services/copilot/molecules/options/remote-cli-options.ts
-var buildRemoteCliOptions, init_remote_cli_options = __esm({
-  "backend/services/copilot/molecules/options/remote-cli-options.ts"() {
-    "use strict";
-    init_core_config();
-    init_permission_policy();
-    buildRemoteCliOptions = (cfg) => ({
-      clientOptions: {
-        cliUrl: `localhost:${cfg.remotePort || CORE_SDK_CONFIG.DEFAULT_REMOTE_PORT}`,
-        cliPath: "copilot"
+// src/tools/office-atoms/core/google-search-tool.ts
+import { defineTool } from "@github/copilot-sdk";
+function createGoogleSearchTool() {
+  return defineTool("google_search", {
+    description: "\u641C\u7D22\u7DB2\u8DEF\u4EE5\u7372\u53D6\u6700\u65B0\u8A0A\u606F\u6216\u7CBE\u78BA\u5B9A\u7FA9\uFF08\u4F8B\u5982\u7E2E\u5BEB\u3001\u5C08\u696D\u540D\u8A5E\u7B49\uFF09",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "\u641C\u7D22\u95DC\u9375\u5B57" }
       },
-      sessionOptions: {
-        model: cfg.model,
-        streaming: cfg.streaming,
-        onPermissionRequest: handleCopilotPermissionRequest
-      }
-    });
-  }
-});
-
-// backend/services/copilot/molecules/option-resolver.ts
-function resolveMethodFromContext(modelName, azureInfo, _isExplicitCli = !1) {
-  if (modelName.toLowerCase().includes("gemini")) return "gemini_cli";
-  let hasAzureKey = !!(azureInfo?.apiKey || env_default.AZURE_OPENAI_API_KEY), hasRemotePort = !!env_default.COPILOT_AGENT_PORT;
-  return hasAzureKey ? "azure_byok" : hasRemotePort ? "remote_cli" : "copilot_cli";
+      required: ["query"]
+    },
+    skipPermission: !0,
+    handler: async ({ query }) => (logger.info("ToolRegistry", "Executing google_search tool", { query }), query.toUpperCase().includes("ACP") && query.toUpperCase().includes("COPILOT") ? CORE_SDK_CONFIG.MOCK_ACP_SEARCH_RESULT : CORE_SDK_CONFIG.MOCK_SEARCH_NO_RESULT.replace("{query}", query))
+  });
 }
-function resolveACPOptions(cfg) {
-  switch (cfg.method) {
-    case "gemini_cli":
-      return buildGeminiCliOptions(cfg);
-    case "copilot_cli":
-      return buildCopilotCliOptions(cfg);
-    case "azure_byok":
-      return buildAzureByokOptions(cfg);
-    case "remote_cli":
-      return buildRemoteCliOptions(cfg);
-    default:
-      throw new Error(`Unknown ACP connection method: ${cfg.method}`);
-  }
-}
-var init_option_resolver = __esm({
-  "backend/services/copilot/molecules/option-resolver.ts"() {
+var init_google_search_tool = __esm({
+  "src/tools/office-atoms/core/google-search-tool.ts"() {
     "use strict";
-    init_env();
-    init_copilot_cli_options();
-    init_gemini_cli_options();
-    init_azure_byok_options();
-    init_remote_cli_options();
+    init_core_config();
+    init_logger();
   }
 });
 
-// backend/services/molecules/system-state-store.ts
+// src/infra/services/molecules/system-state-store.ts
 var SystemStateStore, GlobalSystemState, init_system_state_store = __esm({
-  "backend/services/molecules/system-state-store.ts"() {
+  "src/infra/services/molecules/system-state-store.ts"() {
     "use strict";
     init_logger();
     SystemStateStore = class {
@@ -762,26 +509,29 @@ var SystemStateStore, GlobalSystemState, init_system_state_store = __esm({
         power: "OFF",
         provider: "copilot_cli",
         isWarming: !1,
-        isStreaming: !1
+        isStreaming: !1,
+        tokensPerSec: 0,
+        ttft: -1,
+        activePersona: "General"
       };
       getState() {
         return { ...this.state };
       }
       update(patch) {
-        patch.power !== void 0 && (this.state.power = patch.power), patch.provider !== void 0 && (this.state.provider = patch.provider), patch.isWarming !== void 0 && (this.state.isWarming = patch.isWarming), patch.isStreaming !== void 0 && (this.state.isStreaming = patch.isStreaming), logger.info("SystemStateStore", "System state updated", this.state);
+        patch.power !== void 0 && (this.state.power = patch.power), patch.provider !== void 0 && (this.state.provider = patch.provider), patch.isWarming !== void 0 && (this.state.isWarming = patch.isWarming), patch.isStreaming !== void 0 && (this.state.isStreaming = patch.isStreaming), patch.tokensPerSec !== void 0 && (this.state.tokensPerSec = patch.tokensPerSec), patch.ttft !== void 0 && (this.state.ttft = patch.ttft), patch.activePersona !== void 0 && (this.state.activePersona = patch.activePersona), logger.info("SystemStateStore", "System state updated", this.state);
       }
     }, GlobalSystemState = new SystemStateStore();
   }
 });
 
-// backend/services/molecules/nexus-socket.ts
+// src/infra/services/molecules/nexus-socket.ts
 var nexus_socket_exports = {};
 __export(nexus_socket_exports, {
   NexusSocketRelay: () => NexusSocketRelay
 });
 import { WebSocket, WebSocketServer } from "ws";
 var NexusSocketRelay, init_nexus_socket = __esm({
-  "backend/services/molecules/nexus-socket.ts"() {
+  "src/infra/services/molecules/nexus-socket.ts"() {
     "use strict";
     init_system_state_store();
     init_logger();
@@ -822,106 +572,575 @@ var NexusSocketRelay, init_nexus_socket = __esm({
   }
 });
 
-// backend/services/copilot/molecules/tool-registry.ts
-import { defineTool } from "@github/copilot-sdk";
+// src/tools/office-atoms/core/python-executor-tool.ts
+import { defineTool as defineTool2 } from "@github/copilot-sdk";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { writeFile, unlink } from "fs/promises";
-import { join as join4 } from "path";
-import { tmpdir as tmpdir2 } from "os";
+import { join } from "path";
+import { tmpdir } from "os";
 import { randomUUID } from "crypto";
-function getSessionTools() {
-  return [searchTool, pythonTool, chartTool];
-}
-var execFileAsync, PYTHON_TOOL_TIMEOUT_MS, PYTHON_TOOL_MAX_BUFFER_BYTES, searchTool, pythonTool, chartTool, init_tool_registry = __esm({
-  "backend/services/copilot/molecules/tool-registry.ts"() {
-    "use strict";
-    init_core_config();
-    init_logger();
-    execFileAsync = promisify(execFile), PYTHON_TOOL_TIMEOUT_MS = Number(process.env.PYTHON_TOOL_TIMEOUT_MS || 15e3), PYTHON_TOOL_MAX_BUFFER_BYTES = Number(process.env.PYTHON_TOOL_MAX_BUFFER_BYTES || 1024 * 1024), searchTool = defineTool("google_search", {
-      description: "\u641C\u5C0B\u7DB2\u8DEF\u4EE5\u7372\u7372\u6700\u65B0\u8CC7\u8A0A\u6216\u7CBE\u78BA\u5B9A\u7FA9\uFF08\u4F8B\u5982\u7E2E\u5BEB\u3001\u5C08\u6709\u540D\u8A5E\uFF09\u3002",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "\u641C\u5C0B\u95DC\u9375\u5B57" }
-        },
-        required: ["query"]
+function createPythonExecutorTool() {
+  return defineTool2("python_executor", {
+    description: "Executes industrial Python code for CAGR calculation, trend analysis, and data restructuring. Essential for logic verification.",
+    parameters: {
+      type: "object",
+      properties: {
+        code: { type: "string", description: "Python source code to execute" }
       },
-      skipPermission: !0,
-      handler: async ({ query }) => (logger.info("ToolRegistry", "Executing google_search tool", { query }), query.toUpperCase().includes("ACP") && query.toUpperCase().includes("COPILOT") ? CORE_SDK_CONFIG.MOCK_ACP_SEARCH_RESULT : CORE_SDK_CONFIG.MOCK_SEARCH_NO_RESULT.replace("{query}", query))
-    }), pythonTool = defineTool("python_executor", {
-      description: "Executes industrial Python code for CAGR calculation, trend analysis, and data restructuring. Essential for logic verification.",
-      parameters: {
-        type: "object",
-        properties: {
-          code: { type: "string", description: "Python source code to execute" }
-        },
-        required: ["code"]
-      },
-      handler: async ({ code }) => {
-        let tmpFile = join4(tmpdir2(), `nexus_script_${randomUUID()}.py`);
+      required: ["code"]
+    },
+    handler: async ({ code }) => {
+      let tmpFile = join(tmpdir(), `nexus_script_${randomUUID()}.py`);
+      try {
+        logger.info("ToolRegistry", "Staging python_executor script", {
+          tmpFile,
+          timeoutMs: PYTHON_TOOL_TIMEOUT_MS
+        }), await writeFile(tmpFile, code, "utf-8");
+        let { stdout, stderr } = await execFileAsync("python", [tmpFile], {
+          timeout: PYTHON_TOOL_TIMEOUT_MS,
+          maxBuffer: PYTHON_TOOL_MAX_BUFFER_BYTES,
+          windowsHide: !0
+        }), output = (stdout + (stderr || "")).trim();
+        if (output.includes("[BRIDGE_DISPATCH]: EXCEL_CHART")) {
+          let commandLines = output.split(`
+`).filter((line) => line.includes("[BRIDGE_DISPATCH]: EXCEL_CHART")), { NexusSocketRelay: NexusSocketRelay2 } = await Promise.resolve().then(() => (init_nexus_socket(), nexus_socket_exports));
+          commandLines.forEach((line, index) => {
+            let parts = line.split("|").map((part) => part.trim());
+            if (parts.length >= 3) {
+              let title = parts[1], type = parts[2], range = parts[3] || "AUTO";
+              logger.info("ToolRegistry", "Dispatching chart from python bridge", {
+                index,
+                total: commandLines.length,
+                title,
+                chartType: type
+              }), NexusSocketRelay2.broadcast("EXCEL_CHART_EXTERNAL", { title, chartType: type, range, index });
+            }
+          });
+        }
+        return output || "Execution successful (no standard output).";
+      } catch (err) {
+        let error = err instanceof Error ? err : new Error(String(err));
+        return logger.error("ToolRegistry", "python_executor failed", {
+          tmpFile,
+          error
+        }), `Runtime Error: ${error.message}`;
+      } finally {
         try {
-          logger.info("ToolRegistry", "Staging python_executor script", {
+          await unlink(tmpFile);
+        } catch (cleanupError) {
+          logger.warn("ToolRegistry", "Failed to cleanup python temp file", {
             tmpFile,
-            timeoutMs: PYTHON_TOOL_TIMEOUT_MS
-          }), await writeFile(tmpFile, code, "utf-8");
-          let { stdout, stderr } = await execFileAsync("python", [tmpFile], {
-            timeout: PYTHON_TOOL_TIMEOUT_MS,
-            maxBuffer: PYTHON_TOOL_MAX_BUFFER_BYTES,
-            windowsHide: !0
-          }), output = (stdout + (stderr || "")).trim();
-          if (output.includes("[BRIDGE_DISPATCH]: EXCEL_CHART")) {
-            let commandLines = output.split(`
-`).filter((l) => l.includes("[BRIDGE_DISPATCH]: EXCEL_CHART")), { NexusSocketRelay: NexusSocketRelay2 } = await Promise.resolve().then(() => (init_nexus_socket(), nexus_socket_exports));
-            commandLines.forEach((line, index) => {
-              let parts = line.split("|").map((p) => p.trim());
-              if (parts.length >= 3) {
-                let title = parts[1], type = parts[2], range = parts[3] || "AUTO";
-                logger.info("ToolRegistry", "Dispatching chart from python bridge", {
-                  index,
-                  total: commandLines.length,
-                  title,
-                  chartType: type
-                }), NexusSocketRelay2.broadcast("EXCEL_CHART_EXTERNAL", { title, chartType: type, range, index });
-              }
-            });
-          }
-          return output || "Execution successful (no standard output).";
-        } catch (err) {
-          let error = err instanceof Error ? err : new Error(String(err));
-          return logger.error("ToolRegistry", "python_executor failed", {
-            tmpFile,
-            error
-          }), `Runtime Error: ${error.message}`;
-        } finally {
-          try {
-            await unlink(tmpFile);
-          } catch (e) {
-            logger.warn("ToolRegistry", "Failed to cleanup python temp file", {
-              tmpFile,
-              error: e
-            });
-          }
+            error: cleanupError
+          });
         }
       }
-    }), chartTool = defineTool("create_excel_chart", {
-      description: "Generate a professional industrial chart in the active Excel worksheet. Mandatory for all data visualization tasks.",
-      parameters: {
-        type: "object",
-        properties: {
-          title: { type: "string", description: "Chart title" },
-          chartType: { type: "string", enum: ["ColumnClustered", "Line", "Pie", "BarClustered"], description: "Type of chart" },
-          range: { type: "string", description: "Excel range address (e.g. 'A1:B10') or empty for selection." }
-        },
-        required: ["title", "chartType"]
-      },
-      skipPermission: !0,
-      handler: async ({ title, chartType, range }) => `[DISPATCH]: EXCEL_CHART_INIT | ${title} | ${chartType} | ${range || "AUTO"}`
-    });
+    }
+  });
+}
+var execFileAsync, PYTHON_TOOL_TIMEOUT_MS, PYTHON_TOOL_MAX_BUFFER_BYTES, init_python_executor_tool = __esm({
+  "src/tools/office-atoms/core/python-executor-tool.ts"() {
+    "use strict";
+    init_logger();
+    execFileAsync = promisify(execFile), PYTHON_TOOL_TIMEOUT_MS = Number(process.env.PYTHON_TOOL_TIMEOUT_MS || 15e3), PYTHON_TOOL_MAX_BUFFER_BYTES = Number(process.env.PYTHON_TOOL_MAX_BUFFER_BYTES || 1024 * 1024);
   }
 });
 
-// backend/services/copilot/molecules/pending-input-queue.ts
+// src/tools/office-atoms/office/create-excel-chart-tool.ts
+import { defineTool as defineTool3 } from "@github/copilot-sdk";
+function createExcelChartTool() {
+  return defineTool3("create_excel_chart", {
+    description: "Generate a professional industrial chart in the active Excel worksheet. Mandatory for all data visualization tasks.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Chart title" },
+        chartType: {
+          type: "string",
+          enum: ["ColumnClustered", "Line", "Pie", "BarClustered"],
+          description: "Type of chart"
+        },
+        range: {
+          type: "string",
+          description: "Excel range address (e.g. 'A1:B10') or empty for selection."
+        }
+      },
+      required: ["title", "chartType"]
+    },
+    skipPermission: !0,
+    handler: async ({ title, chartType, range }) => `[DISPATCH]: EXCEL_CHART_INIT | ${title} | ${chartType} | ${range || "AUTO"}`
+  });
+}
+var init_create_excel_chart_tool = __esm({
+  "src/tools/office-atoms/office/create-excel-chart-tool.ts"() {
+    "use strict";
+  }
+});
+
+// src/infra/services/bridge-client.ts
+async function post(path14, body) {
+  let controller = new AbortController(), timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    let response = await fetch(`${BRIDGE_URL}${path14}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      let text = await response.text().catch(() => "(no body)");
+      throw new Error(`Skill bridge HTTP ${response.status}: ${text}`);
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+async function invokeExcelSkill(payload) {
+  return logger.info(TAG, "Invoking Excel skill via bridge", { output: payload.output_path }), post("/skills/excel", payload);
+}
+async function invokePPTSkill(payload) {
+  return logger.info(TAG, "Invoking PPT skill via bridge", { output: payload.output_path }), post("/skills/ppt", payload);
+}
+async function invokeWordSkill(payload) {
+  return logger.info(TAG, "Invoking Word skill via bridge", { output: payload.output_path }), post("/skills/word", payload);
+}
+var TAG, BRIDGE_URL, REQUEST_TIMEOUT_MS, init_bridge_client = __esm({
+  "src/infra/services/bridge-client.ts"() {
+    "use strict";
+    init_logger();
+    TAG = "SkillBridgeClient", BRIDGE_URL = process.env.SKILL_BRIDGE_URL ?? "http://127.0.0.1:8765", REQUEST_TIMEOUT_MS = 12e4;
+  }
+});
+
+// src/agents/expert-excel/domain/excel-invoker.ts
+import path2 from "path";
+import { fileURLToPath } from "url";
+var __dirname, ExcelSkillInvoker, init_excel_invoker = __esm({
+  "src/agents/expert-excel/domain/excel-invoker.ts"() {
+    "use strict";
+    init_bridge_client();
+    __dirname = path2.dirname(fileURLToPath(import.meta.url)), ExcelSkillInvoker = class {
+      /**
+       * Invoke the ExcelExpert skill via the skill bridge HTTP API.
+       */
+      static async invokeExcelExpert(inputPath, outputPath, changes) {
+        return invokeExcelSkill({
+          input_path: inputPath,
+          output_path: outputPath,
+          changes
+        });
+      }
+      /**
+       * Load the expert prompt for Excel operations.
+       */
+      static getPromptPath() {
+        return path2.join(__dirname, "..", "prompts", "excel-expert.md");
+      }
+    };
+  }
+});
+
+// src/agents/expert-excel/excel.tools.ts
+var init_excel_tools = __esm({
+  "src/agents/expert-excel/excel.tools.ts"() {
+    "use strict";
+    init_excel_invoker();
+  }
+});
+
+// src/agents/expert-excel/index.ts
+import fs from "node:fs/promises";
+import path3 from "node:path";
+async function getCoreInstructions() {
+  let promptPath = path3.join(__currentDir, "prompts", "excel-expert.md");
+  try {
+    return await fs.readFile(promptPath, "utf-8");
+  } catch {
+    return "";
+  }
+}
+var __currentDir, init_expert_excel = __esm({
+  "src/agents/expert-excel/index.ts"() {
+    "use strict";
+    init_excel_tools();
+    init_excel_invoker();
+    __currentDir = path3.resolve(process.cwd(), "src", "agents", "expert-excel");
+  }
+});
+
+// src/tools/office-atoms/shared/prompt-loader.ts
+import { readFile } from "node:fs/promises";
+async function loadPrompt(promptPath) {
+  try {
+    return await readFile(promptPath, "utf-8");
+  } catch {
+    return "";
+  }
+}
+var init_prompt_loader = __esm({
+  "src/tools/office-atoms/shared/prompt-loader.ts"() {
+    "use strict";
+  }
+});
+
+// src/tools/office-atoms/shared/tool-result.ts
+function createSuccessToolResult(payload) {
+  return {
+    resultType: "success",
+    textResultForLlm: JSON.stringify(payload, null, 2)
+  };
+}
+var init_tool_result = __esm({
+  "src/tools/office-atoms/shared/tool-result.ts"() {
+    "use strict";
+  }
+});
+
+// src/tools/office-atoms/shared/office-context.ts
+function pickString(...values) {
+  for (let value of values)
+    if (typeof value == "string" && value.trim().length > 0)
+      return value.trim();
+  return "";
+}
+function normalizeHost(host) {
+  return /powerpoint|ppt/i.test(host) ? "PowerPoint" : /excel|spreadsheet/i.test(host) ? "Excel" : /word|document/i.test(host) ? "Word" : host || "Word";
+}
+function truncate(value, maxLength) {
+  return value.length <= maxLength ? value : `${value.slice(0, maxLength - 3)}...`;
+}
+function mergeOfficeContext(baseContext, overrideContext) {
+  let merged = {
+    ...baseContext ?? {},
+    ...overrideContext ?? {}
+  }, host = normalizeHost(pickString(merged.host) || "Word"), selectedText = pickString(
+    merged.selectedText,
+    merged.selectionText,
+    merged.selection
+  ), documentText = pickString(
+    merged.documentText,
+    merged.fullBody,
+    merged.surroundingContent
+  );
+  return {
+    host,
+    selectedText,
+    documentText,
+    selectionPreview: truncate(selectedText, 400),
+    documentPreview: truncate(documentText, 1200),
+    hasSelection: selectedText.length > 0,
+    hasDocument: documentText.length > 0
+  };
+}
+function isHostCompatible(expectedHost, actualHost) {
+  let normalizedExpected = normalizeHost(expectedHost).toLowerCase(), normalizedActual = normalizeHost(actualHost).toLowerCase();
+  return normalizedExpected === normalizedActual;
+}
+var init_office_context = __esm({
+  "src/tools/office-atoms/shared/office-context.ts"() {
+    "use strict";
+  }
+});
+
+// src/tools/office-atoms/shared/office-skill-tool.ts
+import { defineTool as defineTool4 } from "@github/copilot-sdk";
+function createOfficeSkillTool(definition, sessionOfficeContext) {
+  return defineTool4(definition.name, {
+    description: definition.description,
+    skipPermission: !0,
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "The user intent or task to solve in the Office host."
+        },
+        host: {
+          type: "string",
+          description: "Optional host override such as Word, Excel, or PowerPoint."
+        },
+        selectionText: {
+          type: "string",
+          description: "Optional selection text override when the active selection changed."
+        },
+        documentText: {
+          type: "string",
+          description: "Optional document body or surrounding content override."
+        },
+        includePrompt: {
+          type: "boolean",
+          description: "When false, omit the full expert prompt from the tool response.",
+          default: !0
+        }
+      },
+      required: ["query"]
+    },
+    handler: async ({ query, host, selectionText, documentText, includePrompt = !0 }) => {
+      let officeContext = mergeOfficeContext(sessionOfficeContext, {
+        host,
+        selectionText,
+        documentText
+      }), prompt = includePrompt ? await loadPrompt(definition.promptPath) : "";
+      return createSuccessToolResult({
+        status: "office_skill_ready",
+        domain: definition.domain,
+        skill: definition.skillName,
+        category: definition.category,
+        query,
+        officeContext: {
+          host: officeContext.host,
+          hostCompatible: isHostCompatible(definition.recommendedHost, officeContext.host),
+          hasSelection: officeContext.hasSelection,
+          hasDocument: officeContext.hasDocument,
+          selectionPreview: officeContext.selectionPreview,
+          documentPreview: officeContext.documentPreview
+        },
+        recommendedHost: definition.recommendedHost,
+        promptAvailable: includePrompt,
+        prompt: includePrompt ? prompt : void 0,
+        usageHints: definition.usageHints
+      });
+    }
+  });
+}
+var init_office_skill_tool = __esm({
+  "src/tools/office-atoms/shared/office-skill-tool.ts"() {
+    "use strict";
+    init_prompt_loader();
+    init_tool_result();
+    init_office_context();
+  }
+});
+
+// src/tools/office-atoms/office/excel-skill-tool.ts
+function createExcelSkillTool(sessionOfficeContext) {
+  return createOfficeSkillTool(
+    {
+      name: "excel_skill",
+      description: "Provide the project Excel expert skill so the agent can reason about tables, formulas, pivots, and chart-ready analysis.",
+      domain: "excel",
+      skillName: "ExcelExpert",
+      category: "excel_data",
+      recommendedHost: "Excel",
+      promptPath: ExcelSkillInvoker.getPromptPath(),
+      usageHints: [
+        "Use for spreadsheet transformations, formula planning, pivot logic, and analytical summaries.",
+        "Pass selectionText with the active range values when you need cell-aware reasoning.",
+        "Pair with create_excel_chart when the answer should also materialize as a chart."
+      ]
+    },
+    sessionOfficeContext
+  );
+}
+var init_excel_skill_tool = __esm({
+  "src/tools/office-atoms/office/excel-skill-tool.ts"() {
+    "use strict";
+    init_expert_excel();
+    init_office_skill_tool();
+  }
+});
+
+// src/agents/expert-ppt/domain/ppt-invoker.ts
+import path4 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+var __dirname2, PPTSkillInvoker, init_ppt_invoker = __esm({
+  "src/agents/expert-ppt/domain/ppt-invoker.ts"() {
+    "use strict";
+    init_bridge_client();
+    __dirname2 = path4.dirname(fileURLToPath2(import.meta.url)), PPTSkillInvoker = class {
+      /**
+       * Invoke the PPTExpert skill via the skill bridge HTTP API.
+       */
+      static async invokePPTExpert(inputPath, outputPath, changes) {
+        return invokePPTSkill({
+          input_path: inputPath,
+          output_path: outputPath,
+          slides: changes
+        });
+      }
+      /**
+       * Load the expert prompt for PPT design operations.
+       */
+      static getPromptPath() {
+        return path4.join(__dirname2, "..", "prompts", "ppt-master.md");
+      }
+    };
+  }
+});
+
+// src/agents/expert-ppt/ppt.tools.ts
+var init_ppt_tools = __esm({
+  "src/agents/expert-ppt/ppt.tools.ts"() {
+    "use strict";
+    init_ppt_invoker();
+  }
+});
+
+// src/agents/expert-ppt/index.ts
+import fs2 from "node:fs/promises";
+import path5 from "node:path";
+async function getCoreInstructions2() {
+  let promptPath = path5.join(__currentDir2, "prompts", "ppt-master.md");
+  try {
+    return await fs2.readFile(promptPath, "utf-8");
+  } catch {
+    return "";
+  }
+}
+var __currentDir2, init_expert_ppt = __esm({
+  "src/agents/expert-ppt/index.ts"() {
+    "use strict";
+    init_ppt_tools();
+    init_ppt_invoker();
+    __currentDir2 = path5.resolve(process.cwd(), "src", "agents", "expert-ppt");
+  }
+});
+
+// src/tools/office-atoms/office/powerpoint-skill-tool.ts
+function createPowerPointSkillTool(sessionOfficeContext) {
+  return createOfficeSkillTool(
+    {
+      name: "powerpoint_skill",
+      description: "Provide the project PowerPoint expert skill so the agent can generate slide structures, layouts, and presentation-ready content.",
+      domain: "powerpoint",
+      skillName: "PPT-Master",
+      category: "ppt_design",
+      recommendedHost: "PowerPoint",
+      promptPath: PPTSkillInvoker.getPromptPath(),
+      usageHints: [
+        "Use for slide outlines, deck narratives, title-body layouts, and presentation design moves.",
+        "Pass selectionText when the current slide already contains source text or speaker notes.",
+        "Use the returned prompt and context to stay aligned with the project's slide design persona."
+      ]
+    },
+    sessionOfficeContext
+  );
+}
+var init_powerpoint_skill_tool = __esm({
+  "src/tools/office-atoms/office/powerpoint-skill-tool.ts"() {
+    "use strict";
+    init_expert_ppt();
+    init_office_skill_tool();
+  }
+});
+
+// src/agents/expert-word/domain/word-invoker.ts
+import path6 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+var __dirname3, WordSkillInvoker, init_word_invoker = __esm({
+  "src/agents/expert-word/domain/word-invoker.ts"() {
+    "use strict";
+    init_bridge_client();
+    __dirname3 = path6.dirname(fileURLToPath3(import.meta.url)), WordSkillInvoker = class {
+      /**
+       * Invoke the WordExpert skill via the skill bridge HTTP API.
+       */
+      static async invokeWordExpert(inputPath, outputPath, changes) {
+        return invokeWordSkill({
+          input_path: inputPath,
+          output_path: outputPath,
+          edits: changes
+        });
+      }
+      /**
+       * Load the expert prompt for Word document operations.
+       */
+      static getPromptPath() {
+        return path6.join(__dirname3, "..", "prompts", "word-expert.md");
+      }
+    };
+  }
+});
+
+// src/agents/expert-word/word.tools.ts
+var init_word_tools = __esm({
+  "src/agents/expert-word/word.tools.ts"() {
+    "use strict";
+    init_word_invoker();
+  }
+});
+
+// src/agents/expert-word/index.ts
+import fs3 from "node:fs/promises";
+import path7 from "node:path";
+async function getCoreInstructions3() {
+  let promptPath = path7.join(__currentDir3, "prompts", "word-expert.md");
+  try {
+    return await fs3.readFile(promptPath, "utf-8");
+  } catch {
+    return "";
+  }
+}
+var __currentDir3, init_expert_word = __esm({
+  "src/agents/expert-word/index.ts"() {
+    "use strict";
+    init_word_tools();
+    init_word_invoker();
+    __currentDir3 = path7.resolve(process.cwd(), "src", "agents", "expert-word");
+  }
+});
+
+// src/tools/office-atoms/office/word-skill-tool.ts
+function createWordSkillTool(sessionOfficeContext) {
+  return createOfficeSkillTool(
+    {
+      name: "word_skill",
+      description: "Provide the project Word expert skill so the agent can draft, rewrite, and structure document output for Word.",
+      domain: "word",
+      skillName: "WordExpert",
+      category: "word_creative",
+      recommendedHost: "Word",
+      promptPath: WordSkillInvoker.getPromptPath(),
+      usageHints: [
+        "Use for reports, memos, executive summaries, rewriting, and document formatting.",
+        "Pass updated selectionText when the active paragraph changed after the request started.",
+        "Combine with officeContext to keep tone and structure aligned with the current document."
+      ]
+    },
+    sessionOfficeContext
+  );
+}
+var init_word_skill_tool = __esm({
+  "src/tools/office-atoms/office/word-skill-tool.ts"() {
+    "use strict";
+    init_expert_word();
+    init_office_skill_tool();
+  }
+});
+
+// src/tools/office-atoms/index.ts
+function getSessionTools(sessionOfficeContext) {
+  return [
+    createGoogleSearchTool(),
+    createPythonExecutorTool(),
+    createExcelChartTool(),
+    createWordSkillTool(sessionOfficeContext),
+    createExcelSkillTool(sessionOfficeContext),
+    createPowerPointSkillTool(sessionOfficeContext)
+  ];
+}
+var init_office_atoms = __esm({
+  "src/tools/office-atoms/index.ts"() {
+    "use strict";
+    init_google_search_tool();
+    init_python_executor_tool();
+    init_create_excel_chart_tool();
+    init_excel_skill_tool();
+    init_powerpoint_skill_tool();
+    init_word_skill_tool();
+  }
+});
+
+// src/shared/molecules/ai-core/tool-registry.ts
+var init_tool_registry = __esm({
+  "src/shared/molecules/ai-core/tool-registry.ts"() {
+    "use strict";
+    init_office_atoms();
+  }
+});
+
+// src/shared/molecules/ai-core/pending-input-queue.ts
 function settlePendingInput(sessionId, response) {
   let entry = pendingInputs.get(sessionId);
   return entry ? (pendingInputs.delete(sessionId), clearTimeout(entry.timeout), entry.abortCleanup?.(), entry.resolve(response), !0) : !1;
@@ -960,7 +1179,7 @@ function deletePendingInput(sessionId) {
   settlePendingInput(sessionId, USER_INPUT_CANCELLED_RESPONSE) && logger.info("PendingInput", "Cleared pending user input during session cleanup", { sessionId });
 }
 var MAX_PENDING, pendingInputs, USER_INPUT_TIMEOUT_RESPONSE, USER_INPUT_CANCELLED_RESPONSE, USER_INPUT_EVICTED_RESPONSE, init_pending_input_queue = __esm({
-  "backend/services/copilot/molecules/pending-input-queue.ts"() {
+  "src/shared/molecules/ai-core/pending-input-queue.ts"() {
     "use strict";
     init_core_config();
     init_logger();
@@ -977,29 +1196,11 @@ var MAX_PENDING, pendingInputs, USER_INPUT_TIMEOUT_RESPONSE, USER_INPUT_CANCELLE
   }
 });
 
-// backend/services/copilot/atoms/tool-surface-policy.ts
-function applyLeastPrivilegeToolSurface(sessionOptions) {
-  return ENABLE_BUILTIN_TOOLS ? (logger.warn("SDKToolSurface", "Built-in SDK tools are enabled by environment override"), {
-    availableTools: sessionOptions.availableTools,
-    excludedTools: sessionOptions.excludedTools
-  }) : {
-    availableTools: [],
-    excludedTools: void 0
-  };
-}
-var ENABLE_BUILTIN_TOOLS, init_tool_surface_policy = __esm({
-  "backend/services/copilot/atoms/tool-surface-policy.ts"() {
-    "use strict";
-    init_logger();
-    ENABLE_BUILTIN_TOOLS = process.env.COPILOT_ENABLE_BUILTIN_TOOLS === "true";
-  }
-});
-
-// backend/services/copilot/molecules/session-lifecycle.ts
+// src/shared/molecules/ai-core/session-lifecycle.ts
 import crypto from "crypto";
-function mergeSessionTools(sessionTools) {
+function mergeSessionTools(sessionOfficeContext, sessionTools) {
   let merged = /* @__PURE__ */ new Map();
-  for (let tool of getSessionTools())
+  for (let tool of getSessionTools(sessionOfficeContext))
     merged.set(tool.name, tool);
   for (let tool of sessionTools ?? [])
     merged.set(tool.name, tool);
@@ -1008,7 +1209,7 @@ function mergeSessionTools(sessionTools) {
 function generateSessionId() {
   return crypto.randomUUID();
 }
-async function createSession(client, sessionOptions, method, sessionId, onChunk, signal) {
+async function createSession(client, sessionOptions, method, sessionId, onChunk, signal, officeContext) {
   let sessionTimeout, originalPreToolUse = sessionOptions.hooks?.onPreToolUse, originalUserInputRequest = sessionOptions.onUserInputRequest, toolSurface = applyLeastPrivilegeToolSurface(sessionOptions), augmentedOptions = {
     ...sessionOptions,
     clientName: sessionOptions.clientName || "nexus-center-office-addin",
@@ -1016,7 +1217,7 @@ async function createSession(client, sessionOptions, method, sessionId, onChunk,
     sessionId,
     ...toolSurface,
     onPermissionRequest: sessionOptions.onPermissionRequest || handleCopilotPermissionRequest,
-    tools: mergeSessionTools(sessionOptions.tools),
+    tools: mergeSessionTools(officeContext, sessionOptions.tools),
     hooks: {
       ...sessionOptions.hooks,
       onPreToolUse: async (input, invocation) => (onChunk && onChunk(`${CORE_SDK_CONFIG.PROGRESS_FEEDBACK_PREFIX}${input.toolName}${CORE_SDK_CONFIG.PROGRESS_FEEDBACK_SUFFIX}`), originalPreToolUse?.(input, invocation))
@@ -1070,7 +1271,7 @@ async function cleanupAllSessions() {
   activeSessions.clear();
 }
 var activeSessions, init_session_lifecycle = __esm({
-  "backend/services/copilot/molecules/session-lifecycle.ts"() {
+  "src/shared/molecules/ai-core/session-lifecycle.ts"() {
     "use strict";
     init_core_config();
     init_permission_policy();
@@ -1082,9 +1283,857 @@ var activeSessions, init_session_lifecycle = __esm({
   }
 });
 
-// backend/services/copilot/molecules/adaptive-watchdog.ts
+// src/shared/molecules/ai-core/client-manager.ts
+var client_manager_exports = {};
+__export(client_manager_exports, {
+  ClientManager: () => ClientManager,
+  cleanupAllSessions: () => cleanupAllSessions2,
+  getOrCreateClient: () => getOrCreateClient,
+  removeClient: () => removeClient,
+  removeClientByParams: () => removeClientByParams,
+  stopAllClients: () => stopAllClients,
+  warmUpClient: () => warmUpClient
+});
+import { CopilotClient } from "@github/copilot-sdk";
+var FAILURE_THRESHOLD, RECOVERY_TIMEOUT_MS, ClientManager, getOrCreateClient, stopAllClients, removeClientByParams, removeClient, warmUpClient, cleanupAllSessions2, init_client_manager = __esm({
+  "src/shared/molecules/ai-core/client-manager.ts"() {
+    "use strict";
+    init_core_config();
+    init_idle_cleaner();
+    init_logger();
+    init_session_lifecycle();
+    FAILURE_THRESHOLD = 5, RECOVERY_TIMEOUT_MS = 6e4, ClientManager = class _ClientManager {
+      static clients = /* @__PURE__ */ new Map();
+      static pendingClients = /* @__PURE__ */ new Map();
+      // PR-004: Per-key circuit breakers
+      static circuitBreakers = /* @__PURE__ */ new Map();
+      // PR-004: Global concurrency semaphore — max 10 concurrent Copilot calls
+      static MAX_CONCURRENT = 10;
+      static activeRequests = 0;
+      static semaphoreQueue = [];
+      static CLIENT_TTL = 1800 * 1e3;
+      // 30 minutes
+      static HEALTH_CHECK_INTERVAL = 300 * 1e3;
+      // 5 minutes
+      static healthCheckTimer;
+      // ---------------------------------------------------------------------------
+      // PR-004: Semaphore helpers
+      // ---------------------------------------------------------------------------
+      static async acquireSemaphore() {
+        if (_ClientManager.activeRequests < _ClientManager.MAX_CONCURRENT) {
+          _ClientManager.activeRequests++;
+          return;
+        }
+        return new Promise((resolve) => {
+          _ClientManager.semaphoreQueue.push(resolve);
+        });
+      }
+      static releaseSemaphore() {
+        let next = _ClientManager.semaphoreQueue.shift();
+        next ? next() : _ClientManager.activeRequests = Math.max(0, _ClientManager.activeRequests - 1);
+      }
+      // ---------------------------------------------------------------------------
+      // PR-004: Circuit breaker helpers
+      // ---------------------------------------------------------------------------
+      static getBreaker(key) {
+        return _ClientManager.circuitBreakers.has(key) || _ClientManager.circuitBreakers.set(key, { state: "CLOSED", failureCount: 0, lastFailureTime: 0 }), _ClientManager.circuitBreakers.get(key);
+      }
+      static checkBreaker(key) {
+        let breaker2 = _ClientManager.getBreaker(key);
+        if (breaker2.state === "OPEN") {
+          let elapsed = Date.now() - breaker2.lastFailureTime;
+          if (elapsed >= RECOVERY_TIMEOUT_MS)
+            breaker2.state = "HALF_OPEN", logger.info("ClientManager", "Circuit HALF_OPEN \u2014 attempting recovery probe", { key });
+          else
+            throw new Error(`Circuit breaker OPEN for ${key}. Retry after ${Math.ceil((RECOVERY_TIMEOUT_MS - elapsed) / 1e3)}s.`);
+        }
+      }
+      static recordSuccess(key) {
+        let breaker2 = _ClientManager.getBreaker(key);
+        breaker2.failureCount = 0, breaker2.state = "CLOSED";
+      }
+      static recordFailure(key) {
+        let breaker2 = _ClientManager.getBreaker(key);
+        breaker2.failureCount++, breaker2.lastFailureTime = Date.now(), (breaker2.state === "HALF_OPEN" || breaker2.failureCount >= FAILURE_THRESHOLD) && (breaker2.state = "OPEN", logger.warn("ClientManager", "Circuit OPEN \u2014 further requests blocked", {
+          key,
+          failureCount: breaker2.failureCount
+        }));
+      }
+      // ---------------------------------------------------------------------------
+      // Existing helpers
+      // ---------------------------------------------------------------------------
+      static normalizeCacheKeyPart(value) {
+        return Array.isArray(value) ? value.map((item) => this.normalizeCacheKeyPart(item)) : !value || typeof value != "object" ? typeof value == "function" ? "[function]" : value : Object.keys(value).sort().reduce((normalized, key) => (normalized[key] = this.normalizeCacheKeyPart(value[key]), normalized), {});
+      }
+      static buildClientKey(method, options) {
+        return `${method}-${JSON.stringify(this.normalizeCacheKeyPart(options))}`;
+      }
+      /**
+       * Get or create a client with connection pooling, circuit breaker, and semaphore.
+       */
+      static async getClient(method, options) {
+        let clientKey = this.buildClientKey(method, options), now = Date.now();
+        this.checkBreaker(clientKey);
+        let existing = this.clients.get(clientKey);
+        if (existing && existing.healthy && now - existing.created < this.CLIENT_TTL)
+          return existing.lastUsed = now, IdleCleaner.touch(clientKey), this.recordSuccess(clientKey), existing.client;
+        let pendingPromise = this.pendingClients.get(clientKey);
+        if (pendingPromise)
+          return logger.info("ClientManager", "Waiting for pending client creation", { method }), pendingPromise;
+        existing && await this.cleanupClient(clientKey);
+        let createClientPromise = (async () => {
+          let client, startTimer;
+          await _ClientManager.acquireSemaphore();
+          try {
+            logger.info("ClientManager", "Starting new Copilot client", { method, clientKey });
+            let startTimeoutMs = method === "gemini_cli" ? CORE_SDK_CONFIG.GEMINI_CLIENT_START_TIMEOUT_MS : CORE_SDK_CONFIG.CLIENT_START_TIMEOUT_MS;
+            client = new CopilotClient(options);
+            let startPromise = client.start(), timeoutPromise = new Promise((_, reject) => {
+              startTimer = setTimeout(
+                () => reject(new Error(`ACP Client Timeout (${method}): Agent failed to start/handshake within ${Math.round(startTimeoutMs / 1e3)}s`)),
+                startTimeoutMs
+              );
+            });
+            return await Promise.race([startPromise, timeoutPromise]), this.clients.set(clientKey, {
+              client,
+              method,
+              created: Date.now(),
+              lastUsed: Date.now(),
+              healthy: !0
+            }), IdleCleaner.touch(clientKey), this.healthCheckTimer || (this.startHealthMonitoring(), IdleCleaner.startScanning((key) => this.cleanupClient(key))), _ClientManager.recordSuccess(clientKey), client;
+          } catch (error) {
+            throw client && await client.stop().catch(() => {
+            }), _ClientManager.recordFailure(clientKey), logger.error("ClientManager", "Failed to start Copilot client", { method, clientKey, error }), error;
+          } finally {
+            startTimer && clearTimeout(startTimer), this.pendingClients.delete(clientKey), _ClientManager.releaseSemaphore();
+          }
+        })();
+        return this.pendingClients.set(clientKey, createClientPromise), createClientPromise;
+      }
+      static startHealthMonitoring() {
+        this.healthCheckTimer = setInterval(async () => {
+          await this.performHealthCheck();
+        }, this.HEALTH_CHECK_INTERVAL), this.healthCheckTimer.unref();
+      }
+      static async performHealthCheck() {
+        let now = Date.now(), clientsToRemove = [];
+        for (let [key, clientInfo] of this.clients.entries()) {
+          if (now - clientInfo.created > this.CLIENT_TTL) {
+            clientsToRemove.push(key);
+            continue;
+          }
+          try {
+            await clientInfo.client.ping(), clientInfo.healthy = !0, this.recordSuccess(key);
+          } catch (error) {
+            logger.warn("ClientManager", "Client health check failed", { key, method: clientInfo.method, error }), clientInfo.healthy = !1, this.recordFailure(key), now - clientInfo.lastUsed > 6e4 && clientsToRemove.push(key);
+          }
+        }
+        for (let key of clientsToRemove)
+          await this.cleanupClient(key);
+      }
+      static async cleanupClient(key) {
+        let clientInfo = this.clients.get(key);
+        if (clientInfo) {
+          try {
+            await clientInfo.client.stop();
+          } catch (error) {
+            logger.warn("ClientManager", "Failed to stop Copilot client cleanly", {
+              key,
+              method: clientInfo.method,
+              error
+            });
+          }
+          this.clients.delete(key), IdleCleaner.remove(key);
+        }
+      }
+      static async cleanupByParams(method, options) {
+        let key = this.buildClientKey(method, options);
+        await this.cleanupClient(key);
+      }
+      static async cleanupAll() {
+        this.healthCheckTimer && (clearInterval(this.healthCheckTimer), this.healthCheckTimer = void 0), IdleCleaner.stopScanning();
+        let promises = Array.from(this.clients.keys()).map((k) => this.cleanupClient(k));
+        await Promise.allSettled(promises);
+      }
+      /**
+       * Warm up a client by creating it without an immediate session.
+       * Useful for background connection initialization.
+       */
+      static async warmUp(method) {
+        try {
+          logger.info("ClientManager", "Warming up client", { method }), await this.getClient(method, {});
+        } catch (error) {
+          logger.warn("ClientManager", "Client warm-up failed (non-critical)", { method, error });
+        }
+      }
+    }, getOrCreateClient = ClientManager.getClient.bind(ClientManager), stopAllClients = ClientManager.cleanupAll.bind(ClientManager), removeClientByParams = ClientManager.cleanupByParams.bind(ClientManager), removeClient = ClientManager.cleanupClient.bind(ClientManager), warmUpClient = ClientManager.warmUp.bind(ClientManager), cleanupAllSessions2 = cleanupAllSessions;
+  }
+});
+
+// src/shared/atoms/ai-core/formatters.ts
+function extractResponseText(event) {
+  if (!event) return "";
+  let e = event, content = e.result?.content || e.data?.content || e.data?.text || e.content;
+  return content || (typeof event == "string" ? event : "");
+}
+async function emitChunks(text, onChunk) {
+  let segments = text.split(/([\s,.!?;]+)/);
+  for (let segment of segments)
+    segment && onChunk(segment), await new Promise((r) => setTimeout(r, 10));
+}
+var init_formatters = __esm({
+  "src/shared/atoms/ai-core/formatters.ts"() {
+    "use strict";
+  }
+});
+
+// src/shared/molecules/ai-core/options/copilot-cli-options.ts
+import * as path8 from "node:path";
+var projectRoot2, buildCopilotCliOptions, init_copilot_cli_options = __esm({
+  "src/shared/molecules/ai-core/options/copilot-cli-options.ts"() {
+    "use strict";
+    init_env();
+    init_permission_policy();
+    projectRoot2 = process.cwd(), buildCopilotCliOptions = (cfg) => {
+      let modelsToken = cfg.githubToken || env_default.getModelsToken(), apiBase = env_default.COPILOT_API_URL;
+      return {
+        clientOptions: {
+          // Windows: JS files are not executables! Use node.exe explicitly.
+          cliPath: process.execPath,
+          useStdio: !0,
+          cliArgs: [
+            "--no-warnings",
+            path8.join(projectRoot2, "node_modules/@github/copilot/index.js")
+          ],
+          env: {
+            ...process.env,
+            NODE_NO_WARNINGS: "1",
+            ...apiBase ? {
+              COPILOT_API_URL: apiBase,
+              GITHUB_API_URL: apiBase
+            } : {},
+            GITHUB_MODELS_API_VERSION: env_default.GITHUB_MODELS_API_VERSION,
+            GITHUB_TOKEN: modelsToken || process.env.GITHUB_TOKEN,
+            GH_TOKEN: modelsToken || process.env.GH_TOKEN
+          }
+        },
+        sessionOptions: {
+          model: cfg.model,
+          streaming: cfg.streaming,
+          onPermissionRequest: handleCopilotPermissionRequest,
+          provider: apiBase ? {
+            type: "openai",
+            baseUrl: apiBase,
+            bearerToken: modelsToken || void 0
+          } : void 0
+        }
+      };
+    };
+  }
+});
+
+// src/shared/molecules/ai-core/options/gemini-cli-options.ts
+import * as path9 from "node:path";
+import * as fs4 from "node:fs";
+import * as os from "node:os";
+var projectRoot3, buildGeminiCliOptions, init_gemini_cli_options = __esm({
+  "src/shared/molecules/ai-core/options/gemini-cli-options.ts"() {
+    "use strict";
+    init_env();
+    init_permission_policy();
+    init_logger();
+    projectRoot3 = process.cwd(), buildGeminiCliOptions = (cfg) => {
+      let wrapperEntry = path9.join(projectRoot3, "src/infra/scripts/gemini-wrapper-v2.js"), availableModels = env_default.AVAILABLE_MODELS_GEMINI.map((modelId) => ({
+        id: modelId,
+        name: modelId,
+        capabilities: {
+          supports: {
+            vision: !1,
+            reasoningEffort: !1
+          },
+          limits: {
+            max_context_window_tokens: 1048576
+          }
+        }
+      }));
+      return {
+        clientOptions: {
+          cliPath: process.execPath,
+          useStdio: !0,
+          cliArgs: [
+            "--no-warnings",
+            wrapperEntry
+          ],
+          env: (() => {
+            let { GEMINI_API_KEY: _inherited, ...cleanEnv } = process.env, explicitKey = cfg.geminiKey || env_default.GEMINI_API_KEY || "", cloudAuthEnv = {}, authJson = process.env.GEMINI_CLI_AUTH_JSON;
+            if (authJson && !explicitKey)
+              try {
+                let tempAuthPath = path9.join(os.tmpdir(), "gemini-auth-token.json");
+                fs4.writeFileSync(tempAuthPath, authJson), logger.info("GeminiCliOptions", "Injected temporary cloud auth credentials for Gemini CLI", {
+                  tempAuthPath
+                }), cloudAuthEnv = {
+                  GOOGLE_APPLICATION_CREDENTIALS: tempAuthPath,
+                  // Force the CLI to use this path instead of ~/.gemini/auth
+                  GEMINI_AUTH_PATH: tempAuthPath
+                };
+              } catch (e) {
+                logger.error("GeminiCliOptions", "Failed to write temporary cloud auth credentials", {
+                  error: e
+                });
+              }
+            return {
+              ...cleanEnv,
+              ...cloudAuthEnv,
+              NODE_NO_WARNINGS: process.env.NODE_NO_WARNINGS || "1",
+              ...explicitKey ? { GEMINI_API_KEY: explicitKey } : {}
+            };
+          })(),
+          onListModels: async () => availableModels
+        },
+        sessionOptions: {
+          streaming: !!cfg.streaming,
+          // Default to gemini-2.5-flash as defined in our ModelManager
+          model: cfg.model || "gemini-2.5-flash",
+          onPermissionRequest: handleCopilotPermissionRequest
+        }
+      };
+    };
+  }
+});
+
+// src/shared/molecules/ai-core/options/azure-byok-options.ts
+import * as path10 from "node:path";
+var projectRoot4, buildAzureByokOptions, init_azure_byok_options = __esm({
+  "src/shared/molecules/ai-core/options/azure-byok-options.ts"() {
+    "use strict";
+    init_env();
+    init_permission_policy();
+    init_core_config();
+    projectRoot4 = process.cwd(), buildAzureByokOptions = (cfg) => {
+      let azureKey = cfg.azure?.apiKey || env_default.AZURE_OPENAI_API_KEY, azureEndpoint = cfg.azure?.endpoint || env_default.AZURE_OPENAI_ENDPOINT, azureDeployment = cfg.azure?.deployment || env_default.AZURE_OPENAI_DEPLOYMENT, provider = {
+        type: "azure",
+        baseUrl: azureEndpoint || "",
+        apiKey: azureKey || void 0,
+        azure: { apiVersion: CORE_SDK_CONFIG.AZURE_API_VERSION }
+      };
+      return {
+        clientOptions: {
+          // Windows: JS files are not executables! Use node.exe explicitly.
+          cliPath: process.execPath,
+          useStdio: !0,
+          cliArgs: [
+            path10.join(projectRoot4, "src/infra/scripts/core/acp-adaptive-shim.cjs"),
+            path10.join(projectRoot4, "node_modules/@github/copilot/index.js")
+          ]
+        },
+        sessionOptions: {
+          model: azureDeployment || cfg.model,
+          streaming: cfg.streaming,
+          provider,
+          onPermissionRequest: handleCopilotPermissionRequest
+        }
+      };
+    };
+  }
+});
+
+// src/shared/molecules/ai-core/options/remote-cli-options.ts
+var buildRemoteCliOptions, init_remote_cli_options = __esm({
+  "src/shared/molecules/ai-core/options/remote-cli-options.ts"() {
+    "use strict";
+    init_core_config();
+    init_permission_policy();
+    buildRemoteCliOptions = (cfg) => ({
+      clientOptions: {
+        cliUrl: `localhost:${cfg.remotePort || CORE_SDK_CONFIG.DEFAULT_REMOTE_PORT}`,
+        cliPath: "copilot"
+      },
+      sessionOptions: {
+        model: cfg.model,
+        streaming: cfg.streaming,
+        onPermissionRequest: handleCopilotPermissionRequest
+      }
+    });
+  }
+});
+
+// src/shared/molecules/ai-core/option-resolver.ts
+function resolveMethodFromContext(modelName, azureInfo, _isExplicitCli = !1) {
+  if (modelName.toLowerCase().includes("gemini")) return "gemini_cli";
+  let hasAzureKey = !!(azureInfo?.apiKey || env_default.AZURE_OPENAI_API_KEY), hasRemotePort = !!env_default.COPILOT_AGENT_PORT;
+  return hasAzureKey ? "azure_byok" : hasRemotePort ? "remote_cli" : "copilot_cli";
+}
+function resolveACPOptions(cfg) {
+  switch (cfg.method) {
+    case "gemini_cli":
+      return buildGeminiCliOptions(cfg);
+    case "copilot_cli":
+      return buildCopilotCliOptions(cfg);
+    case "azure_byok":
+      return buildAzureByokOptions(cfg);
+    case "remote_cli":
+      return buildRemoteCliOptions(cfg);
+    default:
+      throw new Error(`Unknown ACP connection method: ${cfg.method}`);
+  }
+}
+var init_option_resolver = __esm({
+  "src/shared/molecules/ai-core/option-resolver.ts"() {
+    "use strict";
+    init_env();
+    init_copilot_cli_options();
+    init_gemini_cli_options();
+    init_azure_byok_options();
+    init_remote_cli_options();
+  }
+});
+
+// src/agents/skills/atoms/intent-classifier.ts
+function keywordClassify(query) {
+  let q = query.toLowerCase();
+  for (let rule of KEYWORD_RULES)
+    if (rule.keywords.some((kw) => q.includes(kw)))
+      return rule.label;
+  return "vector_search";
+}
+async function classifyIntent(query, options) {
+  let { token, timeoutMs = 5e3 } = options ?? {};
+  if (!token)
+    return keywordClassify(query);
+  try {
+    let fetchFn = (await import("node-fetch")).default, controller = new AbortController(), tid = setTimeout(() => controller.abort(), timeoutMs), response = await fetchFn("https://models.inference.ai.azure.com/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: CLASSIFIER_SYSTEM_PROMPT },
+          { role: "user", content: query }
+        ],
+        max_tokens: 16,
+        temperature: 0
+      }),
+      signal: controller.signal
+    });
+    if (clearTimeout(tid), !response.ok)
+      throw new Error(`HTTP ${response.status}`);
+    let raw = (await response.json()).choices?.[0]?.message?.content?.trim().replace(/^"|"$/g, "") ?? "", VALID_LABELS = [
+      "galaxy_graph",
+      "vision",
+      "dev_sync",
+      "ppt",
+      "excel",
+      "word",
+      "cross_app",
+      "vector_search",
+      "recap",
+      "insight"
+    ], label = raw;
+    if (VALID_LABELS.includes(label))
+      return label;
+  } catch {
+  }
+  return keywordClassify(query);
+}
+var KEYWORD_RULES, CLASSIFIER_SYSTEM_PROMPT, init_intent_classifier = __esm({
+  "src/agents/skills/atoms/intent-classifier.ts"() {
+    "use strict";
+    KEYWORD_RULES = [
+      { keywords: ["related to", "impact", "connection", "dependency", "what breaks"], label: "galaxy_graph" },
+      { keywords: ["diagram", "flowchart", "screenshot", "architecture diagram"], label: "vision" },
+      { keywords: ["github", "issue", "pull request", " pr ", "progress report"], label: "dev_sync" },
+      { keywords: ["ppt", "slide", "presentation", "deck", "powerpoint"], label: "ppt" },
+      { keywords: ["excel", "sheet", "spreadsheet", "formula", "pivot", "cell range"], label: "excel" },
+      { keywords: ["data", "report", "table", "chart", "rows", "columns"], label: "excel" },
+      { keywords: ["word", "document", "write", "memo", "report writing", "paragraph"], label: "word" },
+      { keywords: ["sync", "export to", "from excel", "to ppt", "to word", "bridge", "cross-app", "transfer"], label: "cross_app" },
+      { keywords: ["recap", "summarize", "summary", "what did we do", "\u7E3D\u7D50", "\u6458\u8981", "\u525B\u624D", "what changed", "milestone"], label: "recap" },
+      { keywords: ["insight", "analyse", "analyze", "what is the status", "document status", "\u6D1E\u5BDF", "\u5206\u6790", "zenith insight", "current state"], label: "insight" }
+    ];
+    CLASSIFIER_SYSTEM_PROMPT = `You are an intent classification engine for the Nexus Office Add-in.
+Given a user query, output ONLY one of these JSON labels (no explanation, no markdown, no extra text):
+"galaxy_graph" | "vision" | "dev_sync" | "ppt" | "excel" | "word" | "cross_app" | "vector_search" | "recap" | "insight"
+
+Label definitions:
+- galaxy_graph: relationship/impact/dependency analysis
+- vision: image, diagram, screenshot, or visual interpretation
+- dev_sync: GitHub issues, pull requests, or project progress
+- ppt: PowerPoint slides, presentations, decks
+- excel: Excel spreadsheets, formulas, data tables, charts
+- word: Word documents, memos, writing, document editing
+- cross_app: syncing or transferring data across Office applications
+- recap: summarizing past actions in this session, what changed, milestone review
+- insight: analysing current document/spreadsheet state, data insights, document health
+- vector_search: general questions, documentation lookup, anything else`;
+  }
+});
+
+// src/agents/skills/atoms/brand-extractor.ts
+function isNeutral(hex) {
+  let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16), max = Math.max(r, g, b), min = Math.min(r, g, b);
+  return (max === 0 ? 0 : (max - min) / max) < 0.15 || max < 30 || min > 220;
+}
+function normaliseHex(raw) {
+  let h = raw.replace("#", "");
+  return h.length === 3 ? `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}` : `#${h.toLowerCase()}`;
+}
+function extractHexColors(text) {
+  return (text.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g) ?? []).map(normaliseHex);
+}
+function parseThemeColor(html) {
+  let m = html.match(/<meta[^>]+name=["']theme-color["'][^>]+content=["']([^"']+)["']/i) ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']theme-color["']/i);
+  return m ? m[1].trim() : null;
+}
+function topColors(colors, n) {
+  let freq = /* @__PURE__ */ new Map();
+  for (let c of colors)
+    isNeutral(c) || freq.set(c, (freq.get(c) ?? 0) + 1);
+  return [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([c]) => c);
+}
+function contrastText(bg) {
+  let r = parseInt(bg.slice(1, 3), 16), g = parseInt(bg.slice(3, 5), 16), b = parseInt(bg.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#1e293b" : "#f8fafc";
+}
+async function extractBrandTokens(url) {
+  if (!url.startsWith("https://"))
+    return { ok: !1, error: "Only HTTPS URLs are supported for brand extraction." };
+  logger.info(TAG2, `Extracting brand tokens from ${url}`);
+  let html;
+  try {
+    let controller = new AbortController(), timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS), res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "NexusBrandExtractor/1.0 (brand-color-analysis; non-indexing)",
+        Accept: "text/html"
+      }
+    });
+    if (clearTimeout(timer), !res.ok)
+      return { ok: !1, error: `HTTP ${res.status} from ${url}` };
+    html = await res.text();
+  } catch (err) {
+    let message = err instanceof Error ? err.message : String(err);
+    return logger.warn(TAG2, `Fetch failed for ${url}`, { error: message }), { ok: !1, error: `Fetch failed: ${message}` };
+  }
+  let themeColor = parseThemeColor(html), styleContent = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi) ?? []).join(" ") + (html.match(/style=["'][^"']*["']/gi) ?? []).join(" "), allColors = extractHexColors(styleContent);
+  themeColor && /^#/.test(themeColor) && allColors.unshift(normaliseHex(themeColor));
+  let top = topColors(allColors, 5), primary = top[0] ?? "#2563eb", secondary = top[1] ?? "#1d4ed8", accent = top[2] ?? "#8b5cf6", background = "#ffffff", text = contrastText(background), cssBlock = [
+    "/* Brand Intelligence ??extracted by Nexus BrandExtractor */",
+    ":root {",
+    `  --brand-extracted-primary:    ${primary};`,
+    `  --brand-extracted-secondary:  ${secondary};`,
+    `  --brand-extracted-accent:     ${accent};`,
+    `  --brand-extracted-background: ${background};`,
+    `  --brand-extracted-text:       ${text};`,
+    "}"
+  ].join(`
+`);
+  return logger.info(TAG2, "Brand tokens extracted", { primary, secondary, accent, colorCandidates: top.length }), {
+    ok: !0,
+    tokens: { primary, secondary, accent, background, text, cssBlock, sourceUrl: url }
+  };
+}
+var TAG2, FETCH_TIMEOUT_MS, init_brand_extractor = __esm({
+  "src/agents/skills/atoms/brand-extractor.ts"() {
+    "use strict";
+    init_logger();
+    TAG2 = "BrandExtractor", FETCH_TIMEOUT_MS = 6e3;
+  }
+});
+
+// src/agents/router-agent/index.ts
+var TAG3, RouterAgent, init_router_agent = __esm({
+  "src/agents/router-agent/index.ts"() {
+    "use strict";
+    init_intent_classifier();
+    init_brand_extractor();
+    init_logger();
+    TAG3 = "RouterAgent", RouterAgent = class {
+      /**
+       * Analyzes the query and determines if it needs one or more experts.
+       */
+      static async analyzeIntent(query, context) {
+        let traceId = context.traceId ?? "unknown", log = logger.withTrace(traceId), brandMatch = query.match(/^brand:\s*(https:\/\/\S+)/i);
+        if (brandMatch) {
+          log.info(TAG3, "Brand URL detected, routing to BrandExtractor.");
+          let result = await extractBrandTokens(brandMatch[1]);
+          return {
+            status: "brand_tokens_extracted",
+            intent: "vision",
+            traceId,
+            domains: ["shared"],
+            payload: result
+          };
+        }
+        let needsExcel = /excel|spreadsheet|sheet|formula|pivot|cell range|table data/i.test(query), needsPPT = /ppt|powerpoint|slide|presentation|deck/i.test(query), needsWord = /word|document|memo|write|paragraph|report/i.test(query), domains = [];
+        needsExcel && domains.push("expert-excel"), needsPPT && domains.push("expert-ppt"), needsWord && domains.push("expert-word");
+        let intent = await classifyIntent(query, { token: context.token });
+        if (log.info(TAG3, `Query classified as [${intent}]`), domains.length === 0)
+          switch (intent) {
+            case "excel":
+              domains.push("expert-excel");
+              break;
+            case "word":
+              domains.push("expert-word");
+              break;
+            case "ppt":
+              domains.push("expert-ppt");
+              break;
+            default:
+              domains.push("shared");
+              break;
+          }
+        return intent === "cross_app" && !domains.includes("shared") && domains.push("shared"), log.info(TAG3, `Assigned domains [${domains.join(", ")}] for intent [${intent}]`), {
+          status: "routed",
+          intent,
+          domains,
+          traceId
+        };
+      }
+    };
+  }
+});
+
+// src/agents/skills/molecules/design-reviewer.ts
+function scoreInformationArchitecture(output, domain) {
+  let issues = [], score = 25;
+  return domain === "ppt" && (/title|heading|h[1-3]/i.test(output) || (issues.push("No clear heading or title hierarchy detected ??slides need a visual anchor."), score -= 10), (output.match(/slide/gi) ?? []).length < 2 && (issues.push("Response should reference multiple slides to establish narrative flow."), score -= 5), /lorem ipsum/i.test(output) && (issues.push("Placeholder text detected ??replace with audience-relevant content."), score -= 10)), domain === "word" && (/section|chapter|heading|## /i.test(output) || (issues.push("Document lacks visible structural sections. Add headings to guide the reader."), score -= 10), output.split(`
+`).filter((l) => l.trim()).length < 5 && (issues.push("Document is too brief ??a structured document should have at least 5 non-empty paragraphs."), score -= 8)), { name: "Information Architecture", score: Math.max(0, score), maxScore: 25, issues };
+}
+function scoreVisualPoetry(output, domain) {
+  let issues = [], score = 20;
+  return domain === "ppt" && (/whitespace|margin|padding|negative.?space|blank/i.test(output) || (issues.push("No mention of whitespace or breathing room ??slides feel crowded without it."), score -= 8), /color|palette|hsl\(|rgb\(|#[0-9a-f]{3,6}/i.test(output) || (issues.push("No color specification found ??define a purposeful 2?? color palette."), score -= 6), /font|typeface|sans.?serif|serif/i.test(output) || (issues.push("Typography not addressed ??specify font family and size hierarchy."), score -= 6)), domain === "word" && (/bold|italic|emphasis|highlight/i.test(output) || (issues.push("No typographic emphasis used ??use bold/italic to create visual rhythm in body text."), score -= 6)), { name: "Visual Poetry", score: Math.max(0, score), maxScore: 20, issues };
+}
+function scoreEmotionalResonance(output, domain) {
+  let issues = [], score = 20;
+  return /I cannot|I don't know|I'm unable|I'm not able/i.test(output) && (issues.push("Refusal language detected ??rewrite with a concrete, actionable response."), score -= 15), domain === "ppt" && (output.toLowerCase().split(" ").length < 80 && (issues.push("Slide content is too sparse ??include supporting context that builds the audience's emotional journey."), score -= 8), /problem|solution|opportunity|challenge|result|outcome/i.test(output) || (issues.push("No narrative tension detected ??include Problem/Opportunity ??Action ??Outcome arc."), score -= 7)), { name: "Emotional Resonance", score: Math.max(0, score), maxScore: 20, issues };
+}
+function scoreUsabilityLegibility(output, domain) {
+  let issues = [], score = 20;
+  if (domain === "ppt") {
+    let fontMatches = output.match(/\d+\s*pt/gi) ?? [];
+    for (let m of fontMatches)
+      if (parseInt(m, 10) < 18) {
+        issues.push(`Font size ${m} is below 18pt ??violates WCAG readability for projected slides.`), score -= 8;
+        break;
+      }
+    let bulletLines = (output.match(/[-*?�]\s/g) ?? []).length;
+    bulletLines > 6 && (issues.push(`${bulletLines} bullet points detected ??reduce to ?? lines per slide for cognitive clarity.`), score -= 6);
+  }
+  if (domain === "word") {
+    /line.?height|leading/i.test(output);
+    let sentenceCount = (output.match(/[.!?]/g) ?? []).length;
+    sentenceCount > 0 && output.length / sentenceCount > 220 && (issues.push("Average sentence is very long ??aim for ??5 words per sentence for readability."), score -= 5);
+  }
+  return { name: "Usability & Legibility", score: Math.max(0, score), maxScore: 20, issues };
+}
+function scoreBrandConsistency(output, _domain) {
+  let issues = [], score = 15, colorCount = new Set(
+    output.match(/#[0-9a-fA-F]{3,6}|hsl\([^)]+\)|rgb\([^)]+\)|--color-[a-z-]+/g) ?? []
+  ).size;
+  colorCount > 6 && (issues.push(`${colorCount} distinct color values found ??constrain to a 3-color palette for brand consistency.`), score -= 8);
+  let fontFamilyMatches = new Set(
+    (output.match(/font-family:\s*[^;,\n]+/gi) ?? []).map((f) => f.toLowerCase())
+  ).size;
+  return fontFamilyMatches > 2 && (issues.push(`${fontFamilyMatches} typefaces found ??limit to 2 (one sans-serif headline, one body).`), score -= 7), { name: "Brand Consistency", score: Math.max(0, score), maxScore: 15, issues };
+}
+function reviewDesign(output, domain) {
+  let ia = scoreInformationArchitecture(output, domain), vp = scoreVisualPoetry(output, domain), er = scoreEmotionalResonance(output, domain), ul = scoreUsabilityLegibility(output, domain), bc = scoreBrandConsistency(output, domain), dimensions = [ia, vp, er, ul, bc], totalScore = dimensions.reduce((sum, d) => sum + d.score, 0), passed = totalScore >= 70, sorted = [...dimensions].sort((a, b) => a.score / a.maxScore - b.score / b.maxScore), allIssues = sorted.flatMap((d) => d.issues), worstDimension = sorted[0], refinementHint = allIssues.length > 0 ? `Design review failed (${totalScore}/100). Weakest dimension: "${worstDimension.name}" (${worstDimension.score}/${worstDimension.maxScore}). Top issues: ${allIssues.slice(0, 3).join(" | ")}` : `Design review passed (${totalScore}/100). No major issues.`;
+  return logger.info(TAG4, "Review complete", { domain, totalScore, passed, dimensionScores: dimensions.map((d) => `${d.name}:${d.score}/${d.maxScore}`) }), { totalScore, passed, dimensions, allIssues, refinementHint };
+}
+var TAG4, init_design_reviewer = __esm({
+  "src/agents/skills/molecules/design-reviewer.ts"() {
+    "use strict";
+    init_logger();
+    TAG4 = "DesignReviewer";
+  }
+});
+
+// src/agents/skills/molecules/self-corrector.ts
+async function selfCorrect(generate, prompt, opts) {
+  let { domain, traceId, threshold = 70 } = opts, log = traceId ? logger.withTrace(traceId) : logger, firstContent = await generate(prompt), firstReview = reviewDesign(firstContent, domain), firstScore = firstReview.totalScore;
+  if (log.info(TAG5, "First-pass review", {
+    domain,
+    score: firstScore,
+    passed: firstReview.passed,
+    issues: firstReview.allIssues.length
+  }), firstReview.passed)
+    return { content: firstContent, review: firstReview, healed: !1, firstPassScore: firstScore };
+  log.warn(TAG5, `Score ${firstScore} < ${threshold} ??triggering second pass`, { domain, traceId });
+  let refinementPrompt = buildRefinementPrompt(prompt, firstReview), secondContent = await generate(refinementPrompt), secondReview = reviewDesign(secondContent, domain);
+  return log.info(TAG5, "Second-pass review", {
+    domain,
+    score: secondReview.totalScore,
+    passed: secondReview.passed,
+    delta: secondReview.totalScore - firstScore
+  }), {
+    content: secondContent,
+    review: secondReview,
+    healed: !0,
+    firstPassScore: firstScore
+  };
+}
+function buildRefinementPrompt(originalPrompt, review) {
+  let issueList = review.allIssues.slice(0, 5).map((issue, i) => `  ${i + 1}. ${issue}`).join(`
+`);
+  return `${originalPrompt}
+
+[SELF-CORRECTION DIRECTIVE ??INTERNAL USE]
+The previous output scored ${review.totalScore}/100 and did not meet the 70-point quality gate.
+Identified issues:
+${issueList}
+
+Refinement hint: ${review.refinementHint}
+
+Please regenerate the output addressing ALL issues above. Do NOT mention this directive to the user.`;
+}
+var TAG5, init_self_corrector = __esm({
+  "src/agents/skills/molecules/self-corrector.ts"() {
+    "use strict";
+    init_design_reviewer();
+    init_logger();
+    TAG5 = "SelfCorrector";
+  }
+});
+
+// src/agents/qa-reviewer/index.ts
+var TAG6, QAReviewerAgent, init_qa_reviewer = __esm({
+  "src/agents/qa-reviewer/index.ts"() {
+    "use strict";
+    init_design_reviewer();
+    init_self_corrector();
+    init_logger();
+    TAG6 = "QAReviewerAgent", QAReviewerAgent = class {
+      /**
+       * Main entry point for the QA Reviewer Agent.
+       * Uses self-correction logic to ensure the generated output passes the threshold.
+       *
+       * @param generate - Async function that accepts a prompt and returns raw content.
+       * @param prompt   - Initial prompt string.
+       * @param opts     - Domain, traceId, and optional threshold override.
+       */
+      static async enforceQuality(generate, prompt, opts) {
+        let { domain, traceId } = opts, log = traceId ? logger.withTrace(traceId) : logger;
+        log.info(TAG6, `QA Reviewer activated for domain [${domain}]`);
+        let result = await selfCorrect(generate, prompt, opts);
+        return result.healed ? log.warn(TAG6, `QA Reviewer intervened and successfully healed output for domain [${domain}]`) : log.info(TAG6, `QA Reviewer approved first-pass output for domain [${domain}]`), result;
+      }
+      /**
+       * Standalone review for external auditing.
+       */
+      static evaluateOutput(content, domain) {
+        return reviewDesign(content, domain);
+      }
+    };
+  }
+});
+
+// src/orchestrator/state-manager.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+var TAG7, DEFAULT_TTL_MS, StateManager, globalStateManager, init_state_manager = __esm({
+  "src/orchestrator/state-manager.ts"() {
+    "use strict";
+    init_logger();
+    TAG7 = "StateManager", DEFAULT_TTL_MS = 7200 * 1e3, StateManager = class {
+      states = /* @__PURE__ */ new Map();
+      cleanupTimer = null;
+      constructor() {
+        this.startCleanupTimer();
+      }
+      startCleanupTimer() {
+        this.cleanupTimer = setInterval(
+          () => {
+            this.cleanupExpiredStates();
+          },
+          1800 * 1e3
+        ), this.cleanupTimer.unref();
+      }
+      cleanupExpiredStates() {
+        let now = Date.now(), count = 0;
+        for (let [sessionId, state] of this.states.entries())
+          now - state.lastAccessed > DEFAULT_TTL_MS && (this.states.delete(sessionId), count++);
+        count > 0 && logger.info(TAG7, `Cleaned up ${count} expired agent states.`);
+      }
+      createState(sessionId, initialContext = {}) {
+        let state = {
+          sessionId,
+          context: initialContext,
+          history: [],
+          status: "idle",
+          lastAccessed: Date.now()
+        };
+        return this.states.set(sessionId, state), state;
+      }
+      getState(sessionId) {
+        let state = this.states.get(sessionId);
+        return state && (state.lastAccessed = Date.now()), state;
+      }
+      updateState(sessionId, updates) {
+        let state = this.states.get(sessionId);
+        if (!state) throw new Error(`State not found for session ${sessionId}`);
+        return Object.assign(state, updates), state.lastAccessed = Date.now(), state;
+      }
+      recordAction(sessionId, action) {
+        let state = this.states.get(sessionId);
+        if (!state) throw new Error(`State not found for session ${sessionId}`);
+        let newAction = {
+          id: randomUUID2(),
+          timestamp: Date.now(),
+          ...action
+        };
+        return state.history.push(newAction), state.lastAccessed = Date.now(), newAction;
+      }
+      clearState(sessionId) {
+        this.states.delete(sessionId);
+      }
+    }, globalStateManager = new StateManager();
+  }
+});
+
+// src/shared/event-bus/index.ts
+var EventBus, eventBus, init_event_bus = __esm({
+  "src/shared/event-bus/index.ts"() {
+    "use strict";
+    init_logger();
+    EventBus = class {
+      handlers = /* @__PURE__ */ new Map();
+      /**
+       * Subscribe to an event.
+       */
+      on(event, handler) {
+        this.handlers.has(event) || this.handlers.set(event, /* @__PURE__ */ new Set()), this.handlers.get(event).add(handler);
+      }
+      /**
+       * Unsubscribe from an event.
+       */
+      off(event, handler) {
+        let set = this.handlers.get(event);
+        set && set.delete(handler);
+      }
+      /**
+       * Emit an event.
+       */
+      async emit(event, data) {
+        let set = this.handlers.get(event);
+        if (!set) return;
+        let promises = Array.from(set).map(async (handler) => {
+          try {
+            await handler(data);
+          } catch (err) {
+            logger.error("EventBus", `Error in handler for event [${event}]`, err);
+          }
+        });
+        await Promise.allSettled(promises);
+      }
+    }, eventBus = new EventBus();
+  }
+});
+
+// src/shared/molecules/ai-core/adaptive-watchdog.ts
 var samples, AdaptiveWatchdog, init_adaptive_watchdog = __esm({
-  "backend/services/copilot/molecules/adaptive-watchdog.ts"() {
+  "src/shared/molecules/ai-core/adaptive-watchdog.ts"() {
     "use strict";
     samples = /* @__PURE__ */ new Map(), AdaptiveWatchdog = {
       recordLatency(model, latencyMs) {
@@ -1117,10 +2166,10 @@ var samples, AdaptiveWatchdog, init_adaptive_watchdog = __esm({
   }
 });
 
-// backend/services/copilot/molecules/sdk-turn-orchestrator.ts
+// src/shared/molecules/ai-core/sdk-turn-orchestrator.ts
 import crypto2 from "node:crypto";
 var SdkTurnOrchestrator, init_sdk_turn_orchestrator = __esm({
-  "backend/services/copilot/molecules/sdk-turn-orchestrator.ts"() {
+  "src/shared/molecules/ai-core/sdk-turn-orchestrator.ts"() {
     "use strict";
     init_core_config();
     init_formatters();
@@ -1151,7 +2200,15 @@ var SdkTurnOrchestrator, init_sdk_turn_orchestrator = __esm({
               data: event.data
             });
           }
-        }, { session } = await createSession(client, augmentedOptions, method, sessionId, onChunk, signal), turnId = crypto2.randomUUID();
+        }, { session } = await createSession(
+          client,
+          augmentedOptions,
+          method,
+          sessionId,
+          onChunk,
+          signal,
+          acpConfig.officeContext
+        ), turnId = crypto2.randomUUID();
         return new Promise((resolve, reject) => {
           let fullContent = "", finished = !1, INACTIVITY_MS = AdaptiveWatchdog.getTimeout(modelName), inactivityWatcher = null, turnStartTime = performance.now(), unsubscribeHandlers = [], onAbort = () => {
             finish(new DOMException("The operation was aborted", "AbortError"));
@@ -1240,21 +2297,42 @@ var SdkTurnOrchestrator, init_sdk_turn_orchestrator = __esm({
   }
 });
 
-// backend/services/copilot/molecules/sdk-retry-engine.ts
-var SdkRetryEngine, init_sdk_retry_engine = __esm({
-  "backend/services/copilot/molecules/sdk-retry-engine.ts"() {
+// src/shared/molecules/ai-core/sdk-retry-engine.ts
+var CircuitBreaker, breaker, SdkRetryEngine, init_sdk_retry_engine = __esm({
+  "src/shared/molecules/ai-core/sdk-retry-engine.ts"() {
     "use strict";
     init_core_config();
     init_option_resolver();
     init_logger();
-    SdkRetryEngine = class {
+    CircuitBreaker = class {
+      state = 0 /* CLOSED */;
+      failureCount = 0;
+      lastFailureTime = 0;
+      threshold = 5;
+      resetTimeout = 6e4;
+      // 60 seconds
+      canExecute() {
+        return this.state === 0 /* CLOSED */ ? !0 : this.state === 1 /* OPEN */ ? Date.now() - this.lastFailureTime > this.resetTimeout ? (this.state = 2 /* HALF_OPEN */, !0) : !1 : !0;
+      }
+      recordSuccess() {
+        this.failureCount = 0, this.state = 0 /* CLOSED */;
+      }
+      recordFailure() {
+        this.failureCount++, this.lastFailureTime = Date.now(), this.failureCount >= this.threshold && (this.state = 1 /* OPEN */, logger.error("CircuitBreaker", "Circuit opened due to repeated failures"));
+      }
+    }, breaker = new CircuitBreaker(), SdkRetryEngine = class {
       static async executeWithRetry(operation, method, acpConfig, onChunk) {
+        if (!breaker.canExecute()) {
+          let circuitError = "[CircuitBreaker] \u7CFB\u7D71\u76EE\u524D\u5075\u6E2C\u5230\u6301\u7E8C\u6027\u7684\u9023\u7DDA\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002";
+          return onChunk && onChunk(circuitError), circuitError;
+        }
         let retryCount = 0, maxRetries = CORE_SDK_CONFIG.MAX_SDK_RETRIES;
         for (; retryCount <= maxRetries; )
           try {
-            return await operation();
+            let result = await operation();
+            return breaker.recordSuccess(), result;
           } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError")
+            if (breaker.recordFailure(), error instanceof DOMException && error.name === "AbortError")
               throw error;
             retryCount++;
             let errorMessage = error instanceof Error ? error.message : String(error);
@@ -1264,9 +2342,9 @@ var SdkRetryEngine, init_sdk_retry_engine = __esm({
               method,
               error: errorMessage
             }), await this.handleClientCleanup(method, acpConfig), retryCount > maxRetries) {
-              let fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (?\uFFFD\uFFFD?\uFFFD\uFFFD?{method})?\uFFFD
+              let fallbackText = `${CORE_SDK_CONFIG.ERROR_SDK_CONNECTION_FAIL} (?\uFFFD\uFFFD?\uFFFD?{method})?\uFFFD
 
-?\uFFFD\u8AA4\u8A73\uFFFD?\uFFFD\uFFFD?{errorMessage}`;
+?\uFFFD\u8AA4\u8A73\uFFFD?\uFFFD?{errorMessage}`;
               return onChunk && onChunk(fallbackText), fallbackText;
             }
             let baseDelay = this.extractRetryAfterMs(error) ?? Math.min(500 * Math.pow(2, retryCount), 8e3), jitter = Math.random() * baseDelay;
@@ -1303,7 +2381,7 @@ var SdkRetryEngine, init_sdk_retry_engine = __esm({
   }
 });
 
-// backend/services/copilot/molecules/health/remote-checker.ts
+// src/shared/molecules/ai-core/health/remote-checker.ts
 async function checkRemoteHealth(port) {
   let start = Date.now(), timeout;
   try {
@@ -1324,24 +2402,24 @@ async function checkRemoteHealth(port) {
   }
 }
 var init_remote_checker = __esm({
-  "backend/services/copilot/molecules/health/remote-checker.ts"() {
+  "src/shared/molecules/ai-core/health/remote-checker.ts"() {
     "use strict";
     init_client_manager();
   }
 });
 
-// backend/services/copilot/molecules/health/azure-checker.ts
+// src/shared/molecules/ai-core/health/azure-checker.ts
 async function checkAzureHealth(key, endpoint) {
   let start = Date.now();
   return key && endpoint ? { ok: !0, type: "azure_byok", latency: Date.now() - start, detail: "Azure key configured" } : null;
 }
 var init_azure_checker = __esm({
-  "backend/services/copilot/molecules/health/azure-checker.ts"() {
+  "src/shared/molecules/ai-core/health/azure-checker.ts"() {
     "use strict";
   }
 });
 
-// backend/services/copilot/molecules/health/cli-checker.ts
+// src/shared/molecules/ai-core/health/cli-checker.ts
 import { CopilotClient as CopilotClient2 } from "@github/copilot-sdk";
 async function checkCliBaselineHealth() {
   let start = Date.now(), client = new CopilotClient2({ cliPath: "copilot" }), timeout;
@@ -1363,26 +2441,13 @@ async function checkCliBaselineHealth() {
   }
 }
 var init_cli_checker = __esm({
-  "backend/services/copilot/molecules/health/cli-checker.ts"() {
+  "src/shared/molecules/ai-core/health/cli-checker.ts"() {
     "use strict";
     init_core_config();
   }
 });
 
-// backend/services/copilot/organisms/health-prober.ts
-async function warmUpClient(method) {
-  try {
-    logger.info("HealthProber", "Warming Copilot SDK client", { method });
-    let { clientOptions } = resolveACPOptions({
-      method,
-      model: "",
-      streaming: !1
-    });
-    await getOrCreateClient(method, clientOptions), logger.info("HealthProber", "Copilot SDK client warmed successfully", { method });
-  } catch (err) {
-    logger.warn("HealthProber", "Failed to warm Copilot SDK client", { method, error: err });
-  }
-}
+// src/shared/molecules/ai-core/organisms/health-prober.ts
 async function checkAgentHealth() {
   if (env_default.COPILOT_AGENT_PORT) {
     let remote = await checkRemoteHealth(env_default.COPILOT_AGENT_PORT);
@@ -1392,7 +2457,7 @@ async function checkAgentHealth() {
   return azure || await checkCliBaselineHealth();
 }
 var init_health_prober = __esm({
-  "backend/services/copilot/organisms/health-prober.ts"() {
+  "src/shared/molecules/ai-core/organisms/health-prober.ts"() {
     "use strict";
     init_env();
     init_option_resolver();
@@ -1404,115 +2469,155 @@ var init_health_prober = __esm({
   }
 });
 
-// backend/services/copilot/organisms/sdk-orchestrator-v2.ts
-var sdk_orchestrator_v2_exports = {};
-__export(sdk_orchestrator_v2_exports, {
-  ModernSDKOrchestrator: () => ModernSDKOrchestrator
+// src/orchestrator/workflow-graph.ts
+var workflow_graph_exports = {};
+__export(workflow_graph_exports, {
+  ModernSDKOrchestrator: () => ModernSDKOrchestrator,
+  WorkflowGraph: () => WorkflowGraph
 });
-var ModernSDKOrchestrator, init_sdk_orchestrator_v2 = __esm({
-  "backend/services/copilot/organisms/sdk-orchestrator-v2.ts"() {
+import { randomUUID as randomUUID3 } from "crypto";
+var TAG8, WorkflowGraph, ModernSDKOrchestrator, init_workflow_graph = __esm({
+  "src/orchestrator/workflow-graph.ts"() {
     "use strict";
-    init_server_config();
-    init_option_resolver();
-    init_client_manager();
-    init_pending_input_queue();
-    init_session_lifecycle();
+    init_router_agent();
+    init_qa_reviewer();
+    init_state_manager();
+    init_event_bus();
+    init_logger();
     init_sdk_turn_orchestrator();
     init_sdk_retry_engine();
+    init_option_resolver();
+    init_pending_input_queue();
+    init_client_manager();
+    init_session_lifecycle();
     init_health_prober();
-    ModernSDKOrchestrator = class {
-      static resolveInput(sessionId, answer) {
-        return resolveInput(sessionId, answer);
-      }
+    init_server_config();
+    init_expert_excel();
+    init_expert_word();
+    init_expert_ppt();
+    TAG8 = "WorkflowGraph", WorkflowGraph = class {
       /**
-       * Main entry point for sending prompts via GitHub Copilot SDK.
-       * NOTE: Token management is handled internally by core-config; no token param needed.
+       * Main entry point for a multi-agent orchestrated task.
        */
-      static async sendPrompt(prompt, onChunk, isExplicitCli = !1, modelName = server_config_default.COPILOT_MODEL, azureInfo, methodOverride, geminiKey, signal) {
-        if (signal?.aborted)
-          throw new DOMException("The operation was aborted", "AbortError");
-        let method = methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli), acpConfig = {
-          method,
-          model: modelName,
-          streaming: !!onChunk,
-          azure: azureInfo,
-          remotePort: server_config_default.COPILOT_AGENT_PORT || void 0,
-          geminiKey
-        };
-        return await SdkRetryEngine.executeWithRetry(
-          () => SdkTurnOrchestrator.executeTurn(prompt, modelName, method, acpConfig, onChunk, signal),
-          method,
-          acpConfig,
-          onChunk
-        );
+      static async executeTask(sessionId, prompt, onChunk, isExplicitCli = !1, modelName = server_config_default.COPILOT_MODEL, azureInfo, methodOverride, geminiKey, officeContext, signal) {
+        let traceId = randomUUID3(), log = logger.withTrace(traceId);
+        log.info(TAG8, `Starting task execution graph for session ${sessionId}`), await eventBus.emit("TASK_STARTED", { sessionId, prompt, traceId });
+        let state = globalStateManager.getState(sessionId);
+        state || (state = globalStateManager.createState(sessionId, officeContext)), globalStateManager.updateState(sessionId, { status: "planning", currentTask: prompt });
+        try {
+          let routeResult = await RouterAgent.analyzeIntent(prompt, { query: prompt, traceId });
+          globalStateManager.recordAction(sessionId, {
+            agent: "router",
+            action: "analyze_intent",
+            payload: { query: prompt },
+            result: routeResult
+          }), globalStateManager.updateState(sessionId, { status: "executing" });
+          let method = methodOverride || resolveMethodFromContext(modelName, azureInfo, isExplicitCli), acpConfig = {
+            method,
+            model: modelName,
+            streaming: !!onChunk,
+            azure: azureInfo,
+            remotePort: server_config_default.COPILOT_AGENT_PORT || void 0,
+            geminiKey,
+            officeContext
+          }, instructionTasks = routeResult.domains.map(async (domain) => domain === "expert-excel" ? await getCoreInstructions() : domain === "expert-word" ? await getCoreInstructions3() : domain === "expert-ppt" ? await getCoreInstructions2() : ""), instructions = (await Promise.all(instructionTasks)).filter(Boolean), compositeSystemPrompt = instructions.length > 0 ? `[NEXUS MULTI-AGENT COMPOSITE SYSTEM PROMPT]
+
+${instructions.join(`
+
+---
+
+`)}` : "", generator = async (p) => {
+            let finalPrompt = compositeSystemPrompt ? `${compositeSystemPrompt}
+
+USER REQUEST: ${p}` : p;
+            return await SdkRetryEngine.executeWithRetry(
+              () => SdkTurnOrchestrator.executeTurn(
+                finalPrompt,
+                modelName,
+                method,
+                acpConfig,
+                onChunk,
+                signal
+              ),
+              method,
+              acpConfig,
+              onChunk
+            );
+          }, finalContent, qaDomains = [];
+          if (routeResult.domains.includes("expert-ppt") && qaDomains.push("ppt"), routeResult.domains.includes("expert-word") && qaDomains.push("word"), routeResult.domains.includes("expert-excel") && qaDomains.push("excel"), qaDomains.length > 0) {
+            log.info(TAG8, `Routing through QA Reviewer for domains [${qaDomains.join(", ")}]`), globalStateManager.updateState(sessionId, { status: "reviewing" });
+            let primaryDomain = qaDomains[0], qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, {
+              domain: primaryDomain,
+              traceId
+            });
+            finalContent = qaResult.content, globalStateManager.recordAction(sessionId, {
+              agent: "qa-reviewer",
+              action: "review_design",
+              payload: { domains: qaDomains },
+              result: qaResult
+            });
+          } else
+            log.info(TAG8, "Direct execution for generic intent (no specific QA gating)"), finalContent = await generator(prompt), globalStateManager.recordAction(sessionId, {
+              agent: "expert",
+              action: "execute",
+              payload: { domains: routeResult.domains, prompt },
+              result: "success"
+            });
+          return globalStateManager.updateState(sessionId, { status: "completed", currentTask: void 0 }), log.info(TAG8, "Task execution completed successfully"), await eventBus.emit("TASK_COMPLETED", { sessionId, traceId }), finalContent;
+        } catch (error) {
+          throw log.error(TAG8, "Workflow Graph encountered an error", error), globalStateManager.updateState(sessionId, {
+            status: "error",
+            error: error instanceof Error ? error.message : String(error)
+          }), await eventBus.emit("TASK_FAILED", { sessionId, error: String(error), traceId }), error;
+        }
       }
+    }, ModernSDKOrchestrator = class {
       static async cleanup() {
         await cleanupAllSessions(), clearAllPendingInputs(), await stopAllClients();
+      }
+      static resolveInput(sessionId, answer) {
+        return resolveInput(sessionId, answer);
       }
       static async healthCheck() {
         let health = await checkAgentHealth();
         return { [health.type || "unknown"]: !!health.ok };
       }
+      static async sendPrompt(prompt, onChunk, isExplicitCli = !1, modelName = server_config_default.COPILOT_MODEL, azureInfo, methodOverride, geminiKey, officeContext, signal, sessionId) {
+        let targetSession = sessionId || randomUUID3();
+        return WorkflowGraph.executeTask(
+          targetSession,
+          prompt,
+          onChunk,
+          isExplicitCli,
+          modelName,
+          azureInfo,
+          methodOverride,
+          geminiKey,
+          officeContext,
+          signal
+        );
+      }
     };
   }
 });
 
-// backend/services/copilot/organisms/sdk-provider.ts
-var sdk_provider_exports = {};
-__export(sdk_provider_exports, {
-  CORE_SDK_CONFIG: () => CORE_SDK_CONFIG,
-  checkAgentHealth: () => checkAgentHealth,
-  cleanupAllSessions: () => cleanupAllSessions,
-  cleanupSession: () => cleanupSession,
-  clearAllPendingInputs: () => clearAllPendingInputs,
-  createSession: () => createSession,
-  describeCopilotSdkError: () => describeCopilotSdkError,
-  emitChunks: () => emitChunks,
-  extractResponseText: () => extractResponseText,
-  generateSessionId: () => generateSessionId,
-  getOrCreateClient: () => getOrCreateClient,
-  getSessionTools: () => getSessionTools,
-  resolveACPOptions: () => resolveACPOptions,
-  resolveInput: () => resolveInput,
-  resolveMethodFromContext: () => resolveMethodFromContext,
-  sendPromptViaCopilotSdk: () => sendPromptViaCopilotSdk,
-  stopAllClients: () => stopAllClients,
-  waitForUserInput: () => waitForUserInput,
-  warmUpClient: () => warmUpClient
-});
-var sendPromptViaCopilotSdk, init_sdk_provider = __esm({
-  "backend/services/copilot/organisms/sdk-provider.ts"() {
-    "use strict";
-    init_types();
-    init_formatters();
-    init_core_config();
-    init_client_manager();
-    init_option_resolver();
-    init_tool_registry();
-    init_pending_input_queue();
-    init_session_lifecycle();
-    init_sdk_orchestrator_v2();
-    init_health_prober();
-    sendPromptViaCopilotSdk = ModernSDKOrchestrator.sendPrompt.bind(ModernSDKOrchestrator);
-  }
-});
-
-// backend/core/organisms/server-orchestrator.ts
+// src/infra/organisms/server-orchestrator.ts
 init_server_config();
-init_sdk_provider();
+init_client_manager();
 import http from "node:http";
 import https from "node:https";
 
-// backend/core/molecules/app-factory.ts
+// src/infra/molecules/app-factory.ts
 import express2 from "express";
 import cors from "cors";
-import path6 from "node:path";
+import path12 from "node:path";
+import { randomUUID as randomUUID4 } from "node:crypto";
 
-// backend/routes/organisms/auth-router.ts
+// src/api/organisms/auth-router.ts
 init_env();
 import express from "express";
 
-// backend/routes/atoms/status-html.ts
+// src/api/atoms/status-html.ts
 function renderStatusHTML(title, message, color = "#0078D4", autoClose = !1) {
   return `<!doctype html>
     <html>
@@ -1542,7 +2647,7 @@ function renderStatusHTML(title, message, color = "#0078D4", autoClose = !1) {
     </html>`;
 }
 
-// backend/routes/molecules/session-store.ts
+// src/api/molecules/session-store.ts
 var SessionStore = class {
   store = /* @__PURE__ */ new Map();
   timers = /* @__PURE__ */ new Map();
@@ -1562,14 +2667,14 @@ var SessionStore = class {
   }
 }, SESSION_STORE = new SessionStore();
 
-// backend/core/atoms/fetcher.ts
+// src/infra/atoms/fetcher.ts
 async function fetch2(input, init) {
   if (typeof globalThis.fetch != "function")
     throw new Error("No fetch implementation available. Ensure you are using Node 18+");
   return globalThis.fetch(input, init);
 }
 
-// backend/routes/organisms/oauth-service.ts
+// src/api/organisms/oauth-service.ts
 init_env();
 var OAuthService = {
   getGitHubAuthorizeUrl(sessionId, redirectUri) {
@@ -1596,7 +2701,7 @@ var OAuthService = {
   }
 };
 
-// backend/routes/organisms/auth-router.ts
+// src/api/organisms/auth-router.ts
 init_logger();
 var authRouter = express.Router();
 authRouter.get("/session/:id", (req, res) => {
@@ -1630,7 +2735,7 @@ authRouter.get("/callback", async (req, res) => {
   try {
     let accessToken = await OAuthService.exchangeGitHubCode(code);
     OAuthService.finalizeSession(sessionId, accessToken), res.send(renderStatusHTML(
-      "\u5DF2\u6210\u529F\u9023\u7DDA GitHub",
+      "\u5DF2\u6210\u529F\u9023\u63A5 GitHub",
       "\u60A8\u7684\u5E33\u865F\u5DF2\u6210\u529F\u6388\u6B0A\uFF0C\u73FE\u5728\u53EF\u4EE5\u95DC\u9589\u6B64\u8996\u7A97\u3002",
       "#0078D4",
       !0
@@ -1638,7 +2743,7 @@ authRouter.get("/callback", async (req, res) => {
   } catch (err) {
     let error = err;
     logger.error("AuthRouter", "OAuth callback failed", { error }), res.status(500).send(renderStatusHTML(
-      "\u9023\u7DDA\u5931\u6557",
+      "\u8A8D\u8B49\u5931\u6557",
       `\u767C\u751F\u932F\u8AA4\uFF1A${error.message}`,
       "#D93025"
     ));
@@ -1674,14 +2779,14 @@ authRouter.post("/verify/github", async (req, res) => {
 });
 var auth_router_default = authRouter;
 
-// backend/routes/organisms/api-router.ts
+// src/api/organisms/api-router.ts
 init_env();
 import { Router } from "express";
 
-// backend/services/copilot/organisms/gemini-rest-service.ts
+// src/adapters/ai-providers/gemini-adapter.ts
 init_env();
 
-// backend/services/copilot/molecules/sse-parser.ts
+// src/shared/molecules/ai-core/sse-parser.ts
 var SSE_PARSER = {
   async *parse(reader) {
     let decoder = new TextDecoder(), buffer = "";
@@ -1700,7 +2805,7 @@ var SSE_PARSER = {
   }
 };
 
-// backend/services/copilot/organisms/gemini-rest-service.ts
+// src/adapters/ai-providers/gemini-adapter.ts
 init_logger();
 var GeminiRestService = {
   /**
@@ -1814,14 +2919,129 @@ var GeminiRestService = {
   }
 };
 
-// backend/routes/organisms/copilot-handler.ts
+// src/api/organisms/copilot-handler.ts
 init_env();
 
-// backend/services/copilot/organisms/completion-service.ts
+// src/shared/molecules/ai-core/organisms/completion-service.ts
 init_server_config();
 init_formatters();
 
-// backend/services/copilot/organisms/github-models-service.ts
+// src/shared/molecules/ai-core/organisms/gemini-rest-service.ts
+init_env();
+init_logger();
+var GeminiRestService2 = {
+  /**
+   * Internal Helper: Prepend models/ if missing for Native API
+   */
+  /**
+   * Internal Helper: Map UI Model Names to Official API IDs
+   * EVOLUTION: Respecting version numbers (3.1, 2.5, etc.) via slugification.
+   */
+  mapModel(model) {
+    let slug = model.toLowerCase().trim().replace(/[\s_]+/g, "-");
+    return slug.startsWith("models/") ? slug : `models/${slug}`;
+  },
+  async parseErrorDetail(response, fallbackMessage) {
+    let raw = await response.text().catch(() => "");
+    if (!raw) return fallbackMessage;
+    try {
+      return JSON.parse(raw).error?.message || raw;
+    } catch {
+      return raw;
+    }
+  },
+  /**
+   * Non-streaming call
+   */
+  async send(apiKey, model, payload) {
+    let modelId = this.mapModel(model), url = `https://generativelanguage.googleapis.com/v1beta/${modelId}:generateContent?key=${apiKey}`;
+    logger.info("GeminiRest", "Sending non-streaming Gemini REST request", { modelId });
+    let body = {
+      contents: [{ parts: [{ text: payload.user || "" }] }],
+      system_instruction: payload.system ? { parts: [{ text: payload.system }] } : void 0,
+      generationConfig: {
+        temperature: Number(env_default.DEFAULT_TEMPERATURE),
+        maxOutputTokens: Number(env_default.MAX_TOKENS)
+      }
+    }, response = await fetch2(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: payload.signal,
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      let errorDetail = await this.parseErrorDetail(response, "Gemini Native Error");
+      throw logger.warn("GeminiRest", "Gemini REST request failed", {
+        modelId,
+        status: response.status,
+        detail: errorDetail
+      }), { status: response.status, detail: errorDetail };
+    }
+    return (await response.json())?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  },
+  /**
+   * SSE Streaming Generator (Gemini Native Implementation)
+   */
+  async *stream(apiKey, model, payload) {
+    let modelId = this.mapModel(model), url = `https://generativelanguage.googleapis.com/v1beta/${modelId}:streamGenerateContent?alt=sse&key=${apiKey}`;
+    logger.info("GeminiRest", "Starting streaming Gemini REST request", { modelId });
+    let body = {
+      contents: [{ parts: [{ text: payload.user || "" }] }],
+      system_instruction: payload.system ? { parts: [{ text: payload.system }] } : void 0,
+      generationConfig: {
+        temperature: Number(env_default.DEFAULT_TEMPERATURE),
+        maxOutputTokens: Number(env_default.MAX_TOKENS)
+      }
+    }, response = await fetch2(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: payload.signal,
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      let errorDetail = await this.parseErrorDetail(response, "Gemini Native Stream Error");
+      throw logger.warn("GeminiRest", "Gemini streaming request failed", {
+        modelId,
+        status: response.status,
+        detail: errorDetail
+      }), { status: response.status, detail: errorDetail };
+    }
+    let reader = response.body?.getReader();
+    if (!reader) return;
+    let parseErrorLogged = !1;
+    for await (let line of SSE_PARSER.parse(reader))
+      try {
+        let text = JSON.parse(line).candidates?.[0]?.content?.parts?.[0]?.text || "";
+        text && (yield text);
+      } catch (e) {
+        parseErrorLogged || (parseErrorLogged = !0, logger.warn("GeminiRest", "Failed to parse SSE chunk from Gemini stream", {
+          modelId,
+          error: e
+        }));
+      }
+  },
+  /**
+   * Key Probe (Validation)
+   */
+  async validate(apiKey) {
+    let models = env_default.AVAILABLE_MODELS_GEMINI, lastErr = null;
+    for (let m of models)
+      try {
+        await this.send(apiKey, m, { system: "Validation", user: "hi" });
+        return;
+      } catch (err) {
+        lastErr = err;
+        let error = err;
+        if (error?.status === 401 || error?.status === 403) throw err;
+      }
+    throw logger.warn("GeminiRest", "Gemini API key validation exhausted all configured models", {
+      models,
+      error: lastErr
+    }), lastErr || { status: 401, detail: "Gemini Key validation failed" };
+  }
+};
+
+// src/shared/molecules/ai-core/organisms/github-models-service.ts
 init_env();
 var GitHubModelsService = {
   async send(token, model, payload, onChunk) {
@@ -1862,7 +3082,7 @@ var GitHubModelsService = {
   }
 };
 
-// backend/services/copilot/atoms/presets.ts
+// src/shared/atoms/ai-core/presets.ts
 var FALLBACK_PRESETS = [
   {
     id: "general",
@@ -1900,7 +3120,7 @@ function getPresetById(id) {
   return FALLBACK_PRESETS.find((p) => p.id === normalized) || FALLBACK_PRESETS[0];
 }
 
-// backend/services/copilot/atoms/prompt-template.ts
+// src/shared/atoms/ai-core/prompt-template.ts
 var PROFESSIONAL_DRAFT_DIRECTIVE = (prompt) => `
 ### \u56DE\u8986\u4EFB\u52D9 ###
 \u4F7F\u7528\u8005\u9700\u6C42\uFF1A${prompt}
@@ -1922,7 +3142,7 @@ var PROFESSIONAL_DRAFT_DIRECTIVE = (prompt) => `
 \u958B\u59CB\u64B0\u5BEB\uFF08\u8ACB\u76F4\u63A5\u7522\u51FA\u5167\u5BB9\uFF09\uFF1A
 `;
 
-// backend/services/copilot/atoms/system-identity.ts
+// src/shared/atoms/ai-core/system-identity.ts
 init_env();
 var SYSTEM_IDENTITY_TEMPLATE = (p) => {
   let lang = p.languageOverrides || env_default.DEFAULT_RESPONSE_LANGUAGE, persona = p.personaOverrides || env_default.DEFAULT_PERSONA;
@@ -1937,7 +3157,7 @@ var SYSTEM_IDENTITY_TEMPLATE = (p) => {
 `);
 };
 
-// backend/services/copilot/atoms/word-instructions.ts
+// src/shared/atoms/ai-core/word-instructions.ts
 var WORD_ACTION_GUIDE = `
 [Office Agent \u589E\u5F37\u63D0\u793A]
 1. \u82E5\u7528\u6236\u5E0C\u671B\u300C\u66FF\u63DB\u300D\u73FE\u6709\u5167\u5BB9\u6216\u91DD\u5C0D\u7576\u524D\u9078\u53D6\u6587\u5B57\u9032\u884C\u4FEE\u6539\uFF0C\u8ACB\u5728\u56DE\u8986\u672B\u5C3E\u5305\u542B\uFF1A
@@ -1947,7 +3167,7 @@ var WORD_ACTION_GUIDE = `
 \u8ACB\u78BA\u4FDD\u5167\u5BB9\u53EF\u4EE5\u76F4\u63A5\u88AB\u63D2\u5165 Word \u4E14\u683C\u5F0F\u6B63\u78BA\u3002
 `;
 
-// backend/services/copilot/organisms/prompt-orchestrator.ts
+// src/shared/molecules/ai-core/organisms/prompt-orchestrator.ts
 var PromptOrchestrator = {
   buildWordPrompt(prompt, officeContext, _model, presetId, systemPromptOverride) {
     let preset = getPresetById(presetId), userContent = PROFESSIONAL_DRAFT_DIRECTIVE(prompt), system = SYSTEM_IDENTITY_TEMPLATE({
@@ -1973,7 +3193,7 @@ ${systemPromptOverride}`), {
   }
 };
 
-// backend/services/copilot/molecules/fallback-chain.ts
+// src/shared/molecules/ai-core/fallback-chain.ts
 init_logger();
 var FallbackChain = class _FallbackChain {
   models;
@@ -2012,8 +3232,30 @@ var FallbackChain = class _FallbackChain {
   }
 };
 
-// backend/services/copilot/organisms/completion-service.ts
-init_sdk_provider();
+// src/shared/molecules/ai-core/organisms/sdk-provider.ts
+init_formatters();
+init_core_config();
+init_client_manager();
+init_option_resolver();
+init_tool_registry();
+init_pending_input_queue();
+init_session_lifecycle();
+init_workflow_graph();
+init_health_prober();
+var sendPromptViaCopilotSdk = (prompt, onChunk, isExplicitCli = !1, modelName, azureInfo, methodOverride, geminiKey, officeContext, signal, sessionId) => ModernSDKOrchestrator.sendPrompt(
+  prompt,
+  onChunk,
+  isExplicitCli,
+  modelName,
+  azureInfo,
+  methodOverride,
+  geminiKey,
+  officeContext,
+  signal,
+  sessionId
+);
+
+// src/shared/molecules/ai-core/organisms/completion-service.ts
 init_logger();
 var CompletionService = {
   async execute(req, onChunk, signal) {
@@ -2031,11 +3273,11 @@ var CompletionService = {
       }
       if (req.authProvider === "gemini_api" && req.geminiKey)
         if (req.stream) {
-          for await (let chunk of GeminiRestService.stream(req.geminiKey, resolvedModel, { system, user }))
+          for await (let chunk of GeminiRestService2.stream(req.geminiKey, resolvedModel, { system, user }))
             onChunk?.(chunk);
           return;
         } else
-          return await GeminiRestService.send(req.geminiKey, resolvedModel, { system, user });
+          return await GeminiRestService2.send(req.geminiKey, resolvedModel, { system, user });
       let isExplicitGeminiCli = req.authProvider === "gemini_cli", combinedPrompt = `${system}
 
 ${user}`, streamedText = await sendPromptViaCopilotSdk(
@@ -2047,7 +3289,10 @@ ${user}`, streamedText = await sendPromptViaCopilotSdk(
         // azure info
         isExplicitGeminiCli ? "gemini_cli" : void 0,
         req.geminiKey,
-        signal
+        req.officeContext,
+        signal,
+        req.sessionId
+        // Pass sessionId to orchestrator
       );
       if (isExplicitGeminiCli && req.stream && !String(streamedText || "").trim()) {
         logger.warn("CompletionService", "Empty Gemini CLI streaming result; retrying once with non-streaming fallback", {
@@ -2062,6 +3307,7 @@ ${user}`, streamedText = await sendPromptViaCopilotSdk(
           void 0,
           "gemini_cli",
           req.geminiKey,
+          req.officeContext,
           signal
           // propagate abort to fallback ??avoids resource leak on disconnect
         );
@@ -2088,7 +3334,17 @@ ${user}`, streamedText = await sendPromptViaCopilotSdk(
         try {
           let fallbackResult = await chain.execute(async (fallbackModel) => {
             let { system: _s, user: u } = PromptOrchestrator.buildWordPrompt(req.prompt, req.officeContext, fallbackModel, req.presetId || "general");
-            return await sendPromptViaCopilotSdk(u, onChunk, !1, fallbackModel, void 0, void 0, void 0, signal);
+            return await sendPromptViaCopilotSdk(
+              u,
+              onChunk,
+              !1,
+              fallbackModel,
+              void 0,
+              void 0,
+              void 0,
+              req.officeContext,
+              signal
+            );
           });
           return fallbackResult.fallbackUsed && logger.info("CompletionService", "Fallback model succeeded", {
             primaryModel: resolvedModel,
@@ -2106,7 +3362,7 @@ ${user}`, streamedText = await sendPromptViaCopilotSdk(
   }
 };
 
-// backend/services/copilot/molecules/response-parser.ts
+// src/shared/molecules/ai-core/response-parser.ts
 var ResponseParser = {
   parse(text) {
     let actions = [], cleanText = text, actionRegex = /<office-action\s+type="([^"]+)">([\s\S]*?)<\/office-action>/gi, match;
@@ -2120,7 +3376,7 @@ var ResponseParser = {
   }
 };
 
-// backend/core/atoms/latency-tracker.ts
+// src/infra/atoms/latency-tracker.ts
 var marks = /* @__PURE__ */ new Map(), MAX_MARKS = 1e3;
 function markStart(label) {
   if (marks.size > MAX_MARKS) {
@@ -2136,16 +3392,16 @@ function markEnd(label) {
   return marks.delete(label), console.log(`[Perf] ${label}: ${elapsed}ms`), elapsed;
 }
 
-// backend/core/atoms/request-logger.ts
+// src/infra/atoms/request-logger.ts
 import crypto3 from "node:crypto";
 
-// backend/core/atoms/client-ip.ts
+// src/infra/atoms/client-ip.ts
 function getClientIp(req) {
   let forwarded = req.headers["x-forwarded-for"];
   return typeof forwarded == "string" ? forwarded.split(",")[0].trim() : req.ip || req.socket.remoteAddress || "unknown";
 }
 
-// backend/core/atoms/request-logger.ts
+// src/infra/atoms/request-logger.ts
 init_logger();
 function createRequestLog(req, requestId = crypto3.randomUUID()) {
   let ip = getClientIp(req);
@@ -2171,14 +3427,14 @@ function logCompletion(log, result) {
   logger.info("Request", "Completion finished", entry);
 }
 
-// backend/routes/organisms/copilot-handler.ts
+// src/api/organisms/copilot-handler.ts
 init_system_state_store();
 init_nexus_socket();
 init_logger();
 var handleCopilotRequest = async (req, res) => {
   let reqLog = createRequestLog(req, res.locals.requestId), requestId = reqLog.requestId;
   markStart(requestId);
-  let firstTokenTracked = !1, chunkCount = 0, { prompt, officeContext, model, stream, authProvider, presetId, systemPrompt } = req.body, geminiKey = req.headers["x-gemini-key"] || env_default.GEMINI_API_KEY, streamingRes = res;
+  let firstTokenTracked = !1, chunkCount = 0, streamStartMs = 0, { prompt, officeContext, model, stream, authProvider, presetId, systemPrompt } = req.body, authHeader = req.headers.authorization, geminiKey = (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null) || env_default.GEMINI_API_KEY, streamingRes = res;
   try {
     let setStreamingState = (isStreaming) => {
       GlobalSystemState.update({ isStreaming }), NexusSocketRelay.broadcast("SYSTEM_STATE_UPDATED", GlobalSystemState.getState());
@@ -2193,33 +3449,45 @@ var handleCopilotRequest = async (req, res) => {
 
 `), res.write(": " + " ".repeat(256) + `
 
-`);
+`), streamingRes.flush?.();
       let onChunk = (chunk) => {
-        firstTokenTracked || (markEnd(`${requestId}:first-token`), firstTokenTracked = !0), res.write(`data: ${JSON.stringify({ text: chunk })}
+        if (!firstTokenTracked) {
+          let ttft = markEnd(`${requestId}:first-token`);
+          firstTokenTracked = !0, streamStartMs = performance.now(), GlobalSystemState.update({ ttft }), NexusSocketRelay.broadcast("SYSTEM_STATE_UPDATED", GlobalSystemState.getState());
+        }
+        res.write(`data: ${JSON.stringify({ text: chunk })}
 
 `), streamingRes.flush?.(), chunkCount++;
       };
       markStart(`${requestId}:first-token`);
       let abortController = new AbortController(), isClientConnected = !0, handleDisconnect = () => {
-        !isClientConnected || res.writableEnded || (isClientConnected = !1, setStreamingState(!1), abortController.abort(), logger.info("CopilotHandler", "Client disconnected during stream; aborting upstream turn", { requestId }));
+        !isClientConnected || res.writableEnded || (isClientConnected = !1, setStreamingState(!1), abortController.abort(), logger.info("CopilotHandler", "Client disconnected during stream; aborting upstream turn", {
+          requestId
+        }));
       };
-      if (res.on("close", handleDisconnect), await CompletionService.execute({
-        prompt,
-        officeContext,
-        model,
-        presetId,
-        stream: !0,
-        authProvider,
-        geminiKey,
-        systemPrompt
-      }, (chunk) => {
-        isClientConnected && onChunk(chunk);
-      }, abortController.signal), isClientConnected) {
+      if (res.on("close", handleDisconnect), await CompletionService.execute(
+        {
+          prompt,
+          officeContext,
+          model,
+          presetId,
+          stream: !0,
+          authProvider,
+          geminiKey,
+          systemPrompt,
+          sessionId: requestId
+          // Pass requestId as sessionId
+        },
+        (chunk) => {
+          isClientConnected && onChunk(chunk);
+        },
+        abortController.signal
+      ), isClientConnected) {
         res.write(`data: [DONE]
 
 `);
-        let streamLatency = markEnd(requestId);
-        logCompletion(reqLog, { latencyMs: streamLatency, status: "ok", chunks: chunkCount }), res.end();
+        let streamLatency = markEnd(requestId), elapsedSec = streamStartMs > 0 ? (performance.now() - streamStartMs) / 1e3 : 1, estimatedTokens = Math.round(chunkCount * 8), tokensPerSec = elapsedSec > 0 ? Math.round(estimatedTokens / elapsedSec) : 0;
+        GlobalSystemState.update({ tokensPerSec, activePersona: presetId || "General" }), NexusSocketRelay.broadcast("SYSTEM_STATE_UPDATED", GlobalSystemState.getState()), logCompletion(reqLog, { latencyMs: streamLatency, status: "ok", chunks: chunkCount }), res.end();
         return;
       } else
         return;
@@ -2266,14 +3534,14 @@ var handleCopilotRequest = async (req, res) => {
   }
 };
 
-// backend/routes/organisms/api-router.ts
+// src/api/organisms/api-router.ts
 init_option_resolver();
 init_client_manager();
-init_sdk_orchestrator_v2();
+init_workflow_graph();
 init_nexus_socket();
 init_system_state_store();
 
-// backend/routes/molecules/rate-limiter.ts
+// src/api/molecules/rate-limiter.ts
 init_logger();
 var store = /* @__PURE__ */ new Map(), WINDOW_MS = 6e4, CLEANUP_INTERVAL_MS = 5 * 6e4, cleanupTimer = setInterval(() => {
   let now = Date.now();
@@ -2303,7 +3571,7 @@ function createRateLimiter(maxRequests) {
   };
 }
 
-// backend/routes/atoms/request-validator.ts
+// src/api/atoms/request-validator.ts
 init_logger();
 var MAX_INPUT_CHARS = 5e4, isNonEmptyString = (value) => typeof value == "string" && value.trim().length > 0, countText = (value) => typeof value == "string" ? value.trim().length : 0;
 function validateOfficeContext(context, errors) {
@@ -2363,8 +3631,8 @@ var validateCopilotRequestBody = (body) => {
   next();
 };
 
-// backend/routes/organisms/api-router.ts
-import path5 from "node:path";
+// src/api/organisms/api-router.ts
+import path11 from "node:path";
 import { pathToFileURL } from "node:url";
 var limiter = createRateLimiter(), ACP_VALIDATION_METHODS = {
   azure: "azure_byok",
@@ -2374,9 +3642,12 @@ var limiter = createRateLimiter(), ACP_VALIDATION_METHODS = {
   gemini_cli: "gemini_cli",
   copilot: "copilot_cli",
   copilot_cli: "copilot_cli"
-}, apiRouter = Router();
+}, apiRouter = Router(), isLocalRequest = (req) => {
+  let ip = req.ip || req.socket.remoteAddress || "";
+  return ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1" || process.env.NODE_ENV !== "production";
+};
 apiRouter.get("/config", (_req, res) => {
-  console.log(`[API] Serving config, AUTO_CONNECT_CLI: ${env_default.AUTO_CONNECT_CLI}`), res.json({
+  res.json({
     COPILOT_MODEL: env_default.COPILOT_MODEL,
     AVAILABLE_MODELS_GITHUB: env_default.AVAILABLE_MODELS_GITHUB,
     AVAILABLE_MODELS_GEMINI: env_default.AVAILABLE_MODELS_GEMINI,
@@ -2401,89 +3672,60 @@ apiRouter.post("/gemini/validate", async (req, res) => {
   }
 });
 apiRouter.post("/acp/validate", async (req, res) => {
-  let client, validationTimer;
+  let client, validationTimer, acpMethod, clientOptions;
   try {
     let { method, token, endpoint, deployment } = req.body;
-    if (typeof method != "string" || !method.trim()) {
-      res.status(400).json({ detail: "Method missing" });
+    if (acpMethod = ACP_VALIDATION_METHODS[method], !acpMethod) {
+      res.status(400).json({ detail: `Unsupported method: ${method}` });
       return;
     }
-    let acpMethod = ACP_VALIDATION_METHODS[method];
-    if (!acpMethod) {
-      res.status(400).json({ detail: `Unsupported ACP validation method: ${method}` });
-      return;
-    }
-    console.log(`[API] Validating ${method} via ${acpMethod}...`);
-    let { clientOptions } = resolveACPOptions({
+    clientOptions = resolveACPOptions({
       method: acpMethod,
       model: acpMethod === "gemini_cli" ? "gemini-1.5-flash" : "github-models",
       streaming: !1,
       githubToken: acpMethod === "copilot_cli" && token || void 0,
       geminiKey: acpMethod === "gemini_cli" ? token : void 0,
       azure: acpMethod === "azure_byok" ? { apiKey: token, endpoint, deployment } : void 0
-    });
-    client = await getOrCreateClient(acpMethod, clientOptions);
+    }).clientOptions, client = await getOrCreateClient(acpMethod, clientOptions);
     let validationTimeoutMs = 15e3, pingPromise = client.ping("health-check"), timeoutPromise = new Promise((_, reject) => {
-      validationTimer = setTimeout(() => {
-        reject(new Error("ACP Handshake Timeout: Agent did not respond to ping within 15s"));
-      }, validationTimeoutMs);
+      validationTimer = setTimeout(
+        () => reject(new Error("ACP Handshake Timeout")),
+        validationTimeoutMs
+      );
     });
-    await Promise.race([pingPromise, timeoutPromise]), res.json({ status: 200, detail: `${method} session is valid via ACP` });
+    await Promise.race([pingPromise, timeoutPromise]), res.json({ status: 200, detail: `${method} valid` });
   } catch (err) {
-    console.error("[ACP Token Validation Error]", err);
-    let detail = err instanceof Error ? err.message : "Invalid credentials or ACP failure", status = detail.includes("Timeout") ? 504 : 401;
-    res.status(status).json({ status, detail });
+    let detail = err instanceof Error ? err.message : "ACP failure";
+    res.status(401).json({ status: 401, detail });
   } finally {
-    validationTimer && clearTimeout(validationTimer);
+    validationTimer && clearTimeout(validationTimer), client && acpMethod && clientOptions && removeClientByParams(acpMethod, clientOptions).catch(() => {
+    });
   }
 });
 apiRouter.get("/health", async (_req, res) => {
   try {
     let health = await ModernSDKOrchestrator.healthCheck();
-    res.json({
-      status: "ok",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      clients: health,
-      uptime: process.uptime()
-    });
+    res.json({ status: "ok", clients: health, uptime: process.uptime() });
   } catch (err) {
-    res.status(500).json({
-      status: "error",
-      detail: err instanceof Error ? err.message : String(err),
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  }
-});
-apiRouter.post("/copilot/response", async (req, res) => {
-  try {
-    let { sessionId, answer } = req.body;
-    if (!sessionId || typeof sessionId != "string") {
-      res.status(400).json({ status: 400, detail: "Missing or invalid sessionId" });
-      return;
-    }
-    if (!ModernSDKOrchestrator.resolveInput(sessionId, answer)) {
-      res.status(404).json({ status: 404, detail: "Session not found or already resolved" });
-      return;
-    }
-    res.json({ status: 200, detail: "Response received" });
-  } catch (err) {
-    res.status(500).json({ status: 500, detail: String(err) });
+    res.status(500).json({ status: "error", detail: String(err) });
   }
 });
 apiRouter.post("/copilot", limiter, validateCopilotRequest, handleCopilotRequest);
-apiRouter.post("/system/patch", async (_req, res) => {
-  try {
-    console.log("[API] Triggering SDK Patching...");
-    let patcherPath = path5.resolve(process.cwd(), "scripts", "patch-copilot-sdk.mjs");
-    await import(`${pathToFileURL(patcherPath).href}?t=${Date.now()}-${Math.random().toString(36).slice(2)}`), res.json({ status: 200, detail: "SDK Patched successfully" });
-  } catch (err) {
-    res.status(500).json({ status: 500, detail: String(err) });
+apiRouter.post("/system/patch", async (req, res) => {
+  if (!isLocalRequest(req)) {
+    res.status(403).json({ detail: "Restricted" });
+    return;
   }
-});
-apiRouter.post("/gateway/stop", async (_req, res) => {
   try {
-    let { stopAllClients: stopAllClients2 } = await Promise.resolve().then(() => (init_sdk_provider(), sdk_provider_exports));
-    await stopAllClients2(), res.json({ status: 200, detail: "All AI gateways disconnected" });
+    let patcherPath = path11.resolve(
+      process.cwd(),
+      "src",
+      "infra",
+      "scripts",
+      "core",
+      "patch-copilot-sdk.mjs"
+    );
+    await import(pathToFileURL(patcherPath).href), res.json({ status: 200, detail: "SDK Patched" });
   } catch (err) {
     res.status(500).json({ status: 500, detail: String(err) });
   }
@@ -2492,34 +3734,35 @@ apiRouter.get("/system/state", (_req, res) => {
   res.json(GlobalSystemState.getState());
 });
 apiRouter.post("/system/state", (req, res) => {
-  let { power, provider, isWarming, isStreaming } = req.body, origin = req.headers.origin || "unknown";
+  if (!isLocalRequest(req)) {
+    res.status(403).json({ detail: "Restricted" });
+    return;
+  }
+  let { power, provider, isWarming, isStreaming } = req.body;
+  if (provider && !ACP_VALIDATION_METHODS[provider]) {
+    res.status(400).json({ detail: "Invalid provider" });
+    return;
+  }
   GlobalSystemState.update({ power, provider, isWarming, isStreaming });
   let newState = GlobalSystemState.getState();
-  console.log(`[Sync] Update from ${origin} -> Power: ${newState.power}, Provider: ${newState.provider}, Streaming: ${newState.isStreaming}`), NexusSocketRelay.broadcast("SYSTEM_STATE_UPDATED", newState), res.json({ status: 200, ...newState });
+  NexusSocketRelay.broadcast("SYSTEM_STATE_UPDATED", newState), res.json({ status: 200, ...newState });
 });
-apiRouter.get("/system/warmup", async (_req, res) => {
-  GlobalSystemState.update({ isWarming: !0 }), console.log("[API] Warming up AI Gateways...");
+apiRouter.get("/system/warmup", async (req, res) => {
+  if (!isLocalRequest(req)) {
+    res.status(403).json({ detail: "Restricted" });
+    return;
+  }
+  GlobalSystemState.update({ isWarming: !0 });
   try {
-    let { warmUpClient: warmUpClient2 } = await Promise.resolve().then(() => (init_sdk_provider(), sdk_provider_exports));
-    await warmUpClient2(GlobalSystemState.getState().provider), GlobalSystemState.update({ isWarming: !1 }), res.json({ status: 200, detail: "Warming complete" });
+    let { warmUpClient: warmUpClient3 } = await Promise.resolve().then(() => (init_client_manager(), client_manager_exports));
+    await warmUpClient3(GlobalSystemState.getState().provider), GlobalSystemState.update({ isWarming: !1 }), res.json({ status: 200, detail: "Warming complete" });
   } catch (e) {
     GlobalSystemState.update({ isWarming: !1 }), res.status(500).json({ status: 500, detail: String(e) });
   }
 });
-var isLocalRequest = (req) => {
-  let ip = req.ip || req.socket.remoteAddress || "";
-  return ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1" || process.env.NODE_ENV !== "production";
-};
-apiRouter.post("/system/quit", (req, res) => {
-  if (!isLocalRequest(req)) {
-    res.status(403).json({ detail: "System controls are restricted." });
-    return;
-  }
-  console.log("[API] System Shutdown Triggered."), res.json({ status: 200, detail: "Shutting down..." }), setTimeout(() => process.exit(0), 1e3);
-});
 var api_router_default = apiRouter;
 
-// backend/core/molecules/telemetry-middleware.ts
+// src/infra/molecules/telemetry-middleware.ts
 import crypto4 from "node:crypto";
 init_nexus_socket();
 function telemetryMiddleware(req, res, next) {
@@ -2543,15 +3786,17 @@ function telemetryMiddleware(req, res, next) {
   res.once("finish", finalize), res.once("close", finalize), next();
 }
 
-// backend/core/molecules/app-factory.ts
+// src/infra/molecules/app-factory.ts
 var AppFactory = {
   create() {
-    let app = express2(), distPath = path6.resolve(process.cwd(), "dist"), defaultOrigins = [
+    let app = express2(), distPath = path12.resolve(process.cwd(), "dist"), defaultOrigins = [
       "https://localhost:3000",
       "https://localhost:3001",
       "https://localhost:4000"
-    ], configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean), allowedOrigins = /* @__PURE__ */ new Set([...defaultOrigins, ...configuredOrigins]), allowAllOrigins = process.env.CORS_ALLOW_ALL_ORIGINS === "true" || process.env.NODE_ENV !== "production", allowedPatterns = [/\.run\.app$/];
-    return app.use(telemetryMiddleware), app.use(cors({
+    ], configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean), allowedOrigins = /* @__PURE__ */ new Set([...defaultOrigins, ...configuredOrigins]), allowAllOrigins = process.env.CORS_ALLOW_ALL_ORIGINS === "true", allowedPatterns = [/\.run\.app$/];
+    return app.use(telemetryMiddleware), app.use((req, _res, next) => {
+      req.requestId = req.headers["x-request-id"] || randomUUID4(), next();
+    }), app.use(cors({
       origin: (origin, callback) => {
         if (!origin) {
           callback(null, !0);
@@ -2563,7 +3808,7 @@ var AppFactory = {
       allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Gemini-Key", "X-User-API-Key"],
       credentials: !0
     })), app.use(express2.json({ limit: "1mb" })), app.use(express2.static(distPath)), app.use("/auth", auth_router_default), app.use("/api", api_router_default), app.get("/api/debug/list-models", async (req, res) => {
-      if (process.env.NODE_ENV === "production" && process.env.EXPOSE_DEBUG_ENDPOINTS !== "true") {
+      if (process.env.EXPOSE_DEBUG_ENDPOINTS !== "true") {
         res.status(403).json({ error: "debug_endpoint_disabled" });
         return;
       }
@@ -2584,18 +3829,18 @@ var AppFactory = {
   }
 };
 
-// backend/core/molecules/https-server-options.ts
-import fs2 from "node:fs";
-import path7 from "node:path";
+// src/infra/molecules/https-server-options.ts
+import fs5 from "node:fs";
+import path13 from "node:path";
 async function resolveHttpsServerOptions() {
-  let certPath = path7.join(process.cwd(), "certs"), keyFile = path7.join(certPath, "localhost.key"), crtFile = path7.join(certPath, "localhost.crt");
-  if (fs2.existsSync(keyFile) && fs2.existsSync(crtFile))
+  let certPath = path13.join(process.cwd(), "certs"), keyFile = path13.join(certPath, "localhost.key"), crtFile = path13.join(certPath, "localhost.crt");
+  if (fs5.existsSync(keyFile) && fs5.existsSync(crtFile))
     try {
       return console.log("[Setup] SSL: Using Industrial Zenith Certificates (Mount)"), {
         isHttps: !0,
         options: {
-          key: fs2.readFileSync(keyFile),
-          cert: fs2.readFileSync(crtFile)
+          key: fs5.readFileSync(keyFile),
+          cert: fs5.readFileSync(crtFile)
         }
       };
     } catch (e) {
@@ -2612,8 +3857,7 @@ async function resolveHttpsServerOptions() {
   }
 }
 
-// backend/core/molecules/lifecycle-manager.ts
-init_sdk_provider();
+// src/infra/molecules/lifecycle-manager.ts
 var LifecycleManager = class {
   static shutdownHandlers = [];
   static isShuttingDown = !1;
@@ -2634,16 +3878,22 @@ var LifecycleManager = class {
     if (this.registered) return;
     this.registered = !0, ["SIGINT", "SIGTERM"].forEach((sig) => {
       process.once(sig, async () => {
-        if (!this.isShuttingDown) {
-          this.isShuttingDown = !0, console.log(`
+        if (this.isShuttingDown) return;
+        this.isShuttingDown = !0, console.log(`
 [Lifecycle] ${sig} received. Commencing unified cleanup...`);
+        let timeout = setTimeout(() => {
+          console.error("[Lifecycle] Cleanup timed out after 10s. Force exiting."), process.exit(1);
+        }, 1e4);
+        try {
           for (let handler of this.shutdownHandlers)
             try {
               await handler();
             } catch (err) {
               console.error("[Lifecycle] Cleanup handler failed:", err);
             }
-          console.log("[Lifecycle] Cleanup complete. Exiting."), process.exit(0);
+          console.log("[Lifecycle] Cleanup complete. Exiting."), clearTimeout(timeout), process.exit(0);
+        } catch (err) {
+          console.error("[Lifecycle] Unexpected error during cleanup:", err), process.exit(1);
         }
       });
     });
@@ -2651,7 +3901,7 @@ var LifecycleManager = class {
 };
 LifecycleManager.onShutdown(async () => {
   try {
-    let { ModernSDKOrchestrator: ModernSDKOrchestrator2 } = await Promise.resolve().then(() => (init_sdk_orchestrator_v2(), sdk_orchestrator_v2_exports));
+    let { ModernSDKOrchestrator: ModernSDKOrchestrator2 } = await Promise.resolve().then(() => (init_workflow_graph(), workflow_graph_exports));
     await ModernSDKOrchestrator2.cleanup();
   } catch (err) {
     console.warn("[Lifecycle] SDK cleanup failed:", err);
@@ -2661,13 +3911,15 @@ LifecycleManager.onShutdown(async () => {
   await stopAllClients();
 });
 
-// backend/core/organisms/server-orchestrator.ts
+// src/infra/organisms/server-orchestrator.ts
 init_idle_cleaner();
-init_sdk_provider();
 init_nexus_socket();
+init_logger();
 var ServerOrchestrator = {
   async start() {
-    markStart("server-startup");
+    markStart("server-startup"), logger.setHook((entry) => {
+      NexusSocketRelay.broadcast("LOG_ENTRY", entry);
+    });
     let app = AppFactory.create(), { isHttps, options } = await resolveHttpsServerOptions(), targetPort = Number(server_config_default.PORT) || 4e3;
     try {
       let server = isHttps ? https.createServer(options, app) : http.createServer(app);
@@ -2679,7 +3931,7 @@ var ServerOrchestrator = {
       }), console.log(`[Setup] Server: ${isHttps ? "https" : "http"}://localhost:${targetPort}`), markEnd("server-startup"), NexusSocketRelay.attach(server), LifecycleManager.registerServer(server), server_config_default.AUTO_CONNECT_CLI && !server_config_default.isRemoteCliConfigured() && setImmediate(() => {
         warmUpClient("copilot_cli");
       }), IdleCleaner.startScanning(async (_key) => {
-        await cleanupAllSessions(), await stopAllClients();
+        await cleanupAllSessions2(), await stopAllClients();
       }), server;
     } catch (error) {
       throw console.error("[Setup] Server failed to start:", error), error;
@@ -2687,7 +3939,7 @@ var ServerOrchestrator = {
   }
 };
 
-// backend/server.ts
+// src/server.ts
 process.env.NODE_NO_WARNINGS = "1";
 ServerOrchestrator.start().catch((err) => {
   console.error("[Critical] Core Server Orchestration Failed:", err), process.exit(1);

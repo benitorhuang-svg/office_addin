@@ -1,9 +1,10 @@
-﻿import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import config from '@config/env.js';
 import { renderStatusHTML } from '@api/atoms/status-html.js';
 import { SESSION_STORE } from '@api/molecules/session-store.js';
 import { OAuthService } from '@api/organisms/oauth-service.js';
 import { logger } from '@shared/logger/index.js';
+import crypto from 'crypto';
 
 interface GeminiModelsResponse {
   models?: unknown[];
@@ -54,7 +55,15 @@ authRouter.get('/github', (req: Request, res: Response): void => {
     return;
   }
 
-  const url = OAuthService.getGitHubAuthorizeUrl(sessionId, redirectUri);
+  // CSRF Protection & PKCE: Generate state, verifier, and challenge
+  const state = crypto.randomBytes(32).toString('hex');
+  const codeVerifier = crypto.randomBytes(32).toString('base64url');
+  const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+  
+  SESSION_STORE.set(`state:${sessionId}`, state);
+  SESSION_STORE.set(`verifier:${sessionId}`, codeVerifier);
+
+  const url = OAuthService.getGitHubAuthorizeUrl(sessionId, redirectUri, state, codeChallenge);
   res.redirect(url);
 });
 
@@ -64,14 +73,24 @@ authRouter.get('/github', (req: Request, res: Response): void => {
 authRouter.get('/callback', async (req: Request, res: Response): Promise<void> => {
   const code = req.query.code as string;
   const sessionId = (req.query.session as string) || (req.query.state as string) || '';
+  const state = req.query.state as string;
+
+  // Verify State
+  const expectedState = SESSION_STORE.get(`state:${sessionId}`);
+  if (!state || state !== expectedState) {
+    res.status(403).send('Invalid state / CSRF potential.');
+    return;
+  }
 
   if (!code) {
     res.status(400).send('Missing code');
     return;
   }
 
+  const codeVerifier = SESSION_STORE.get(`verifier:${sessionId}`);
+
   try {
-    const accessToken = await OAuthService.exchangeGitHubCode(code);
+    const accessToken = await OAuthService.exchangeGitHubCode(code, codeVerifier || '');
     OAuthService.finalizeSession(sessionId, accessToken);
 
     res.send(renderStatusHTML(

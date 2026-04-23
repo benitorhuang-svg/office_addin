@@ -68,7 +68,7 @@ export class WorkflowGraph {
 
     try {
       // 2. Routing: Analyze intent and break down task (Parallel Optimization)
-      const routeResult = await RouterAgent.analyzeIntent(prompt, { query: prompt, traceId });
+      const routeResult = await RouterAgent.analyzeIntent(prompt, { traceId });
 
       globalStateManager.recordAction(sessionId, {
         agent: "router",
@@ -142,20 +142,39 @@ export class WorkflowGraph {
         log.info(TAG, `Routing through QA Reviewer for domains [${qaDomains.join(", ")}]`);
         globalStateManager.updateState(sessionId, { status: "reviewing" });
 
-        const primaryDomain = qaDomains[0];
-        // 修正這裡：傳入真正的 generator (LLM 呼叫函式)，而非原本的 prompt 字串
-        const qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, {
-          domain: primaryDomain,
-          traceId,
-        });
-        finalContent = qaResult.content;
+        if (qaDomains.length > 1) {
+          log.info(TAG, "Executing parallel multi-domain review.");
+          // Parallel execution logic for multiple domains
+          const reviewTasks = qaDomains.map(async (domain) => {
+            return await QAReviewerAgent.enforceQuality(generator, prompt, {
+              domain,
+              traceId,
+            });
+          });
+          const results = await Promise.all(reviewTasks);
+          finalContent = results.map(r => r.content).join("\n\n---\n\n");
 
-        globalStateManager.recordAction(sessionId, {
-          agent: "qa-reviewer",
-          action: "review_design",
-          payload: { domains: qaDomains },
-          result: qaResult,
-        });
+          globalStateManager.recordAction(sessionId, {
+            agent: "qa-reviewer",
+            action: "parallel_review",
+            payload: { domains: qaDomains },
+            result: "success",
+          });
+        } else {
+          const primaryDomain = qaDomains[0];
+          const qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, {
+            domain: primaryDomain,
+            traceId,
+          });
+          finalContent = qaResult.content;
+
+          globalStateManager.recordAction(sessionId, {
+            agent: "qa-reviewer",
+            action: "review_design",
+            payload: { domains: qaDomains },
+            result: qaResult,
+          });
+        }
       } else {
         log.info(TAG, `Direct execution for generic intent (no specific QA gating)`);
         // 修正這裡：直接呼叫 generator

@@ -16,7 +16,8 @@ export class ExcelSkillInvoker {
     static async invokeExcelExpert(
         inputPath: string,
         outputPath: string,
-        changes: unknown[]
+        changes: unknown[],
+        _officeContext?: unknown
     ): Promise<unknown> {
         return invokeExcelSkill({
             input_path: inputPath,

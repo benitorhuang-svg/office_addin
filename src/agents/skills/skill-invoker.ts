@@ -1,36 +1,42 @@
-﻿/**
+import { ExcelSkillInvoker } from "@agents/expert-excel/index";
+import { PPTSkillInvoker } from "@agents/expert-ppt/index";
+import { WordSkillInvoker } from "@agents/expert-word/index";
+import { SharedSkillInvoker } from "./shared/shared-invoker";
+
+/**
  * ElegantSkillInvoker — Central façade that delegates to domain-specific invokers.
- * Import from the individual domain modules for direct access.
+ * This is the unified entry point for all skill executions.
  */
-// Domain entrypoints (via parts layer)
-
-// Re-export through the new `parts` layer for clearer domain separation.
-export { ExcelSkillInvoker } from "@agents/expert-excel/index.js";
-export { PPTSkillInvoker }   from "@agents/expert-ppt/index.js";
-export { WordSkillInvoker }  from "@agents/expert-word/index.js";
-export { SharedSkillInvoker } from "./shared/shared-invoker.js";
-
-// Agent-callable skill registry (OpenAI / Copilot tool-call compatible)
-export {
-  excelSkill,
-  pptSkill,
-  wordSkill,
-  findSkill,
-  getAllSkills,
-  getToolDefinitions,
-} from "@agents/index.js";
-export type { AgentSkill, AgentSkillContext, AgentSkillResult } from "@agents/index.js";
-
-// ---- Legacy imports for backward compatibility within this module ----
-import { WordSkillInvoker }   from "@agents/expert-word/index.js";
-import { SharedSkillInvoker } from "@agents/skills/shared/shared-invoker.js";
-
 export class ElegantSkillInvoker {
-    static invokeWordExpert(inputPath: string, outputPath: string, changes: unknown[]) {
-        return WordSkillInvoker.invokeWordExpert(inputPath, outputPath, changes);
+    /**
+     * Invoke the ExcelExpert skill.
+     */
+    static async invokeExcel(inputPath: string, outputPath: string, changes: unknown[], officeContext?: unknown) {
+        return ExcelSkillInvoker.invokeExcelExpert(inputPath, outputPath, changes, officeContext);
     }
 
-    static invokeVectorSearch(apiKey: string, query: string, docs: string[]) {
+    /**
+     * Invoke the PPTExpert skill.
+     */
+    static async invokePPT(inputPath: string, outputPath: string, changes: unknown[], officeContext?: unknown) {
+        return PPTSkillInvoker.invokePPTExpert(inputPath, outputPath, changes, officeContext);
+    }
+
+    /**
+     * Invoke the WordExpert skill.
+     */
+    static async invokeWord(inputPath: string, outputPath: string, changes: unknown[], officeContext?: unknown) {
+        return WordSkillInvoker.invokeWordExpert(inputPath, outputPath, changes, officeContext);
+    }
+
+    /**
+     * Invoke shared utility skills (Vector Search, etc.)
+     */
+    static async invokeVectorSearch(apiKey: string, query: string, docs: string[]) {
         return SharedSkillInvoker.invokeVectorSearch(apiKey, query, docs);
+    }
+
+    static async invokeGalaxyGraph(query: string, repo?: string) {
+        return SharedSkillInvoker.invokeGalaxyGraph(query, repo);
     }
 }

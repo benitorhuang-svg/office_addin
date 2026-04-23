@@ -21,17 +21,16 @@ const TAG = 'ContextChunker';
 // Configuration
 // ---------------------------------------------------------------------------
 
-/** Characters per token (rough approximation for English/CJK mixed content). */
-const CHARS_PER_TOKEN = 3;
+/** Characters per token (rough approximation). English is ~3.5-4, Chinese is ~1.5-2. */
+// const DEFAULT_CHARS_PER_TOKEN = 3;
 
-/** Default budget: ~6 000 tokens of context. */
+/** Default budget in tokens: ~6 000 tokens of context. */
 const DEFAULT_TOKEN_BUDGET = 6_000;
-const DEFAULT_CHAR_BUDGET = DEFAULT_TOKEN_BUDGET * CHARS_PER_TOKEN;
 
 /** Below this length, no chunking is applied. */
 const CHUNKING_THRESHOLD_CHARS = 4_000;
 
-/** Chunk size in characters (??400 tokens). */
+/** Chunk size in characters (≈400 tokens). */
 const CHUNK_SIZE = 1_200;
 
 /** Overlap to preserve cross-chunk context. */
@@ -56,16 +55,28 @@ export interface ChunkResult {
 }
 
 /**
+ * Detects if the text contains Chinese characters to adjust token estimation.
+ */
+function getCharsPerToken(text: string): number {
+  const isChinese = /[\u4e00-\u9fa5]/.test(text);
+  return isChinese ? 1.8 : 3.5;
+}
+
+/**
  * Retrieves the most query-relevant portion of `text`, staying within the
- * `charBudget` limit.
+ * token-based budget.
  */
 export function chunkAndRetrieve(
   text: string,
   query: string,
-  charBudget: number = DEFAULT_CHAR_BUDGET,
+  charBudget?: number,
   traceId?: string,
 ): ChunkResult {
   const originalLength = text.length;
+
+  // Dynamic budget calculation based on content language
+  const ratio = getCharsPerToken(text);
+  const effectiveCharBudget = charBudget ?? (DEFAULT_TOKEN_BUDGET * ratio);
 
   if (originalLength <= CHUNKING_THRESHOLD_CHARS) {
     return { context: text, chunked: false, originalLength, retrievedLength: originalLength };
@@ -80,7 +91,7 @@ export function chunkAndRetrieve(
 
   scored.sort((a, b) => b.score - a.score);
 
-  let budget = charBudget;
+  let budget = effectiveCharBudget;
   const selected: string[] = [];
   for (const { chunk } of scored.slice(0, TOP_K)) {
     if (budget <= 0) break;
@@ -119,11 +130,19 @@ function splitChunks(text: string): string[] {
 // Internal: lightweight TF-IDF cosine similarity
 // ---------------------------------------------------------------------------
 
+const STOPWORDS = new Set([
+  // English
+  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'but', 'it', 'that', 'this',
+  // Chinese
+  '的', '是', '在', '了', '和', '與', '或', '就', '也', '都', '而', '及', '與', '著'
+]);
+
 function tokenize(text: string): Map<string, number> {
   const freq = new Map<string, number>();
   // Split on whitespace + punctuation; lower-case
   const words = text.toLowerCase().match(/[\w\u4e00-\u9fff]+/g) ?? [];
   for (const w of words) {
+    if (STOPWORDS.has(w)) continue;
     freq.set(w, (freq.get(w) ?? 0) + 1);
   }
   return freq;

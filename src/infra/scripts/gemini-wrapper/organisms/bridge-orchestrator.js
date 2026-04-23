@@ -182,6 +182,8 @@ class BridgeOrchestrator {
             while (state.pendingRequests.length) {
                 this.handleSdkRequest(state.pendingRequests.shift());
             }
+            // Proactive pre-warm to reduce first-request latency
+            this.prewarm();
             return;
         }
 
@@ -218,6 +220,14 @@ class BridgeOrchestrator {
                 this.sdk.send({ jsonrpc: "2.0", id: sdkId, result });
             }
         }
+    }
+
+    // ─── Pre-warming ─────────────────────────────────────────────
+    prewarm() {
+        log('[BRIDGE] Performing ACP pre-warm (proactive ping)...');
+        // Sending an internal ping (id 999) to ensure CLI is fully responsive.
+        // This is ignored by the SDK forwarding logic because id 999 is not in state.idMap.
+        this.cli.send('ping', {}, 999);
     }
 
     // ─── Streaming Chunk Forwarding ──────────────────────────────

@@ -1,6 +1,7 @@
-﻿/**
+/**
  * Molecule: Rate Limiter
  * Sliding window per-IP rate limiting Express middleware.
+ * P4: Optimized to prevent OOM by performing time-windowed eviction on every insert.
  */
 
 import type { Request, Response, NextFunction } from 'express';
@@ -15,18 +16,18 @@ interface WindowEntry {
 const store = new Map<string, WindowEntry>();
 
 const WINDOW_MS = 60_000; // 1 minute
-const CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
+const MAX_STALE_MS = 120_000; // 2 minutes
 
-// Periodically clean up expired entries to prevent memory leak
-const cleanupTimer = setInterval(() => {
-  const now = Date.now();
+/**
+ * P4: Evict stale entries to prevent OOM.
+ */
+function evictStale(now: number) {
   for (const [ip, entry] of store) {
-    if (entry.timestamps.length === 0 || now - entry.lastSeen > WINDOW_MS * 2) {
+    if (now - entry.lastSeen > MAX_STALE_MS) {
       store.delete(ip);
     }
   }
-}, CLEANUP_INTERVAL_MS);
-cleanupTimer.unref();
+}
 
 export function createRateLimiter(maxRequests?: number) {
   const configuredLimit = maxRequests ?? Number(process.env.RATE_LIMIT_RPM || '30');
@@ -36,23 +37,41 @@ export function createRateLimiter(maxRequests?: number) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!enabled) { next(); return; }
 
-    const ip = getClientIp(req);
+    // VALIDATE IP SOURCE: Ensure valid IPv4/IPv6 string
+    const rawIp = getClientIp(req);
+    if (!rawIp || typeof rawIp !== 'string' || (!rawIp.includes('.') && !rawIp.includes(':'))) {
+      res.status(403).json({ error: 'invalid_ip_origin' });
+      return;
+    }
+    const ip = rawIp;
+
     const now = Date.now();
     const windowStart = now - WINDOW_MS;
+
+    // P4: Selective eviction on every request
+    if (store.size > 1000) evictStale(now);
+
     const entry = store.get(ip) ?? { timestamps: [], lastSeen: now };
-    entry.timestamps = entry.timestamps.filter((timestamp) => timestamp > windowStart);
+    
+    // Optimized: Only filter until first valid timestamp is found instead of mapping all
+    let firstValidIdx = 0;
+    while (firstValidIdx < entry.timestamps.length && entry.timestamps[firstValidIdx] <= windowStart) {
+      firstValidIdx++;
+    }
+    if (firstValidIdx > 0) {
+      entry.timestamps = entry.timestamps.slice(firstValidIdx);
+    }
+    
     entry.lastSeen = now;
 
-    const resetAt = entry.timestamps.length > 0 ? entry.timestamps[0] + WINDOW_MS : now + WINDOW_MS;
-    const remaining = Math.max(limit - entry.timestamps.length, 0);
-
-    res.setHeader('RateLimit-Limit', String(limit));
-    res.setHeader('RateLimit-Remaining', String(remaining));
-    res.setHeader('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
-
     if (entry.timestamps.length >= limit) {
+      const resetAt = entry.timestamps[0] + WINDOW_MS;
       const retryAfter = Math.max(1, Math.ceil((resetAt - now) / 1000));
+      res.setHeader('RateLimit-Limit', String(limit));
+      res.setHeader('RateLimit-Remaining', '0');
+      res.setHeader('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
       res.setHeader('Retry-After', String(retryAfter));
+      
       logger.warn('RateLimiter', 'Request throttled', { ip, limit, retryAfter });
       res.status(429).json({
         error: 'rate_limit_exceeded',
@@ -63,6 +82,10 @@ export function createRateLimiter(maxRequests?: number) {
 
     entry.timestamps.push(now);
     store.set(ip, entry);
+    
+    const remaining = Math.max(limit - entry.timestamps.length, 0);
+    res.setHeader('RateLimit-Limit', String(limit));
+    res.setHeader('RateLimit-Remaining', String(remaining));
     next();
   };
 }

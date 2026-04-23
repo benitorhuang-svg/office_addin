@@ -11,10 +11,10 @@
  *   All three     ??Excel data + PPT deck + Word report in one shot
  */
 
-import { ExcelSkillInvoker }  from '@agents/expert-excel/index.js';
-import { PPTSkillInvoker }    from '@agents/expert-ppt/index.js';
-import { WordSkillInvoker }   from '@agents/expert-word/index.js';
-import { SharedSkillInvoker } from '@agents/skills/shared/shared-invoker.js';
+import { ExcelSkillInvoker }  from '@agents/expert-excel/index';
+import { PPTSkillInvoker }    from '@agents/expert-ppt/index';
+import { WordSkillInvoker }   from '@agents/expert-word/index';
+import { SharedSkillInvoker } from '@agents/skills/shared/shared-invoker';
 import { logger }             from '@shared/logger/index.js';
 
 const TAG = 'TaskOrchestrator';

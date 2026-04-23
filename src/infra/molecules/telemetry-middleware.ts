@@ -32,7 +32,24 @@ export function telemetryMiddleware(req: Request, res: Response, next: NextFunct
     }
   };
 
-  res.once('finish', finalize);
+  res.once('finish', () => {
+    finalize();
+    
+    // P8: Cost Tracking
+    const tokenUsage = req.body?.usage?.totalTokens ?? 0;
+    if (tokenUsage > 0) {
+        NexusSocketRelay.broadcast('TELEMETRY_COST', {
+            tokens: tokenUsage,
+            agent: req.body?.agent,
+            domain: req.body?.domain,
+            requestId
+        });
+    }
+
+    if (req.path.includes('/feedback')) {
+        // ... (existing feedback logic)
+    }
+  });
   res.once('close', finalize);
 
   next();

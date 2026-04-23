@@ -70,6 +70,15 @@ docker-compose stop
 
 ---
 
+## 🧪 架構亮點 (Architecture Highlights)
+
+Nexus Center 採用了前瞻性的軟體工程實踐，確保系統的穩定性與可擴展性：
+
+- **ACP 協議 (Agent Communication Protocol)**: 統一的智能體通訊標準，簡化了不同 AI 模型與 Office 主機之間的交互。
+- **多智能體圖工作流 (Multi-Agent Graph Workflow)**: 基於圖論的任務調度，支援複雜的跨文件（Word/Excel/PPT）協作邏輯。
+- **斷路器 (Circuit Breaker)**: 內置彈性設計，當 AI 供應商或外部服務不穩定時，自動切換至降級模式，確保核心功能不中斷。
+- **原子設計 (Atomic Design)**: 從 Atoms 到 Organisms 的層次化開發架構，極大化了代碼的重用性與測試覆蓋率。
+
 ## 📊 Performance Tech Stack (2026 Edition)
 
 - **Core**: TypeScript, Node.js (v24), Express (v5), Esbuild

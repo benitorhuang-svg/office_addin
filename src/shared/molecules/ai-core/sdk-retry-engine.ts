@@ -3,6 +3,51 @@ import type { ACPConnectionMethod, ACPSessionConfig } from '@shared/atoms/ai-cor
 import { resolveACPOptions } from '@shared/molecules/ai-core/option-resolver.js';
 import { logger } from '@shared/logger/index.js';
 
+enum CircuitState {
+  CLOSED,
+  OPEN,
+  HALF_OPEN
+}
+
+/**
+ * Internal Circuit Breaker to prevent cascading failures
+ */
+class CircuitBreaker {
+  private state: CircuitState = CircuitState.CLOSED;
+  private failureCount: number = 0;
+  private lastFailureTime: number = 0;
+  private readonly threshold: number = 5;
+  private readonly resetTimeout: number = 60000; // 60 seconds
+
+  public canExecute(): boolean {
+    if (this.state === CircuitState.CLOSED) return true;
+    if (this.state === CircuitState.OPEN) {
+      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        this.state = CircuitState.HALF_OPEN;
+        return true;
+      }
+      return false;
+    }
+    return true; // HALF_OPEN allows one trial
+  }
+
+  public recordSuccess() {
+    this.failureCount = 0;
+    this.state = CircuitState.CLOSED;
+  }
+
+  public recordFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    if (this.failureCount >= this.threshold) {
+      this.state = CircuitState.OPEN;
+      logger.error('CircuitBreaker', 'Circuit opened due to repeated failures');
+    }
+  }
+}
+
+const breaker = new CircuitBreaker();
+
 /**
  * Molecule: SDK Retry Engine
  * Manages the retry loop, backoff delays, and client cleanup during SDK errors.
@@ -14,13 +59,22 @@ export class SdkRetryEngine {
     acpConfig: ACPSessionConfig,
     onChunk?: (chunk: string) => void
   ): Promise<T | string> {
+    if (!breaker.canExecute()) {
+      const circuitError = '[CircuitBreaker] 系統目前偵測到持續性的連線錯誤，請稍後再試。';
+      if (onChunk) onChunk(circuitError);
+      return circuitError;
+    }
+
     let retryCount = 0;
     const maxRetries = CORE_SDK_CONFIG.MAX_SDK_RETRIES;
 
     while (retryCount <= maxRetries) {
       try {
-        return await operation();
+        const result = await operation();
+        breaker.recordSuccess();
+        return result;
       } catch (error: unknown) {
+        breaker.recordFailure();
         // SDK spec: never retry an AbortError ??the client explicitly cancelled.
         if (error instanceof DOMException && error.name === 'AbortError') {
           throw error;

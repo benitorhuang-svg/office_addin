@@ -121,11 +121,18 @@ apiRouter.post("/acp/validate", async (req, res) => {
   }
 });
 
-// Endpoint: Health Checks
+// Endpoint: Detailed Health Checks (D2)
 apiRouter.get("/health", async (_req, res) => {
   try {
     const health = await ModernSDKOrchestrator.healthCheck();
-    res.json({ status: "ok", clients: health, uptime: process.uptime() });
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      uptime: Math.round(process.uptime()),
+      node_version: process.version,
+      providers: health, // Detailed status of ACP clients
+      memory: process.memoryUsage().rss
+    });
   } catch (err: unknown) {
     res.status(500).json({ status: "error", detail: String(err) });
   }

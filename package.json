@@ -2,7 +2,7 @@
   "name": "office-addin-taskpane",
   "version": "0.0.1",
   "engines": {
-    "node": ">=25.0.0"
+    "node": ">=22.0.0 <26.0.0"
   },
   "repository": {
     "type": "git",
@@ -18,8 +18,8 @@
     "nexus": "./src/infra/scripts/nexus.mjs"
   },
   "scripts": {
-    "build": "webpack --mode production",
-    "build:dev": "webpack --mode development",
+    "build": "node src/infra/scripts/sync-skills.mjs && webpack --mode production",
+    "build:dev": "node src/infra/scripts/sync-skills.mjs && webpack --mode development",
     "build:server": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-server/index.mjs --packages=external --tree-shaking=true --minify-syntax",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
@@ -83,6 +83,7 @@
     "copy-webpack-plugin": "^14.0.0",
     "core-js": "^3.49.0",
     "css-loader": "^7.1.4",
+    "css-minimizer-webpack-plugin": "^8.0.0",
     "esbuild": "^0.27.4",
     "eslint-plugin-office-addins": "^4.0.6",
     "external-editor": "^3.1.0",
@@ -93,6 +94,7 @@
     "husky": "^9.1.7",
     "jest": "^30.3.0",
     "jest-environment-node": "^30.3.0",
+    "json5": "^2.2.3",
     "lint-staged": "^16.4.0",
     "marked": "^17.0.5",
     "office-addin-cli": "^2.0.6",
@@ -107,6 +109,7 @@
     "source-map-loader": "^5.0.0",
     "style-loader": "^4.0.0",
     "supertest": "^7.2.2",
+    "terser-webpack-plugin": "^5.4.0",
     "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

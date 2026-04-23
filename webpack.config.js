@@ -3,6 +3,8 @@
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const { InjectManifest } = require("workbox-webpack-plugin");
 const path = require("path");
 
@@ -107,16 +109,41 @@ module.exports = async (env, options) => {
       runtimeChunk: "single",
       splitChunks: {
         chunks: "all",
+        maxInitialRequests: Infinity,
+        minSize: 20000,
         cacheGroups: {
           vendor: {
             test: /[\\/]node_modules[\\/]/,
-            name: "vendors",
+            name(module) {
+              const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+              return `npm.${packageName.replace("@", "")}`;
+            },
             priority: 10,
+          },
+          fluentui: {
+            test: /[\\/]node_modules[\\/]@fluentui[\\/]/,
+            name: "fluentui",
+            priority: 20,
+          },
+          common: {
+            name: "common",
+            minChunks: 2,
+            priority: 5,
             reuseExistingChunk: true,
           },
         },
       },
-      ...(dev ? {} : { minimize: true }),
+      minimize: !dev,
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            compress: {
+              drop_console: true,
+            },
+          },
+        }),
+        new CssMinimizerPlugin(),
+      ],
     },
     plugins: [
       new HtmlWebpackPlugin({

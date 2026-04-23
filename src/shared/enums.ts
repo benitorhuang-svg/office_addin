@@ -1,7 +1,33 @@
-﻿/**
- * Atom: Constants & Enums
- * Pure immutable grounding for the Nexus Center ecosystem.
+/**
+ * Shared: Global Error Codes
+ * D1: Standardized snake_case error codes for consistent handling.
  */
+
+export enum ErrorCode {
+  // Security
+  UNAUTHORIZED = 'UNAUTHORIZED_ACCESS',
+  FORBIDDEN = 'FORBIDDEN_ACTION',
+  INVALID_TOKEN = 'INVALID_AUTH_TOKEN',
+
+  // Performance & Limits
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+  TIMEOUT = 'REQUEST_TIMEOUT',
+  OOM_PROTECTION = 'OOM_PROTECTION_TRIGGERED',
+
+  // Provider / AI
+  PROVIDER_ERROR = 'AI_PROVIDER_ERROR',
+  LLM_VALIDATION_FAILED = 'LLM_OUTPUT_INVALID',
+  EMPTY_RESPONSE = 'EMPTY_AI_RESPONSE',
+
+  // Office / Domain
+  OFFICE_HOST_UNAVAILABLE = 'OFFICE_HOST_UNAVAILABLE',
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND',
+  DATA_TRANSFORM_FAILED = 'DATA_TRANSFORM_FAILED',
+
+  // System
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_SYSTEM_ERROR',
+}
 
 export enum NexusPowerState {
     ON = "ON",
@@ -22,7 +48,7 @@ export enum NexusProvider {
     AZURE_BYOK = "azure_byok",
     GITHUB_MODELS = "github_models",
     PREVIEW = "preview",
-    
+
     // Internal/Fallback States
     REMOTE_CLI = "remote_cli",
     NONE = "none"
@@ -39,3 +65,4 @@ export enum SocketEvent {
     PING = "PING",
     PONG = "PONG"
 }
+

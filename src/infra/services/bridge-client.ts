@@ -58,11 +58,22 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     });
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '(no body)');
-      throw new Error(`Skill bridge HTTP ${response.status}: ${text}`);
+      let errorDetail = '(no body)';
+      try {
+        const errorJson = await response.json();
+        errorDetail = JSON.stringify(errorJson);
+      } catch {
+        errorDetail = await response.text().catch(() => '(no body)');
+      }
+      throw new Error(`Skill bridge HTTP ${response.status}: ${errorDetail}`);
     }
 
     return (await response.json()) as T;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Skill bridge request timed out after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw err;
   } finally {
     clearTimeout(timeout);
   }

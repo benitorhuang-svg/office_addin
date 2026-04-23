@@ -5,7 +5,7 @@ import type { Request } from 'express';
  * Unified logic to safely extract client IP considering proxies and direct connections.
  */
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
+  // P4: If 'trust proxy' is configured in Express, req.ip will be the real client IP safely extracted.
+  // Extracting from x-forwarded-for directly is insecure without strict proxy validation.
   return req.ip || req.socket.remoteAddress || 'unknown';
 }

@@ -2,16 +2,16 @@
  * Unit tests: ExcelSkill agent interface
  */
 
-import { ExcelSkillInvoker } from "@agents/expert-excel/domain/excel-invoker.js";
+import { ExcelSkillInvoker } from "@agents/expert-excel/domain/excel-invoker";
 
-jest.mock("@agents/expert-excel/domain/excel-invoker.js", () => ({
+jest.mock("@agents/expert-excel/domain/excel-invoker", () => ({
   ExcelSkillInvoker: {
     invokeExcelExpert: jest.fn(),
     getPromptPath: jest.fn().mockReturnValue("/fake/excel-expert.md"),
   },
 }));
 
-import { excelSkill } from "@agents/expert-excel/index.js";
+import { excelSkill } from "@agents/expert-excel/index";
 
 const mockInvoke = ExcelSkillInvoker.invokeExcelExpert as jest.Mock;
 
@@ -20,7 +20,7 @@ describe("ExcelSkill (agent interface)", () => {
 
   it("has correct name and version", () => {
     expect(excelSkill.name).toBe("excel_expert");
-    expect(excelSkill.version).toBe("3.0");
+    expect(excelSkill.version).toBe("4.0 (Schema-First)");
   });
 
   it("describes when to invoke the skill", () => {
@@ -32,9 +32,9 @@ describe("ExcelSkill (agent interface)", () => {
     expect(parameters.type).toBe("object");
     expect(parameters.required).toContain("output_path");
     expect(parameters.required).toContain("changes");
-    expect(parameters.properties).toHaveProperty("input_path");
     expect(parameters.properties).toHaveProperty("output_path");
     expect(parameters.properties).toHaveProperty("changes");
+    expect(parameters.properties).toHaveProperty("officeContext");
   });
 
   it("returns ok:true with data and meta on success", async () => {
@@ -42,7 +42,7 @@ describe("ExcelSkill (agent interface)", () => {
 
     const result = await excelSkill.execute({
       output_path: "/tmp/out.xlsx",
-      changes: [{ op: "set_value", cell: "A1", value: "Hello" }],
+      changes: [{ type: "SET_VALUE", range: "A1", value: "Hello" }],
     });
 
     expect(result.ok).toBe(true);
@@ -51,24 +51,15 @@ describe("ExcelSkill (agent interface)", () => {
     expect(typeof result.meta?.durationMs).toBe("number");
   });
 
-  it("passes input_path and output_path correctly to invoker", async () => {
+  it("passes parameters correctly to invoker", async () => {
     mockInvoke.mockResolvedValue({});
 
     await excelSkill.execute({
-      input_path: "/data/source.xlsx",
       output_path: "/data/output.xlsx",
       changes: [],
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith("/data/source.xlsx", "/data/output.xlsx", []);
-  });
-
-  it("defaults input_path to empty string when omitted", async () => {
-    mockInvoke.mockResolvedValue({});
-
-    await excelSkill.execute({ output_path: "/tmp/x.xlsx", changes: [] });
-
-    expect(mockInvoke).toHaveBeenCalledWith("", "/tmp/x.xlsx", []);
+    expect(mockInvoke).toHaveBeenCalledWith("", "/data/output.xlsx", [], undefined);
   });
 
   it("returns ok:false with error message on bridge failure", async () => {
@@ -95,3 +86,4 @@ describe("ExcelSkill (agent interface)", () => {
     expect(result.meta?.traceId).toBe("trace-excel-001");
   });
 });
+

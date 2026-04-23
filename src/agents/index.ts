@@ -5,18 +5,18 @@ import {
   excelSkill,
   ExcelSkillInvoker,
   getCoreInstructions as getExcelInstructions,
-} from "./expert-excel/index.js";
+} from "./expert-excel/index";
 import {
   wordSkill,
   WordSkillInvoker,
   getCoreInstructions as getWordInstructions,
-} from "./expert-word/index.js";
+} from "./expert-word/index";
 import {
   pptSkill,
   PPTSkillInvoker,
   getCoreInstructions as getPPTInstructions,
-} from "./expert-ppt/index.js";
-import type { AgentSkill } from "./agent-skill.js";
+} from "./expert-ppt/index";
+import type { AgentSkill } from "./agent-skill";
 
 const SKILLS_LIST: AgentSkill<Record<string, unknown>>[] = [
   excelSkill as AgentSkill<Record<string, unknown>>,
