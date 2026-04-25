@@ -115,7 +115,7 @@ describe("WordExpertInvoker", () => {
           protectedRanges: [{ start: 0, end: 20, label: "Locked intro" }],
         }
       )
-    ).rejects.toThrow(/protected ranges/i);
+    ).rejects.toThrow(/Global find_replace is disabled when protections are present/i);
   });
 
   it("fails fast on unsupported OOXML bridge operations", () => {

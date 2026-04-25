@@ -25,7 +25,7 @@ describe("ExcelSkill (agent interface)", () => {
 
   it("describes when to invoke the skill", () => {
     expect(excelSkill.description.toLowerCase()).toMatch(/excel|spreadsheet/);
-    expect(excelSkill.workflow.process).toHaveLength(3);
+    expect(excelSkill.workflow.process).toHaveLength(4);
     expect(excelSkill.workflow.rationalizations.length).toBeGreaterThan(0);
   });
 

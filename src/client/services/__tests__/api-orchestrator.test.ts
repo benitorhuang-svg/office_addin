@@ -43,7 +43,7 @@ describe("API Orchestrator (Frontend Integration)", () => {
       "http://localhost:3000/api/copilot",
       expect.objectContaining({
         body: expect.stringContaining(
-          '"officeContext":{"activeSheet":"SalesData","glossary":{"AI":"Artificial Intelligence"},"themeColors":{"primary":"#008CA1"}}'
+          '"officeContext":{"selectedText":"","activeSheet":"SalesData","glossary":{"AI":"Artificial Intelligence"},"themeColors":{"primary":"#008CA1"}}'
         ),
       })
     );
