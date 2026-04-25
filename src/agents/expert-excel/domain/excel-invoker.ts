@@ -1,8 +1,5 @@
 import path from "path";
-import { fileURLToPath } from "url";
 import { invokeExcelSkill } from "@infra/services/bridge-client.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type BridgeExcelChange = Record<string, unknown>;
 type ExcelOfficeContextPayload = Record<string, unknown>;
@@ -201,6 +198,6 @@ export class ExcelSkillInvoker {
    * Load the expert prompt for Excel operations.
    */
   static getPromptPath(): string {
-    return path.join(__dirname, "..", "prompts", "excel-expert.md");
+    return path.resolve(process.cwd(), "src/agents/expert-excel/prompts/excel-expert.md");
   }
 }

@@ -2,7 +2,7 @@
  * Regression Test: Design Quality Stability
  * Ensures that changes to prompts/agents do not degrade design quality scores.
  */
-import { reviewDesign, type DesignDomain } from "../../agents/skills/molecules/design-reviewer.js";
+import { reviewDesign, type DesignDomain } from "@agents/skills/molecules/design-reviewer.js";
 
 const EXCEL_GOLD_CASE = `
 # Quarterly Revenue Analysis Report

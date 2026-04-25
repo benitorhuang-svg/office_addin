@@ -1,13 +1,10 @@
 ﻿import path from "path";
-import { fileURLToPath } from "url";
 import { invokeWordSkill } from "@infra/services/bridge-client.js";
 import { AppError } from "@infra/atoms/app-error.js";
 import { logger } from "@shared/logger/index.js";
 import type { WordOfficeContext } from "../word.tools.js";
 
 import { OfficeGuard } from "@sdk/governance/guards/office-guard.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type BridgeWordEdit = Record<string, unknown>;
 type MutableWordChange = Record<string, unknown>;
@@ -252,6 +249,6 @@ export class WordExpertInvoker {
    * Load the expert prompt for Word document operations.
    */
   static getPromptPath(): string {
-    return path.join(__dirname, "..", "prompts", "word-expert.md");
+    return path.resolve(process.cwd(), "src/agents/expert-word/prompts/word-expert.md");
   }
 }

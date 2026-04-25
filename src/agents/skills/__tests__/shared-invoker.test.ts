@@ -71,11 +71,14 @@ describe("Resilience Testing & Circuit Breaker", () => {
     jest.useFakeTimers();
     const mockSpawn = spawn as jest.Mock;
 
+    let closeCallback: ((code: number | null) => void) | undefined;
     mockSpawn.mockReturnValue({
       stdin: { write: jest.fn(), end: jest.fn() },
       stdout: { on: jest.fn() },
       stderr: { on: jest.fn() },
-      on: jest.fn(),
+      on: jest.fn((event, callback) => {
+        if (event === "close") closeCallback = callback;
+      }),
       kill: jest.fn(),
     });
 
@@ -83,6 +86,9 @@ describe("Resilience Testing & Circuit Breaker", () => {
 
     // Advance timers past 30s
     jest.advanceTimersByTime(35000);
+
+    // Manually trigger close to simulate Node.js behavior when signal aborts
+    if (closeCallback) closeCallback(null);
 
     await expect(promise).rejects.toThrow(/Execution timeout after 30s/);
     jest.useRealTimers();

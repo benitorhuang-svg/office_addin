@@ -1,8 +1,5 @@
 import path from "path";
-import { fileURLToPath } from "url";
 import { invokePPTSkill } from "@infra/services/bridge-client.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type BridgePPTChange = Record<string, unknown>;
 
@@ -187,6 +184,6 @@ export class PPTExpertInvoker {
    * Load the expert prompt for PPT design operations.
    */
   static getPromptPath(): string {
-    return path.join(__dirname, "..", "prompts", "ppt-master.md");
+    return path.resolve(process.cwd(), "src/agents/expert-ppt/prompts/ppt-master.md");
   }
 }

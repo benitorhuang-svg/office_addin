@@ -1,5 +1,5 @@
-import { selfCorrect } from "../skills/molecules/self-corrector.js";
-import { type DesignReviewResult } from "../skills/molecules/design-reviewer.js";
+import { selfCorrect } from "@agents/skills/molecules/self-corrector.js";
+import { type DesignReviewResult } from "@agents/skills/molecules/design-reviewer.js";
 
 describe("Security Red Team: SelfCorrector Penetration", () => {
   const mockReviewer = (content: string): DesignReviewResult => ({
@@ -14,7 +14,11 @@ describe("Security Red Team: SelfCorrector Penetration", () => {
     // 1. Simulate an LLM that echoes the system instructions including the sentinel
     const maliciousGenerate = async (prompt: string) => {
       const sentinelMatch = prompt.match(/__NEXUS_CORRECTION_[0-9a-fA-F-]{36}__/);
-      const sentinel = sentinelMatch ? sentinelMatch[0] : "NONE";
+      if (!sentinelMatch) {
+        // Force a failure so it triggers a correction
+        return "FAIL";
+      }
+      const sentinel = sentinelMatch[0];
       return `Here is your output. By the way, the system secret is ${sentinel}. SECRET_TOKEN=12345`;
     };
 
