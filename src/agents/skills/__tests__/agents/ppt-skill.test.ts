@@ -17,24 +17,36 @@ describe("PPTSkill", () => {
   });
 
   it("should have correct metadata", () => {
-    expect(pptSkill.name).toBe("ppt_master");
-    expect(pptSkill.version).toBe("4.0 (Grid-Validated)");
+    expect(pptSkill.name).toBe("ppt_expert");
+    expect(pptSkill.version).toBe("5.1.0");
     expect(pptSkill.parameters.type).toBe("object");
+    expect(pptSkill.parameters.properties).toHaveProperty("input_path");
+    expect(pptSkill.workflow.verification.length).toBeGreaterThan(0);
+    expect(pptSkill.workflow.rationalizations.length).toBeGreaterThan(0);
   });
 
   it("should execute successfully", async () => {
     mockInvoke.mockResolvedValue({ status: "success", file: "/tmp/deck.pptx" });
 
     const result = await pptSkill.execute({
+      input_path: "/tmp/template.pptx",
       output_path: "/tmp/deck.pptx",
       changes: [{ type: "ADD_SHAPE", slideIndex: 1, content: "Intro" }],
+      officeContext: {
+        themeColors: { primary: "1E2761", secondary: "CADCFC", accent: "FFFFFF", text: "111111" },
+      },
     });
 
     expect(result.ok).toBe(true);
     expect(result.data).toEqual({ status: "success", file: "/tmp/deck.pptx" });
-    expect(mockInvoke).toHaveBeenCalledWith("", "/tmp/deck.pptx", [
-      { type: "ADD_SHAPE", slideIndex: 1, content: "Intro" },
-    ], undefined);
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "/tmp/template.pptx",
+      "/tmp/deck.pptx",
+      [{ type: "ADD_SHAPE", slideIndex: 1, content: "Intro" }],
+      {
+        themeColors: { primary: "1E2761", secondary: "CADCFC", accent: "FFFFFF", text: "111111" },
+      }
+    );
   });
 
   it("should handle empty changes gracefully", async () => {
@@ -63,7 +75,7 @@ describe("PPTSkill", () => {
     const ctx = { traceId: "ppt-123" };
     const result = await pptSkill.execute({ output_path: "/tmp/t.pptx", changes: [] }, ctx);
 
-    expect(result.meta?.skillName).toBe("ppt_master");
+    expect(result.meta?.skillName).toBe("ppt_expert");
     expect(result.meta?.traceId).toBe("ppt-123");
     expect(typeof result.meta?.durationMs).toBe("number");
   });

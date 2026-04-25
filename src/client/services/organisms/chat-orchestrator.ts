@@ -46,29 +46,34 @@ export class ChatOrchestrator {
     try {
       const provider = auth.getAuthProvider();
       if (provider === "preview") {
-          const bubble = HistoryManager.appendMessage({ historyEl: activeHistory as HTMLElement, role: "assistant", text: "" }) as HTMLElement;
-          return await this.handlePreview(bubble);
+        const bubble = HistoryManager.appendMessage({
+          historyEl: activeHistory as HTMLElement,
+          role: "assistant",
+          text: "",
+        }) as HTMLElement;
+        return await this.handlePreview(bubble);
       }
 
       // 2. Document Context Harvesting (CRITICAL: Must happen before step definition)
-      const { getOfficeContext, applyUniversalOfficeActions } = await import("../molecules/office-actions");
+      const { getOfficeContext, applyUniversalOfficeActions } =
+        await import("../molecules/office-actions");
       const docCtx = await getOfficeContext();
       const hostName = docCtx.host || "Word";
 
       // 3. Define Intelligence Steps
       const intelligenceSteps: IntelligenceStep[] = [
-        { title: `分析 ${hostName} 工作環境`, status: 'done' },
-        { title: "封裝上下文內容對象", status: 'active' },
-        { title: "生成邏輯推理鏈結 (Chain of Thought)", status: 'pending' },
-        { title: "部署 AI 策略請求", status: 'pending' },
-        { title: `生成 ${hostName} 工業排版`, status: 'pending' }
+        { title: `分析 ${hostName} 工作環境`, status: "done" },
+        { title: "封裝上下文內容對象", status: "active" },
+        { title: "生成邏輯推理鏈結 (Chain of Thought)", status: "pending" },
+        { title: "部署 AI 策略請求", status: "pending" },
+        { title: `生成 ${hostName} 工業排版`, status: "pending" },
       ];
 
-      const bubble = HistoryManager.appendMessage({ 
-        historyEl: activeHistory as HTMLElement, 
-        role: "assistant", 
+      const bubble = HistoryManager.appendMessage({
+        historyEl: activeHistory as HTMLElement,
+        role: "assistant",
         text: "",
-        steps: intelligenceSteps
+        steps: intelligenceSteps,
       }) as HTMLElement;
 
       if (!bubble) throw new Error("Could not create chat bubble.");
@@ -77,14 +82,18 @@ export class ChatOrchestrator {
       // Industrial Mission Strategy: [GOAL + TOOL] Directive
       let industrialSystemPrompt = systemPrompt || "";
       if (docCtx.host === "PowerPoint") {
-          industrialSystemPrompt = (systemPrompt || "") + `\n
+        industrialSystemPrompt =
+          (systemPrompt || "") +
+          `\n
 [MISSION_IDENTITY]: SENIOR_PPT_ARCHITECT_V10 (GOAL_MODE: ON)
 Your primary MISSION is to architect and manufacture high-fidelity slide decks.
 - [TOOL]: python_executor (For data/logic)
 - [TOOL]: google_search (For trends)
 `;
       } else if (docCtx.host === "Excel") {
-          industrialSystemPrompt = (systemPrompt || "") + `\n
+        industrialSystemPrompt =
+          (systemPrompt || "") +
+          `\n
 [MISSION_IDENTITY]: SENIOR_EXCEL_INSIGHT_ARCHITECT_V3 (HYPER_AUTOMATION: ON)
 Your GOAL is to transform Excel into a premium analytical control center with zero-latency visualization.
 
@@ -104,71 +113,96 @@ To trigger the Excel Chart Factory IMMEDIATELY from within your Python logic, yo
 `;
       }
       // 3. Contextualizing Steps
-      intelligenceSteps[1].status = 'done';
-      intelligenceSteps[2].status = 'active';
+      if (intelligenceSteps[1]) intelligenceSteps[1].status = "done";
+      if (intelligenceSteps[2]) intelligenceSteps[2].status = "active";
       HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
 
       // Wrap onChunk to handle COT/TASK markers
       const customOnChunk = (chunk: string) => {
         if (chunk.includes("[THOUGHT]:")) {
-            intelligenceSteps[2].title = "Analyzing Core Concepts...";
-            HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
+          if (intelligenceSteps[2]) intelligenceSteps[2].title = "Analyzing Core Concepts...";
+          HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
         }
         if (chunk.includes("[DISPATCH]: EXCEL_CHART_INIT")) {
-            intelligenceSteps[2].status = 'done';
-            intelligenceSteps[3].status = 'done';
-            intelligenceSteps[4].status = 'active';
+          if (intelligenceSteps[2]) intelligenceSteps[2].status = "done";
+          if (intelligenceSteps[3]) intelligenceSteps[3].status = "done";
+          if (intelligenceSteps[4]) {
+            intelligenceSteps[4].status = "active";
             intelligenceSteps[4].title = "Rendering Analytical Insights...";
-            HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
+          }
+          HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
         }
         if (chunk.includes("[TASK]:") || chunk.includes("---Slide")) {
-            intelligenceSteps[2].status = 'done';
-            intelligenceSteps[3].status = 'done';
-            intelligenceSteps[4].status = 'active';
+          if (intelligenceSteps[2]) intelligenceSteps[2].status = "done";
+          if (intelligenceSteps[3]) intelligenceSteps[3].status = "done";
+          if (intelligenceSteps[4]) {
+            intelligenceSteps[4].status = "active";
             intelligenceSteps[4].title = "Manufacturing Power Orbits...";
-            HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
+          }
+          HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
         }
       };
 
-      const res = await StreamEngine.execute(prompt, model, presetId, auth, docCtx, bubble, industrialSystemPrompt, customOnChunk);
-      
+      const res = await StreamEngine.execute(
+        prompt,
+        model,
+        presetId,
+        auth,
+        docCtx,
+        bubble,
+        industrialSystemPrompt,
+        customOnChunk
+      );
+
       // Finalize Layout Orchestration
-      intelligenceSteps[4].status = 'done';
+      if (intelligenceSteps[4]) intelligenceSteps[4].status = "done";
       HistoryManager.updateAssistantSteps(bubble, intelligenceSteps);
 
       // 4. Action Execution: [IRON-CLAD AUTO-FACTORY]
       // Use case-insensitive multi-lingual detection for slide structures
       const hasSlides = /---Slide|投影片|\[標題\]|頁|Page/i.test(res.text);
-      console.log(`[Zenith Dispatcher] Slide structure detection: ${hasSlides} (Host: ${docCtx.host})`);
+      console.log(
+        `[Zenith Dispatcher] Slide structure detection: ${hasSlides} (Host: ${docCtx.host})`
+      );
 
       if (docCtx.host === "PowerPoint" && hasSlides) {
-          Toast.show("MANUFACTURING_SLIDES...", "info"); 
-          // Use common industrial pattern for triggering factory
-          const slideCount = await applyUniversalOfficeActions([{ type: 'INSERT', value: res.text }], res.text);
-          
-          if (typeof slideCount === 'number' && slideCount > 0) {
-              Toast.show("SLIDES_COMPLETED", "success");
-              const report = `\n\n✅ **NEXUS REPORT**: Successfully generated and presented **${slideCount}** slides. All elements formatted with 2026 Industrial Tokens.`;
-              HistoryManager.updateAssistantBubble(bubble, res.text + report, (t) => t);
-          } else {
-              console.warn("[Zenith Dispatcher] Factory triggered but 0 slides produced. Fallback to manual.");
-          }
+        Toast.show("MANUFACTURING_SLIDES...", "info");
+        // Use common industrial pattern for triggering factory
+        const slideCount = await applyUniversalOfficeActions(
+          [{ type: "INSERT", value: res.text }],
+          res.text
+        );
+
+        if (typeof slideCount === "number" && slideCount > 0) {
+          Toast.show("SLIDES_COMPLETED", "success");
+          const report = `\n\n✅ **NEXUS REPORT**: Successfully generated and presented **${slideCount}** slides. All elements formatted with 2026 Industrial Tokens.`;
+          HistoryManager.updateAssistantBubble(bubble, res.text + report, (t) => t);
+        } else {
+          console.warn(
+            "[Zenith Dispatcher] Factory triggered but 0 slides produced. Fallback to manual."
+          );
+        }
       }
 
       // 5. Normal UI Action Rendering
       const finalActions: OfficeAction[] = [...(res.actions || [])];
-      if (!finalActions.some(a => a.type === 'INSERT')) {
-        finalActions.push({ type: 'INSERT', text: "Paste to Office", icon: "edit", value: res.text });
+      if (!finalActions.some((a) => a.type === "INSERT")) {
+        finalActions.push({
+          type: "INSERT",
+          text: "Paste to Office",
+          icon: "edit",
+          value: res.text,
+        });
       }
-      if (!finalActions.some(a => a.type === 'COPY')) {
-        finalActions.push({ type: 'COPY', text: "Copy Content", icon: "copy", value: res.text });
+      if (!finalActions.some((a) => a.type === "COPY")) {
+        finalActions.push({ type: "COPY", text: "Copy Content", icon: "copy", value: res.text });
       }
 
       ChatUiHelper.renderActions(bubble, finalActions, async (type, val) => {
-        if (type === 'COPY') {
-            await navigator.clipboard.writeText(val);
-            Toast.show("COPIED_TO_CLIPBOARD", "success");
-            return;
+        if (type === "COPY") {
+          await navigator.clipboard.writeText(val);
+          Toast.show("COPIED_TO_CLIPBOARD", "success");
+          return;
         }
         await applyUniversalOfficeActions([{ type, value: val }], val);
       });

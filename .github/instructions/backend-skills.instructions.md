@@ -1,18 +1,21 @@
 ---
-applyTo: "src/agents/skills/**"
+applyTo: "src/agents/**"
 ---
 
-# src/skills — AI Skill Pipeline
+# src/agents — AI Skill Runtime
 
-Receives a classified intent from the orchestrator and returns a structured prompt or result.
-All skill output feeds back to `copilot-handler.ts` which sends it to the Copilot SDK.
+Defines the Office expert skills, shared skill contracts, review helpers, and skill metadata consumed by the orchestrator and Copilot runtime.
 
 ## Entry Points
 | File | Export | Use it when |
 |------|--------|-------------|
-| `skill-orchestrator.ts` | `SkillOrchestrator.route(intent, prompt, context)` | Route any user message to the right skill branch |
 | `skill-invoker.ts` | `invokeSkill(name, input)` | Invoke a named skill from `skills-manifest.json` |
-| `skills-manifest.json` | Registry | Source of truth for registered skill names and entries |
+| `agent-skill.ts` | `AgentSkill` interface | Define or extend the shared runtime contract for expert skills |
+| `index.ts` | `getAllSkills()`, `findSkill()` | Agent registry surface for the built-in expert skills |
+| `expert-excel/excel.tools.ts` | `excelSkill` | Workflow-first Excel skill definition |
+| `expert-word/word.tools.ts` | `wordSkill` | Workflow-first Word skill definition |
+| `expert-ppt/ppt.tools.ts` | `pptSkill` | Workflow-first PowerPoint skill definition |
+| `skills/skills-manifest.json` | Registry | Source of truth for persisted skill names and entries |
 
 ## atoms/ — Classification & Extraction
 | File | Export | Use it when |
@@ -41,24 +44,23 @@ All skill output feeds back to `copilot-handler.ts` which sends it to the Copilo
 - Chunk size: 1,200 chars with 200 overlap
 - Top-K: 8 chunks, budget: 18,000 chars
 
-## agents/ — Office Host Skill Implementations
+## expert-* — Office Host Skill Implementations
 | File | Export | Use it when |
 |------|--------|-------------|
-| `agent-skill.ts` | `AgentSkill` interface + base | Define a new host-specific skill |
-| `excel-skill.ts` | `ExcelSkill` | Handle Excel intent, calls `excel-skill-tool` |
-| `word-skill.ts` | `WordSkill` | Handle Word intent via self-corrector |
-| `ppt-skill.ts` | `PptSkill` | Handle PPT intent via self-corrector |
-| `index.ts` | `getAgentSkill(host)` | Retrieve the right skill by Office host string |
+| `agent-skill.ts` | `AgentSkill` interface + workflow metadata | Extend the shared skill contract |
+| `expert-excel/excel.tools.ts` | `excelSkill` | Excel skill metadata and executor |
+| `expert-word/word.tools.ts` | `wordSkill` | Word skill metadata and executor |
+| `expert-ppt/ppt.tools.ts` | `pptSkill` | PowerPoint skill metadata and executor |
+| `shared/workflow-skill-packet.ts` | `buildSkillWorkflowPacket()` | Convert a skill into runtime workflow payloads |
 
-## Skill Routing Logic (skill-orchestrator.ts)
+## Runtime Routing Logic
 ```
-route(intent, prompt, context) {
-  'excel'   → ExcelSkill.run()
-  'word'    → selfCorrect(WordSkill.run, prompt, { domain: 'word' })
-  'ppt'     → selfCorrect(PptSkill.run, prompt, { domain: 'ppt' })
-  'recap'   → build milestone prompt from context.actionHistory.slice(-5)
-  'insight' → chunkAndRetrieve(documentText, query) → analysis prompt
-  'general' → pass-through
+Intent classifier
+  → router agent / orchestrator
+  → expert skill workflow metadata
+  → expert prompt + workflow guide
+  → self-corrector / QA review
+  → Copilot runtime
 }
 ```
 
@@ -70,6 +72,8 @@ Organized by host:
 
 ## Key Rules
 - `intent-classifier.ts` is the ONLY place IntentLabels are defined — do not hardcode strings elsewhere
-- `selfCorrect` wraps the generator function — do not call `reviewDesign` directly in orchestrator
+- `selfCorrect` wraps the generator function — do not call `reviewDesign` directly from expert skill definitions
 - `chunkAndRetrieve` must be called before any document text is sent to the LLM if text length > 4,000 chars
+- Office expert skills must keep `name`, `version`, `workflow`, tests, and manifest entries aligned
+- Prefer workflow packets over prompt-only payloads when sending skill guidance to runtime consumers
 - Tests go in `__tests__/`, import with `../` relative paths (no `.js` extension in test files)

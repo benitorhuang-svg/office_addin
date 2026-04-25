@@ -11,9 +11,9 @@
  *   );
  */
 
-export type FluentButtonVariant = 'accent' | 'neutral' | 'outline' | 'subtle' | 'transparent';
-export type FluentButtonSize = 'small' | 'medium' | 'large';
-export type FluentButtonShape = 'circular' | 'rounded' | 'square';
+export type FluentButtonVariant = "accent" | "neutral" | "outline" | "subtle" | "transparent";
+export type FluentButtonSize = "small" | "medium" | "large";
+export type FluentButtonShape = "circular" | "rounded" | "square";
 
 export interface FluentButtonOptions {
   label: string;
@@ -22,7 +22,7 @@ export interface FluentButtonOptions {
   shape?: FluentButtonShape;
   disabled?: boolean;
   icon?: string; // inner HTML for icon slot
-  iconPosition?: 'before' | 'after';
+  iconPosition?: "before" | "after";
   onClick?: (event: MouseEvent) => void;
   className?: string;
   ariaLabel?: string;
@@ -32,19 +32,19 @@ export class FluentButton {
   readonly element: HTMLElement;
 
   constructor(opts: FluentButtonOptions) {
-    const btn = document.createElement('fluent-button');
+    const btn = document.createElement("fluent-button");
 
-    if (opts.variant) btn.setAttribute('appearance', opts.variant);
-    if (opts.size) btn.setAttribute('size', opts.size);
-    if (opts.shape) btn.setAttribute('shape', opts.shape);
-    if (opts.disabled) btn.setAttribute('disabled', '');
+    if (opts.variant) btn.setAttribute("appearance", opts.variant);
+    if (opts.size) btn.setAttribute("size", opts.size);
+    if (opts.shape) btn.setAttribute("shape", opts.shape);
+    if (opts.disabled) btn.setAttribute("disabled", "");
     if (opts.className) btn.className = opts.className;
-    if (opts.ariaLabel) btn.setAttribute('aria-label', opts.ariaLabel);
+    if (opts.ariaLabel) btn.setAttribute("aria-label", opts.ariaLabel);
 
     if (opts.icon) {
-      const slot = opts.iconPosition ?? 'before';
-      const iconEl = document.createElement('span');
-      iconEl.setAttribute('slot', `${slot}-icon`);
+      const slot = opts.iconPosition ?? "before";
+      const iconEl = document.createElement("span");
+      iconEl.setAttribute("slot", `${slot}-icon`);
       iconEl.innerHTML = opts.icon;
       btn.appendChild(iconEl);
     }
@@ -53,7 +53,7 @@ export class FluentButton {
     btn.appendChild(labelNode);
 
     if (opts.onClick) {
-      btn.addEventListener('click', opts.onClick as EventListener);
+      btn.addEventListener("click", opts.onClick as EventListener);
     }
 
     this.element = btn;
@@ -61,9 +61,9 @@ export class FluentButton {
 
   setDisabled(disabled: boolean): void {
     if (disabled) {
-      this.element.setAttribute('disabled', '');
+      this.element.setAttribute("disabled", "");
     } else {
-      this.element.removeAttribute('disabled');
+      this.element.removeAttribute("disabled");
     }
   }
 
@@ -71,7 +71,7 @@ export class FluentButton {
     // Update last text node
     for (let i = this.element.childNodes.length - 1; i >= 0; i--) {
       const node = this.element.childNodes[i];
-      if (node.nodeType === Node.TEXT_NODE) {
+      if (node && node.nodeType === Node.TEXT_NODE) {
         node.textContent = label;
         break;
       }

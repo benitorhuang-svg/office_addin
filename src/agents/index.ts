@@ -53,7 +53,7 @@ export function getToolDefinitions(): ToolDefinition[] {
     type: "function",
     function: {
       name: s.name,
-      description: s.description,
+      description: `${s.description} Workflow: ${s.workflow.process.slice(0, 3).join(" -> ")}`,
       parameters: s.parameters as unknown as Record<string, unknown>,
     },
   }));

@@ -18,14 +18,22 @@ export class MemoryService {
    * @param embedding ?�容?��???(??Gemini ?��?)
    * @param source 來�? (例�? "expert-word", "user")
    */
-  async save(text: string, embedding: number[], source: string, extraMetadata: Record<string, unknown> = {}) {
-    const id = crypto.createHash("sha256").update(text + Date.now()).digest("hex");
+  async save(
+    text: string,
+    embedding: number[],
+    source: string,
+    extraMetadata: Record<string, unknown> = {}
+  ) {
+    const id = crypto
+      .createHash("sha256")
+      .update(text + Date.now())
+      .digest("hex");
     const metadata = {
       source,
       timestamp: new Date().toISOString(),
-      ...extraMetadata
+      ...extraMetadata,
     };
-    
+
     await this.adapter.addMemory(id, embedding, text, metadata);
     return id;
   }
@@ -37,16 +45,18 @@ export class MemoryService {
    */
   async recall(queryEmbedding: number[], limit: number = 3) {
     const results = await this.adapter.queryMemory(queryEmbedding, limit);
-    
+
     if (!results || !results.documents || results.documents.length === 0) {
       return [];
     }
 
-    // ?��??��??��???
-    return results.documents[0].map((doc, i) => ({
+    const docs = results.documents[0];
+    if (!docs) return [];
+
+    return docs.map((doc, i) => ({
       text: doc,
-      metadata: results.metadatas?.[0][i],
-      distance: results.distances?.[0][i]
+      metadata: results.metadatas?.[0]?.[i],
+      distance: results.distances?.[0]?.[i],
     }));
   }
 }

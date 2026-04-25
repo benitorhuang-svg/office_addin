@@ -55,6 +55,10 @@ module.exports = async (env, options) => {
     },
     resolve: {
       extensions: [".ts", ".html", ".js", ".css"],
+      extensionAlias: {
+        ".js": [".ts", ".js"],
+        ".mjs": [".mts", ".mjs"]
+      },
       alias: {
         "@shared": path.resolve(__dirname, "src/shared"),
         "@components": path.resolve(__dirname, "src/client/components"),

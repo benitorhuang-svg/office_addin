@@ -11,13 +11,17 @@
  *   All three     ??Excel data + PPT deck + Word report in one shot
  */
 
-import { ExcelSkillInvoker }  from '@agents/expert-excel/index';
-import { PPTSkillInvoker }    from '@agents/expert-ppt/index';
-import { WordSkillInvoker }   from '@agents/expert-word/index';
-import { SharedSkillInvoker } from '@agents/skills/shared/shared-invoker';
-import { logger }             from '@shared/logger/index.js';
+import { ExcelSkillInvoker, excelSkill } from "@agents/expert-excel/index";
+import { PPTSkillInvoker, pptSkill } from "@agents/expert-ppt/index";
+import { WordSkillInvoker, wordSkill } from "@agents/expert-word/index";
+import { SharedSkillInvoker } from "@agents/skills/shared/shared-invoker";
+import {
+  buildSkillWorkflowPacket,
+  renderSkillWorkflowGuide,
+} from "@agents/shared/workflow-skill-packet.js";
+import { logger } from "@shared/logger/index.js";
 
-const TAG = 'TaskOrchestrator';
+const TAG = "TaskOrchestrator";
 
 // ---------------------------------------------------------------------------
 // Cross-app detection helpers
@@ -48,7 +52,7 @@ export interface TaskContext {
 }
 
 export interface TaskResult {
-  strategy: 'parallel' | 'serial';
+  strategy: "parallel" | "serial";
   results: Record<string, unknown>;
 }
 
@@ -58,36 +62,66 @@ export interface TaskResult {
 async function runParallel(
   query: string,
   _ctx: TaskContext,
-  targets: Array<'excel' | 'ppt' | 'word' | 'omni_bridge'>
+  targets: Array<"excel" | "ppt" | "word" | "omni_bridge">
 ): Promise<TaskResult> {
-  logger.info(TAG, 'Fanning out to workers in parallel', { targets, query: query.slice(0, 100) });
+  logger.info(TAG, "Fanning out to workers in parallel", { targets, query: query.slice(0, 100) });
 
   const tasks: Array<Promise<[string, unknown]>> = targets.map((target) => {
     switch (target) {
-      case 'excel':
+      case "excel":
         return (async () => {
           const promptPath = ExcelSkillInvoker.getPromptPath();
           const promptContent = await readPromptSafe(promptPath);
-          return ['excel', { status: 'prompt_augmented', category: 'excel_data', prompt: promptContent }] as [string, unknown];
+          return [
+            "excel",
+            {
+              status: "workflow_skill_ready",
+              category: "excel_data",
+              prompt: promptContent,
+              workflow: buildSkillWorkflowPacket(excelSkill),
+              workflowGuide: renderSkillWorkflowGuide(excelSkill, promptContent),
+            },
+          ] as [string, unknown];
         })();
-      case 'ppt':
+      case "ppt":
         return (async () => {
           const promptPath = PPTSkillInvoker.getPromptPath();
           const promptContent = await readPromptSafe(promptPath);
-          return ['ppt', { status: 'prompt_augmented', category: 'ppt_design', prompt: promptContent }] as [string, unknown];
+          return [
+            "ppt",
+            {
+              status: "workflow_skill_ready",
+              category: "ppt_design",
+              prompt: promptContent,
+              workflow: buildSkillWorkflowPacket(pptSkill),
+              workflowGuide: renderSkillWorkflowGuide(pptSkill, promptContent),
+            },
+          ] as [string, unknown];
         })();
-      case 'word':
+      case "word":
         return (async () => {
           const promptPath = WordSkillInvoker.getPromptPath();
           const promptContent = await readPromptSafe(promptPath);
-          return ['word', { status: 'prompt_augmented', category: 'word_creative', prompt: promptContent }] as [string, unknown];
+          return [
+            "word",
+            {
+              status: "workflow_skill_ready",
+              category: "word_creative",
+              prompt: promptContent,
+              workflow: buildSkillWorkflowPacket(wordSkill),
+              workflowGuide: renderSkillWorkflowGuide(wordSkill, promptContent),
+            },
+          ] as [string, unknown];
         })();
-      case 'omni_bridge':
+      case "omni_bridge":
       default:
         return (async () => {
           const promptPath = SharedSkillInvoker.getOmniBridgePromptPath();
           const promptContent = await readPromptSafe(promptPath);
-          return ['omni_bridge', { status: 'prompt_augmented', category: 'omni_bridge', prompt: promptContent }] as [string, unknown];
+          return [
+            "omni_bridge",
+            { status: "prompt_augmented", category: "omni_bridge", prompt: promptContent },
+          ] as [string, unknown];
         })();
     }
   });
@@ -96,15 +130,15 @@ async function runParallel(
   const results: Record<string, unknown> = {};
 
   for (const outcome of settled) {
-    if (outcome.status === 'fulfilled') {
+    if (outcome.status === "fulfilled") {
       const [key, value] = outcome.value;
       results[key] = value;
     } else {
-      logger.warn(TAG, 'Worker failed', { reason: outcome.reason });
+      logger.warn(TAG, "Worker failed", { reason: outcome.reason });
     }
   }
 
-  return { strategy: 'parallel', results };
+  return { strategy: "parallel", results };
 }
 
 // ---------------------------------------------------------------------------
@@ -112,10 +146,10 @@ async function runParallel(
 // ---------------------------------------------------------------------------
 async function readPromptSafe(filePath: string): Promise<string> {
   try {
-    const { promises: fs } = await import('node:fs');
-    return await fs.readFile(filePath, 'utf-8');
+    const { promises: fs } = await import("node:fs");
+    return await fs.readFile(filePath, "utf-8");
   } catch {
-    return '';
+    return "";
   }
 }
 
@@ -131,19 +165,19 @@ async function readPromptSafe(filePath: string): Promise<string> {
 export async function orchestrateTask(query: string, _ctx: TaskContext): Promise<TaskResult> {
   if (!isCrossApp(query)) {
     // Single domain ??skip parallel overhead
-    logger.info(TAG, 'Single-domain query, using serial route', { query: query.slice(0, 80) });
+    logger.info(TAG, "Single-domain query, using serial route", { query: query.slice(0, 80) });
     return {
-      strategy: 'serial',
-      results: { note: 'Use SkillOrchestrator.route() for single-domain queries.' },
+      strategy: "serial",
+      results: { note: "Use SkillOrchestrator.route() for single-domain queries." },
     };
   }
 
-  const targets: Array<'excel' | 'ppt' | 'word' | 'omni_bridge'> = [];
-  if (needsExcel(query)) targets.push('excel');
-  if (needsPPT(query))   targets.push('ppt');
-  if (needsWord(query))  targets.push('word');
+  const targets: Array<"excel" | "ppt" | "word" | "omni_bridge"> = [];
+  if (needsExcel(query)) targets.push("excel");
+  if (needsPPT(query)) targets.push("ppt");
+  if (needsWord(query)) targets.push("word");
   // Always include cross-app bridge prompt for multi-domain queries
-  targets.push('omni_bridge');
+  targets.push("omni_bridge");
 
   return runParallel(query, _ctx, targets);
 }

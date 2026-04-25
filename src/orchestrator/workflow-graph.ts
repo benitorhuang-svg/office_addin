@@ -30,9 +30,16 @@ import type {
 import config from "@config/molecules/server-config.js";
 
 // Import Expert Getters
-import { getCoreInstructions as getExcelInstructions } from "@agents/expert-excel/index.js";
-import { getCoreInstructions as getWordInstructions } from "@agents/expert-word/index.js";
-import { getCoreInstructions as getPPTInstructions } from "@agents/expert-ppt/index.js";
+import {
+  excelSkill,
+  getCoreInstructions as getExcelInstructions,
+} from "@agents/expert-excel/index.js";
+import {
+  wordSkill,
+  getCoreInstructions as getWordInstructions,
+} from "@agents/expert-word/index.js";
+import { pptSkill, getCoreInstructions as getPPTInstructions } from "@agents/expert-ppt/index.js";
+import { renderSkillWorkflowGuide } from "@agents/shared/workflow-skill-packet.js";
 
 const TAG = "WorkflowGraph";
 
@@ -95,9 +102,15 @@ export class WorkflowGraph {
 
       // Composite Prompting: Combine all relevant expert instructions
       const instructionTasks = routeResult.domains.map(async (domain) => {
-        if (domain === "expert-excel") return await getExcelInstructions();
-        if (domain === "expert-word") return await getWordInstructions();
-        if (domain === "expert-ppt") return await getPPTInstructions();
+        if (domain === "expert-excel") {
+          return renderSkillWorkflowGuide(excelSkill, await getExcelInstructions());
+        }
+        if (domain === "expert-word") {
+          return renderSkillWorkflowGuide(wordSkill, await getWordInstructions());
+        }
+        if (domain === "expert-ppt") {
+          return renderSkillWorkflowGuide(pptSkill, await getPPTInstructions());
+        }
         return "";
       });
 
@@ -152,7 +165,7 @@ export class WorkflowGraph {
             });
           });
           const results = await Promise.all(reviewTasks);
-          finalContent = results.map(r => r.content).join("\n\n---\n\n");
+          finalContent = results.map((r) => r.content).join("\n\n---\n\n");
 
           globalStateManager.recordAction(sessionId, {
             agent: "qa-reviewer",
@@ -162,18 +175,23 @@ export class WorkflowGraph {
           });
         } else {
           const primaryDomain = qaDomains[0];
-          const qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, {
-            domain: primaryDomain,
-            traceId,
-          });
-          finalContent = qaResult.content;
+          if (primaryDomain) {
+            const qaResult = await QAReviewerAgent.enforceQuality(generator, prompt, {
+              domain: primaryDomain,
+              traceId,
+            });
+            finalContent = qaResult.content;
 
-          globalStateManager.recordAction(sessionId, {
-            agent: "qa-reviewer",
-            action: "review_design",
-            payload: { domains: qaDomains },
-            result: qaResult,
-          });
+            globalStateManager.recordAction(sessionId, {
+              agent: "qa-reviewer",
+              action: "review_design",
+              payload: { domains: qaDomains },
+              result: qaResult,
+            });
+          } else {
+            // Fallback for safety
+            finalContent = await generator(prompt);
+          }
         }
       } else {
         log.info(TAG, `Direct execution for generic intent (no specific QA gating)`);

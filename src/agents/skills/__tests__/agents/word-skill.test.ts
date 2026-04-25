@@ -20,11 +20,13 @@ describe("WordSkill (agent interface)", () => {
 
   it("has correct name and version", () => {
     expect(wordSkill.name).toBe("word_expert");
-    expect(wordSkill.version).toBe("4.0 (Style-Aware)");
+    expect(wordSkill.version).toBe("5.1.0");
   });
 
   it("describes when to invoke the skill", () => {
     expect(wordSkill.description.toLowerCase()).toMatch(/word|document|report|style/);
+    expect(wordSkill.workflow.redFlags.length).toBeGreaterThan(0);
+    expect(wordSkill.workflow.rationalizations.length).toBeGreaterThan(0);
   });
 
   it("declares required parameters in JSON-Schema format", () => {
@@ -32,6 +34,7 @@ describe("WordSkill (agent interface)", () => {
     expect(parameters.type).toBe("object");
     expect(parameters.required).toContain("output_path");
     expect(parameters.required).toContain("changes");
+    expect(parameters.properties).toHaveProperty("input_path");
     expect(parameters.properties).toHaveProperty("output_path");
     expect(parameters.properties).toHaveProperty("changes");
     expect(parameters.properties).toHaveProperty("officeContext");
@@ -53,14 +56,24 @@ describe("WordSkill (agent interface)", () => {
 
   it("passes parameters correctly to invoker", async () => {
     mockInvoke.mockResolvedValue({});
-    const changes: import("@shared/domain-actions").WordAction[] = [{ type: "REPLACE_SECTION", sectionId: "{{DATE}}", text: "2026-04-23" }];
+    const changes: import("@shared/domain-actions").WordAction[] = [
+      { type: "REPLACE_SECTION", sectionId: "{{DATE}}", text: "2026-04-23" },
+    ];
+    const officeContext = { availableNamedStyles: ["Normal", "Body"], documentOutline: [] };
 
     await wordSkill.execute({
+      input_path: "/data/template.docx",
       output_path: "/data/report.docx",
       changes,
+      officeContext,
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith("", "/data/report.docx", changes, undefined);
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "/data/template.docx",
+      "/data/report.docx",
+      changes,
+      officeContext
+    );
   });
 
   it("defaults input_path to empty string when omitted", async () => {
@@ -95,4 +108,3 @@ describe("WordSkill (agent interface)", () => {
     expect(result.meta?.traceId).toBe("trace-word-42");
   });
 });
-

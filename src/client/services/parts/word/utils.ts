@@ -14,7 +14,7 @@ export async function convertImageUrlToBase64(url: string): Promise<string> {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = String(reader.result || "");
-      resolve(result.includes(",") ? result.split(",")[1] : result);
+      resolve(result.includes(",") ? result.split(",")[1] || result : result);
     };
     reader.onerror = () => reject(reader.error || new Error("Failed to read image data."));
     reader.readAsDataURL(blob);

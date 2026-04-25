@@ -13,9 +13,9 @@
  * This is a pure in-process operation ??no Python bridge required.
  */
 
-import { logger } from '@shared/logger/index.js';
+import { logger } from "@shared/logger/index.js";
 
-const TAG = 'ContextChunker';
+const TAG = "ContextChunker";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -31,10 +31,10 @@ const DEFAULT_TOKEN_BUDGET = 6_000;
 const CHUNKING_THRESHOLD_CHARS = 4_000;
 
 /** Chunk size in characters (≈400 tokens). */
-const CHUNK_SIZE = 1_200;
+// const CHUNK_SIZE = 1_200;
 
 /** Overlap to preserve cross-chunk context. */
-const CHUNK_OVERLAP = 200;
+// const CHUNK_OVERLAP = 200;
 
 /** How many top-scored chunks to include (before budget cap). */
 const TOP_K = 8;
@@ -55,11 +55,25 @@ export interface ChunkResult {
 }
 
 /**
- * Detects if the text contains Chinese characters to adjust token estimation.
+ * Characters per token (rough approximation). English is ~3.5-4, Chinese is ~1.5-2.
  */
 function getCharsPerToken(text: string): number {
   const isChinese = /[\u4e00-\u9fa5]/.test(text);
   return isChinese ? 1.8 : 3.5;
+}
+
+/**
+ * Dynamically calculates optimal chunk size and overlap based on language.
+ * Industrial Grade 5.0 Optimization.
+ */
+function getOptimalChunkSize(text: string): { size: number; overlap: number } {
+  const isChinese = /[\u4e00-\u9fa5]/.test(text);
+  if (isChinese) {
+    // Chinese characters carry more information per unit
+    return { size: 800, overlap: 150 };
+  }
+  // English/Latin standard
+  return { size: 1500, overlap: 300 };
 }
 
 /**
@@ -70,23 +84,28 @@ export function chunkAndRetrieve(
   text: string,
   query: string,
   charBudget?: number,
-  traceId?: string,
+  traceId?: string
 ): ChunkResult {
   const originalLength = text.length;
 
   // Dynamic budget calculation based on content language
   const ratio = getCharsPerToken(text);
-  const effectiveCharBudget = charBudget ?? (DEFAULT_TOKEN_BUDGET * ratio);
+  const effectiveCharBudget = charBudget ?? DEFAULT_TOKEN_BUDGET * ratio;
 
   if (originalLength <= CHUNKING_THRESHOLD_CHARS) {
     return { context: text, chunked: false, originalLength, retrievedLength: originalLength };
   }
 
-  const chunks = splitChunks(text);
+  const { size, overlap } = getOptimalChunkSize(text);
+  const chunks = splitChunks(text, size, overlap);
   const queryTokens = tokenize(query);
+
+  // Calculate IDF across all chunks for industrial-grade similarity
+  const idf = calculateIDF(chunks);
+
   const scored = chunks.map((chunk) => ({
     chunk,
-    score: cosineSimilarity(queryTokens, tokenize(chunk)),
+    score: cosineSimilarity(queryTokens, tokenize(chunk), idf),
   }));
 
   scored.sort((a, b) => b.score - a.score);
@@ -100,13 +119,14 @@ export function chunkAndRetrieve(
     budget -= slice.length;
   }
 
-  const context = selected.join('\n\n---\n\n');
+  const context = selected.join("\n\n---\n\n");
   const log = traceId ? logger.withTrace(traceId) : logger;
-  log.info(TAG, 'Context chunked', {
+  log.info(TAG, "Context chunked with IDF & Dynamic Sizing", {
     originalLength,
     chunks: chunks.length,
     selected: selected.length,
     retrievedLength: context.length,
+    chunkSize: size,
   });
 
   return { context, chunked: true, originalLength, retrievedLength: context.length };
@@ -116,12 +136,13 @@ export function chunkAndRetrieve(
 // Internal: chunking
 // ---------------------------------------------------------------------------
 
-function splitChunks(text: string): string[] {
+function splitChunks(text: string, size: number, overlap: number): string[] {
   const chunks: string[] = [];
   let start = 0;
   while (start < text.length) {
-    chunks.push(text.slice(start, start + CHUNK_SIZE));
-    start += CHUNK_SIZE - CHUNK_OVERLAP;
+    chunks.push(text.slice(start, start + size));
+    start += size - overlap;
+    if (start >= text.length) break;
   }
   return chunks;
 }
@@ -132,9 +153,40 @@ function splitChunks(text: string): string[] {
 
 const STOPWORDS = new Set([
   // English
-  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'but', 'it', 'that', 'this',
+  "the",
+  "a",
+  "an",
+  "is",
+  "are",
+  "was",
+  "were",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "of",
+  "and",
+  "or",
+  "but",
+  "it",
+  "that",
+  "this",
   // Chinese
-  '的', '是', '在', '了', '和', '與', '或', '就', '也', '都', '而', '及', '與', '著'
+  "的",
+  "是",
+  "在",
+  "了",
+  "和",
+  "與",
+  "或",
+  "就",
+  "也",
+  "都",
+  "而",
+  "及",
+  "與",
+  "著",
 ]);
 
 function tokenize(text: string): Map<string, number> {
@@ -148,18 +200,49 @@ function tokenize(text: string): Map<string, number> {
   return freq;
 }
 
-function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): number {
+/**
+ * Calculates Inverse Document Frequency (IDF) for all terms in chunks.
+ */
+function calculateIDF(chunks: string[]): Map<string, number> {
+  const idf = new Map<string, number>();
+  const N = chunks.length;
+
+  for (const chunk of chunks) {
+    const tokens = new Set(tokenize(chunk).keys());
+    for (const token of tokens) {
+      idf.set(token, (idf.get(token) ?? 0) + 1);
+    }
+  }
+
+  for (const [token, count] of idf) {
+    idf.set(token, Math.log((N + 1) / (count + 0.5)));
+  }
+
+  return idf;
+}
+
+function cosineSimilarity(
+  a: Map<string, number>,
+  b: Map<string, number>,
+  idf?: Map<string, number>
+): number {
   let dot = 0;
   let normA = 0;
   let normB = 0;
 
   for (const [term, freqA] of a) {
-    normA += freqA * freqA;
+    const weight = idf?.get(term) ?? 1;
+    const valA = freqA * weight;
+    normA += valA * valA;
+
     const freqB = b.get(term) ?? 0;
-    dot += freqA * freqB;
+    const valB = freqB * weight;
+    dot += valA * valB;
   }
-  for (const [, freqB] of b) {
-    normB += freqB * freqB;
+  for (const [term, freqB] of b) {
+    const weight = idf?.get(term) ?? 1;
+    const valB = freqB * weight;
+    normB += valB * valB;
   }
 
   const denom = Math.sqrt(normA) * Math.sqrt(normB);

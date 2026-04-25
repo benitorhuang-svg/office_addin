@@ -6,6 +6,7 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "useDefineForClassFields": true,
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
@@ -31,7 +32,8 @@
       "@orchestrator/*": ["./src/orchestrator/*"],
       "@api/*": ["./src/api/*"],
       "@config/*": ["./src/config/*"],
-      "@tools/*": ["./src/tools/*"]
+      "@tools/*": ["./src/tools/*"],
+      "@sdk/*": ["./src/sdk/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx"],

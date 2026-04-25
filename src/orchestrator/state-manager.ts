@@ -50,9 +50,9 @@ class StateManager {
   }
 
   /** P3: Compute hash of context to detect changes */
-  static computeContextHash(context: any): string {
+  static computeContextHash(context: unknown): string {
     const serialized = JSON.stringify(context);
-    return createHash('md5').update(serialized).digest('hex');
+    return createHash("md5").update(serialized).digest("hex");
   }
 
   private startCleanupTimer() {

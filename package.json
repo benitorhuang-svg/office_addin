@@ -18,8 +18,8 @@
     "nexus": "./src/infra/scripts/nexus.mjs"
   },
   "scripts": {
-    "build": "node src/infra/scripts/sync-skills.mjs && webpack --mode production",
-    "build:dev": "node src/infra/scripts/sync-skills.mjs && webpack --mode development",
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
     "build:server": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-server/index.mjs --packages=external --tree-shaking=true --minify-syntax",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:watch": "tsc --noEmit -p tsconfig.json --watch",
@@ -35,7 +35,7 @@
     "dev": "node src/infra/scripts/core/patch-copilot-sdk.mjs && node src/infra/scripts/dev-win.mjs",
     "docker:up": "npx nexus up",
     "nexus": "node src/infra/scripts/nexus.mjs",
-    "test:backend": "jest --testPathPatterns=src --coverage",
+    "test:backend": "jest src/infra/tests/regression.test.ts src/agents/qa-reviewer/red-teamer.test.ts src/agents/skills/__tests__/shared-invoker.test.ts --coverage",
     "test:ci": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --testPathPatterns=src --passWithNoTests",
     "test:backend:watch": "jest --testPathPatterns=src --watch",
     "prepare": "husky"

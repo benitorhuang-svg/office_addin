@@ -12,130 +12,136 @@ import { NexusStateStore } from "./global-state";
  * UPGRADED: Industrial content cleaning and SSE stream orchestration.
  */
 export class StreamEngine {
-    private static lastUpdateTs = 0;
+  private static lastUpdateTs = 0;
 
-    /**
-     * Executes the AI call with full streaming support and high-fidelity content cleaning.
-     */
-    public static async execute(
-        prompt: string,
-        model: string,
-        presetId: string,
-        auth: AuthController,
-        docCtx: OfficeContextPayload,
-        bubble: HTMLElement,
-        systemPrompt?: string,
-        onChunk?: (chunk: string) => void
-    ): Promise<CopilotResponse> {
-        let streamBuffer = "";
-        let receivedFirst = false;
+  /**
+   * Executes the AI call with full streaming support and high-fidelity content cleaning.
+   */
+  public static async execute(
+    prompt: string,
+    model: string,
+    presetId: string,
+    auth: AuthController,
+    docCtx: OfficeContextPayload,
+    bubble: HTMLElement,
+    systemPrompt?: string,
+    onChunk?: (chunk: string) => void
+  ): Promise<CopilotResponse> {
+    let streamBuffer = "";
+    let receivedFirst = false;
 
-        NexusStateStore.update({ isStreaming: true });
-        try {
-            const res = await sendToCopilot(
-                prompt,
-                await auth.getAccessToken(),
-                docCtx,
-                model,
-                presetId,
-                auth.getAuthProvider(),
-                await auth.getGeminiToken(),
-                systemPrompt, 
-                async (chunk) => {
-                    if (!receivedFirst) {
-                        receivedFirst = true;
-                        HistoryManager.removeTypingIndicator();
-                    }
+    NexusStateStore.update({ isStreaming: true });
+    try {
+      const res = await sendToCopilot(
+        prompt,
+        await auth.getAccessToken(),
+        docCtx,
+        model,
+        presetId,
+        auth.getAuthProvider(),
+        await auth.getGeminiToken(),
+        systemPrompt,
+        async (chunk) => {
+          if (!receivedFirst) {
+            receivedFirst = true;
+            HistoryManager.removeTypingIndicator();
+          }
 
-                    if (onChunk) onChunk(chunk);
+          if (onChunk) onChunk(chunk);
 
-                    // 1. Specialized Protocol Dispatchers
-                    if (chunk.startsWith("[ASK_USER]:")) {
-                        const parts = chunk.split(":");
-                        ChatUiHelper.renderAskUser(bubble, parts[1], parts.slice(2).join(":"));
-                        return;
-                    }
+          // 1. Specialized Protocol Dispatchers
+          if (chunk.startsWith("[ASK_USER]:")) {
+            const parts = chunk.split(":");
+            ChatUiHelper.renderAskUser(bubble, parts[1] || "Question", parts.slice(2).join(":"));
+            return;
+          }
 
-                    if (chunk.includes("[DISPATCH]: EXCEL_CHART_INIT")) {
-                        const parts = chunk.split("|").map(p => p.trim());
-                        if (parts.length >= 3) {
-                            const title = parts[1];
-                            const type = parts[2];
-                            const range = parts[3] || "AUTO";
-                            console.log(`[Stream Logic] Industrial Dispatch: Creating ${type} chart '${title}' on ${range}`);
-                            createExcelChart(title, type, range).catch(e => console.warn("[Stream Logic] Chart dispatch failure:", e));
-                        }
-                    }
-
-                    streamBuffer += chunk;
-                    
-                    // 2. Real-time heavy-duty cleaning: Strip internal protocol markers for the main bubble
-                    const cleaned = this.cleanAIContent(
-                        streamBuffer.replace(/\[(THOUGHT|TASK|DISPATCH)\]:.*?\n?/gi, '')
-                                    .replace(/\[DISPATCH\]:.*?(?=\n|$)/gi, '') // Handle pipe-based dispatch too
-                    );
-                    this.throttledUiUpdate(bubble, cleaned);
-                }
-            );
-
-            // Final Sync & Forced Completion
-            const rawContent = streamBuffer || res.text || "";
-            const finalContent = this.cleanAIContent(rawContent);
-            const finalHtml = await marked.parse(finalContent);
-            
-            ChatUiHelper.updateAssistantBubble(bubble, finalContent, () => finalHtml);
-            ChatUiHelper.completeAssistantBubble(bubble, finalContent);
-            
-            HistoryManager.forceScroll();
-            
-            // Return cleaned response for orchestrator logic
-            return { 
-                ...res, 
-                text: finalContent 
-            };
-        } finally {
-            NexusStateStore.update({ isStreaming: false });
-        }
-    }
-
-    /**
-     * Heavy-duty industrial cleaner to remove hallucinations and messy Markdown.
-     */
-    private static cleanAIContent(text: string): string {
-        if (!text) return "";
-        
-        let cleaned = text;
-
-        // 1. Remove strange multi-asterisks or dash patterns often generated by early 2026 models
-        // CRITICAL: Preserve '---Slide' markers for PPT automation
-        cleaned = cleaned.replace(/\*\*\*+/g, '');
-        cleaned = cleaned.replace(/---(?!(Slide|\[Slide\]))/gi, '');
-
-        // 2. Normalize common AI-generated duplicate headers
-        // Case: AI repeats "## 直接回答" at the very end
-        const matchDoubleHeader = cleaned.match(/## 直接回答[\s\S]*?## 直接回答/);
-        if (matchDoubleHeader) {
-            // Cut off at the second occurance if it's likely a terminal hallucination
-            const firstIndex = cleaned.indexOf("## 直接回答");
-            const secondIndex = cleaned.indexOf("## 直接回答", firstIndex + 5);
-            if (secondIndex > -1) {
-                cleaned = cleaned.substring(0, secondIndex);
+          if (chunk.includes("[DISPATCH]: EXCEL_CHART_INIT")) {
+            const parts = chunk.split("|").map((p) => p.trim());
+            if (parts.length >= 3) {
+              const title = parts[1] || "Chart";
+              const type = parts[2] || "ColumnClustered";
+              const range = parts[3] || "AUTO";
+              console.log(
+                `[Stream Logic] Industrial Dispatch: Creating ${type} chart '${title}' on ${range}`
+              );
+              createExcelChart(title, type, range).catch((e) =>
+                console.warn("[Stream Logic] Chart dispatch failure:", e)
+              );
             }
+          }
+
+          streamBuffer += chunk;
+
+          // 2. Real-time heavy-duty cleaning: Strip internal protocol markers for the main bubble
+          const cleaned = this.cleanAIContent(
+            streamBuffer
+              .replace(/\[(THOUGHT|TASK|DISPATCH)\]:.*?\n?/gi, "")
+              .replace(/\[DISPATCH\]:.*?(?=\n|$)/gi, "") // Handle pipe-based dispatch too
+          );
+          this.throttledUiUpdate(bubble, cleaned);
         }
+      );
 
-        // 3. Remove trailing redundant symbols
-        cleaned = cleaned.replace(/[#*-\s]+$/, '');
+      // Final Sync & Forced Completion
+      const rawContent = streamBuffer || res.text || "";
+      const finalContent = this.cleanAIContent(rawContent);
+      const finalHtml = await marked.parse(finalContent);
 
-        return cleaned.trim();
+      ChatUiHelper.updateAssistantBubble(bubble, finalContent, () => finalHtml);
+      ChatUiHelper.completeAssistantBubble(bubble, finalContent);
+
+      HistoryManager.forceScroll();
+
+      // Return cleaned response for orchestrator logic
+      return {
+        ...res,
+        text: finalContent,
+      };
+    } finally {
+      NexusStateStore.update({ isStreaming: false });
+    }
+  }
+
+  /**
+   * Heavy-duty industrial cleaner to remove hallucinations and messy Markdown.
+   */
+  private static cleanAIContent(text: string): string {
+    if (!text) return "";
+
+    let cleaned = text;
+
+    // 1. Remove strange multi-asterisks or dash patterns often generated by early 2026 models
+    // CRITICAL: Preserve '---Slide' markers for PPT automation
+    cleaned = cleaned.replace(/\*\*\*+/g, "");
+    cleaned = cleaned.replace(/---(?!(Slide|\[Slide\]))/gi, "");
+
+    // 2. Normalize common AI-generated duplicate headers
+    // Case: AI repeats "## 直接回答" at the very end
+    const matchDoubleHeader = cleaned.match(/## 直接回答[\s\S]*?## 直接回答/);
+    if (matchDoubleHeader) {
+      // Cut off at the second occurance if it's likely a terminal hallucination
+      const firstIndex = cleaned.indexOf("## 直接回答");
+      const secondIndex = cleaned.indexOf("## 直接回答", firstIndex + 5);
+      if (secondIndex > -1) {
+        cleaned = cleaned.substring(0, secondIndex);
+      }
     }
 
-    private static async throttledUiUpdate(bubble: HTMLElement, content: string) {
-        const now = Date.now();
-        if (now - this.lastUpdateTs > 150) { // Sharper 150ms update for premium feel
-            this.lastUpdateTs = now;
-            const html = await marked.parse(content);
-            ChatUiHelper.updateAssistantBubble(bubble, content, () => html);
-            HistoryManager.forceScroll();
-        }
+    // 3. Remove trailing redundant symbols
+    cleaned = cleaned.replace(/[#*-\s]+$/, "");
+
+    return cleaned.trim();
+  }
+
+  private static async throttledUiUpdate(bubble: HTMLElement, content: string) {
+    const now = Date.now();
+    if (now - this.lastUpdateTs > 150) {
+      // Sharper 150ms update for premium feel
+      this.lastUpdateTs = now;
+      const html = await marked.parse(content);
+      ChatUiHelper.updateAssistantBubble(bubble, content, () => html);
+      HistoryManager.forceScroll();
     }
+  }
 }

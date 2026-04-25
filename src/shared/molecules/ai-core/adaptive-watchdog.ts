@@ -11,10 +11,10 @@ interface LatencyStats {
   lastUpdated: number;
 }
 
-const MIN_TIMEOUT_MS = 30_000;   // 30s floor
-const MAX_TIMEOUT_MS = 600_000;  // 10min ceiling
+const MIN_TIMEOUT_MS = 30_000; // 30s floor
+const MAX_TIMEOUT_MS = 600_000; // 10min ceiling
 const DEFAULT_TIMEOUT_MS = 300_000; // 5min default for unknown models
-const MAX_SAMPLES = 100;          // Rolling window size
+const MAX_SAMPLES = 100; // Rolling window size
 
 const samples = new Map<string, number[]>();
 
@@ -52,9 +52,9 @@ export const AdaptiveWatchdog = {
 
     return {
       count: len,
-      p50: sorted[idx(0.5)],
-      p95: sorted[idx(0.95)],
-      p99: sorted[idx(0.99)],
+      p50: sorted[idx(0.5)] || 0,
+      p95: sorted[idx(0.95)] || 0,
+      p99: sorted[idx(0.99)] || 0,
       lastUpdated: Date.now(),
     };
   },

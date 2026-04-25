@@ -15,9 +15,9 @@
  * For full pixel-level extraction, delegate to vision_expert.py via the Python bridge.
  */
 
-import { logger } from '@shared/logger/index.js';
+import { logger } from "@shared/logger/index.js";
 
-const TAG = 'BrandExtractor';
+const TAG = "BrandExtractor";
 const FETCH_TIMEOUT_MS = 6_000;
 
 // ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ function isNeutral(hex: string): boolean {
 
 /** Normalise a 3-char hex to 6-char lowercase. */
 function normaliseHex(raw: string): string {
-  const h = raw.replace('#', '');
+  const h = raw.replace("#", "");
   if (h.length === 3) return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
   return `#${h.toLowerCase()}`;
 }
@@ -78,9 +78,11 @@ function extractHexColors(text: string): string[] {
 
 /** Parse `theme-color` meta tag. */
 function parseThemeColor(html: string): string | null {
-  const m = html.match(/<meta[^>]+name=["']theme-color["'][^>]+content=["']([^"']+)["']/i)
-         ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']theme-color["']/i);
-  return m ? m[1].trim() : null;
+  const m =
+    html.match(/<meta[^>]+name=["']theme-color["'][^>]+content=["']([^"']+)["']/i) ??
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']theme-color["']/i);
+  const val = m?.[1];
+  return val ? val.trim() : null;
 }
 
 /** Tally color frequencies and return the top N non-neutral colors. */
@@ -102,7 +104,7 @@ function contrastText(bg: string): string {
   const b = parseInt(bg.slice(5, 7), 16);
   // WCAG relative luminance approximation
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum > 0.5 ? '#1e293b' : '#f8fafc';
+  return lum > 0.5 ? "#1e293b" : "#f8fafc";
 }
 
 // ---------------------------------------------------------------------------
@@ -128,15 +130,18 @@ const cache = new Map<string, CacheEntry>();
  * @param fallbackColor - Optional fallback primary color (e.g., from officeContext?.themeColors?.Primary).
  * @returns   - BrandExtractResult with tokens or an error message.
  */
-export async function extractBrandTokens(url: string, fallbackColor?: string): Promise<BrandExtractResult> {
+export async function extractBrandTokens(
+  url: string,
+  fallbackColor?: string
+): Promise<BrandExtractResult> {
   // Security: only allow HTTPS
-  if (!url.startsWith('https://')) {
-    return { ok: false, error: 'Only HTTPS URLs are supported for brand extraction.' };
+  if (!url.startsWith("https://")) {
+    return { ok: false, error: "Only HTTPS URLs are supported for brand extraction." };
   }
 
   const now = Date.now();
   const cached = cache.get(url);
-  if (cached && (now - cached.timestamp < CACHE_TTL_MS)) {
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
     logger.info(TAG, `Cache hit for ${url}`);
     return cached.result;
   }
@@ -151,8 +156,8 @@ export async function extractBrandTokens(url: string, fallbackColor?: string): P
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'NexusBrandExtractor/1.0 (brand-color-analysis; non-indexing)',
-        'Accept': 'text/html',
+        "User-Agent": "NexusBrandExtractor/1.0 (brand-color-analysis; non-indexing)",
+        Accept: "text/html",
       },
     });
     clearTimeout(timer);
@@ -175,22 +180,23 @@ export async function extractBrandTokens(url: string, fallbackColor?: string): P
   const themeColor = parseThemeColor(html);
 
   // Extract all hex colors from <style> blocks and inline style attributes
-  const styleContent = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi) ?? []).join(' ')
-                     + (html.match(/style=["'][^"']*["']/gi) ?? []).join(' ');
+  const styleContent =
+    (html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi) ?? []).join(" ") +
+    (html.match(/style=["'][^"']*["']/gi) ?? []).join(" ");
   const allColors = extractHexColors(styleContent);
   if (themeColor && /^#/.test(themeColor)) allColors.unshift(normaliseHex(themeColor));
 
   const top = topColors(allColors, 5);
 
   // Fallback palette when extraction yields nothing
-  const primary   = top[0] ?? fallbackColor ?? '#2563eb';
-  const secondary = top[1] ?? '#1d4ed8';
-  const accent    = top[2] ?? '#8b5cf6';
-  const background = '#ffffff';
-  const text       = contrastText(background);
+  const primary = top[0] ?? fallbackColor ?? "#2563eb";
+  const secondary = top[1] ?? "#1d4ed8";
+  const accent = top[2] ?? "#8b5cf6";
+  const background = "#ffffff";
+  const text = contrastText(background);
 
   const cssBlock = [
-    '/* Brand Intelligence ??extracted by Nexus BrandExtractor */',
+    "/* Brand Intelligence ??extracted by Nexus BrandExtractor */",
     `:root {`,
     `  --brand-extracted-primary:    ${primary};`,
     `  --brand-extracted-secondary:  ${secondary};`,
@@ -198,9 +204,14 @@ export async function extractBrandTokens(url: string, fallbackColor?: string): P
     `  --brand-extracted-background: ${background};`,
     `  --brand-extracted-text:       ${text};`,
     `}`,
-  ].join('\n');
+  ].join("\n");
 
-  logger.info(TAG, `Brand tokens extracted`, { primary, secondary, accent, colorCandidates: top.length });
+  logger.info(TAG, `Brand tokens extracted`, {
+    primary,
+    secondary,
+    accent,
+    colorCandidates: top.length,
+  });
 
   const successResult = {
     ok: true,

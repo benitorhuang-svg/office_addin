@@ -1,5 +1,5 @@
 {
-  "version": "Omni-Arsenal 3.0",
+  "version": "Omni-Arsenal 3.2",
   "routing": {
     "strategy": "llm_intent_classifier",
     "fallback": "keyword_match",
@@ -12,8 +12,10 @@
       "prompt": "src/agents/expert-excel/prompts/excel-expert.md",
       "skills": {
         "ExcelExpert": {
-          "trigger": "Industrial data manipulation and spreadsheet automation.",
-          "logic": "Use when query involves spreadsheets, formulas, data tables, pivot analysis, charts, or numeric reporting.",
+          "name": "excel_expert",
+          "description": "Workflow-first spreadsheet automation for xlsx/xlsm/csv/tsv deliverables, workbook-safe edits, formula-first modeling, pivot summaries, and template-preserving reporting.",
+          "trigger": "Industrial data manipulation, template-preserving workbook edits, spreadsheet file delivery, and spreadsheet automation.",
+          "logic": "Use when query involves spreadsheets, spreadsheet file paths, formulas, existing workbook templates, data tables, pivot analysis, charts, or numeric reporting.",
           "intent_labels": [
             "excel",
             "spreadsheet",
@@ -25,13 +27,54 @@
             "Add a SUM formula to column D rows 2 through 50",
             "Create a pivot table from Sheet1 grouped by Category",
             "Format all headers in row 1 as bold with blue background",
-            "Generate a bar chart comparing Q1 vs Q2 sales",
-            "Apply conditional formatting to highlight values above 1000"
+            "Generate a bar chart comparing Q1 vs Q2 sales"
           ],
-          "example_outputs": "Returns Office.js JavaScript snippet + brief explanation of what was applied.",
-          "edge_cases": "If the sheet name or cell range is not provided, infer from the active selection in officeContext. If officeContext is empty, ask the user to specify the target range.",
-          "input_format": "{ query: string, activeCell?: string, selectedRange?: string, sheetName?: string }",
-          "parallel_safe": true
+          "examples": [
+            {
+              "input": {
+                "input_path": "sales_template.xlsx",
+                "output_path": "q1_report.xlsx",
+                "changes": [
+                  {
+                    "op": "create_pivottable",
+                    "source": "Data!A1:C100",
+                    "destination": "Summary!A1",
+                    "rows": ["Region"],
+                    "values": [{"field": "Amount", "func": "SUM"}]
+                  }
+                ],
+                "office_context": { "activeSheet": "Data" }
+              },
+              "output": { "ok": true },
+              "reasoning": "Preserving existing template while generating a summary pivot on a new sheet."
+            }
+          ],
+          "parameters": {
+            "type": "object",
+            "required": [
+              "output_path",
+              "changes"
+            ],
+            "properties": {
+              "input_path": {
+                "type": "string",
+                "description": "Optional path to an existing .xlsx, .xlsm, .csv, or .tsv spreadsheet to preserve and modify."
+              },
+              "output_path": {
+                "type": "string",
+                "description": "Required path to the output spreadsheet file (.xlsx, .xlsm, .csv, or .tsv)."
+              },
+              "changes": {
+                "type": "array",
+                "description": "Array of changes to apply (set_value, set_formula, format_range, create_pivottable, etc.)",
+                "items": { "type": "object" }
+              },
+              "officeContext": {
+                "type": "object",
+                "description": "Optional context from Office host (activeSheet, selectedRange, etc.)"
+              }
+            }
+          }
         }
       }
     },
@@ -39,27 +82,45 @@
       "engine": "python3 src/agents/expert-ppt/domain/ppt_expert.py",
       "prompt": "src/agents/expert-ppt/prompts/ppt-master.md",
       "skills": {
-        "PPT-Master": {
-          "trigger": "High-fidelity slide layout and UI/UX logic.",
-          "logic": "Use when user refers to slides, presentations, decks, visual layouts, or PowerPoint design.",
-          "intent_labels": [
-            "ppt",
-            "slide",
-            "presentation",
-            "deck",
-            "visual_design"
+        "PPTExpert": {
+          "name": "ppt_expert",
+          "description": "Workflow-first PowerPoint automation for narrative slide design, grid-based layout planning, and brand-safe deck edits.",
+          "trigger": "Professional presentation creation and slide manipulation.",
+          "intent_labels": ["ppt", "presentation", "slide", "layout"],
+          "examples": [
+            {
+              "input": {
+                "output_path": "branded_deck.pptx",
+                "slides": [
+                  {
+                    "op": "add_shape",
+                    "shape_type": "diamond",
+                    "left": 100, "top": 100, "width": 50, "height": 50,
+                    "fill_color": "accent"
+                  }
+                ],
+                "office_context": { 
+                  "themeColors": { "primary": "#1E2761", "accent": "#FF5733" } 
+                }
+              },
+              "output": { "ok": true },
+              "reasoning": "Creating a branded diamond shape using theme-aware color mapping."
+            }
           ],
-          "example_inputs": [
-            "Add a title slide with the company logo on the right",
-            "Create a 3-column comparison layout for slide 4",
-            "Generate a timeline slide showing Q1–Q4 milestones",
-            "Apply the Industrial Zenith theme to all slides",
-            "Add speaker notes summarising the key points on slide 2"
-          ],
-          "example_outputs": "Returns Office.js code to manipulate the active presentation + design rationale.",
-          "edge_cases": "If slide index is not specified, target the currently selected slide. If no presentation is open, ask the user to open one.",
-          "input_format": "{ query: string, slideIndex?: number, selectedText?: string }",
-          "parallel_safe": true
+          "parameters": {
+            "type": "object",
+            "required": ["output_path", "changes"],
+            "properties": {
+              "input_path": { "type": "string", "description": "Optional existing .pptx template." },
+              "output_path": { "type": "string", "description": "Output .pptx path." },
+              "changes": { 
+                "type": "array", 
+                "items": { "type": "object" },
+                "description": "List of changes. Note: apply_layout is currently unsupported."
+              },
+              "officeContext": { "type": "object", "description": "Includes themeColors, slideCount, etc." }
+            }
+          }
         }
       }
     },
@@ -68,187 +129,39 @@
       "prompt": "src/agents/expert-word/prompts/word-expert.md",
       "skills": {
         "WordExpert": {
-          "trigger": "Document writing, editing, and high-fidelity formatting.",
-          "logic": "Use when query involves Word documents, reports, memos, structured text editing, or formatting.",
-          "intent_labels": [
-            "word",
-            "document",
-            "writing",
-            "editing",
-            "memo",
-            "report"
+          "name": "word_expert",
+          "description": "Workflow-first Word automation for structured drafting, semantic editing, and brand-safe document changes.",
+          "trigger": "Structured document creation and brand-consistent writing.",
+          "examples": [
+            {
+              "input": {
+                "output_path": "policy.docx",
+                "changes": [
+                  { "op": "insert_paragraph", "text": "AI Usage Policy", "style": "Heading 1" }
+                ],
+                "office_context": { 
+                  "glossary": { "AI": "Artificial Intelligence" },
+                  "documentOutline": [{ "text": "Root", "level": 0 }]
+                }
+              },
+              "output": { "ok": true },
+              "reasoning": "Drafting with terminology enforcement (glossary) and outline awareness."
+            }
           ],
-          "example_inputs": [
-            "Write an executive summary for this quarterly report",
-            "Format all H2 headings in the document as bold with 14pt font",
-            "Insert a table of contents at the beginning",
-            "Rewrite the selected paragraph in a more formal tone",
-            "Add numbered footnotes to the highlighted citations"
-          ],
-          "example_outputs": "Returns formatted content ready to insert, or Office.js code to apply changes to the active document.",
-          "edge_cases": "If the document has no content (empty officeContext.documentText), ask the user what they want to write before proceeding.",
-          "input_format": "{ query: string, selectionText?: string, documentText?: string }",
-          "parallel_safe": true
-        }
-      }
-    },
-    "shared": {
-      "prompt": "src/agents/skills/shared/prompts/omni-bridge.md",
-      "skills": {
-        "VectorNexus": {
-          "trigger": "General semantic search across development docs.",
-          "logic": "Use when user asks 'What is X?' or 'Find documentation about Y' with no Office-specific context.",
-          "intent_labels": [
-            "vector_search",
-            "documentation",
-            "knowledge_base"
-          ],
-          "engine": "python3 src/agents/skills/shared/vector_nexus.py",
-          "example_inputs": [
-            "What does the XLOOKUP function do?",
-            "Find documentation about Office.js Range API"
-          ],
-          "example_outputs": "Returns ranked list of relevant document snippets with source references.",
-          "edge_cases": "Fall back to TurboSearch if VectorNexus latency exceeds 5 seconds.",
-          "input_format": "{ apiKey: string, query: string, docs: string[] }",
-          "parallel_safe": true
-        },
-        "TripleTierSearch": {
-          "trigger": "High-precision technical retrieval.",
-          "logic": "Use when query contains specific variable names, function signatures, or terminal commands requiring reranking.",
-          "intent_labels": [
-            "technical_search",
-            "code_lookup"
-          ],
-          "engine": "python3 src/agents/skills/shared/triple_tier_search.py",
-          "example_inputs": [
-            "Find all usages of context.workbook.getSelectedRange()",
-            "Search for RATE_LIMIT_RPM across the config files"
-          ],
-          "example_outputs": "Returns reranked results with precision score and source location.",
-          "edge_cases": "Only use when keyword search would produce too many false positives.",
-          "input_format": "{ query: string, docs: string[] }",
-          "parallel_safe": true
-        },
-        "TurboSearch": {
-          "trigger": "Fast keyword-level document scan.",
-          "logic": "Use when speed is prioritised over precision, or as fallback when VectorNexus is unavailable.",
-          "intent_labels": [
-            "fast_search",
-            "keyword_scan"
-          ],
-          "engine": "python3 src/agents/skills/shared/turbo_search.py",
-          "example_inputs": [
-            "Quick search for 'rate limiter' in the backend source"
-          ],
-          "example_outputs": "Returns file paths and line excerpts matching the keyword.",
-          "input_format": "{ query: string, docs: string[] }",
-          "parallel_safe": true
-        },
-        "GalaxyGraph": {
-          "trigger": "Impact analysis and entity relationship mapping.",
-          "logic": "Use when user asks 'What is related to X?' or 'If I change Y, what breaks?' or needs dependency analysis.",
-          "intent_labels": [
-            "graph",
-            "impact",
-            "relationship",
-            "dependency"
-          ],
-          "engine": "python3 src/agents/skills/shared/galaxy_graph.py",
-          "example_inputs": [
-            "If I rename the ClientManager class, what files will break?",
-            "Show all modules that depend on skill-orchestrator.ts",
-            "What is related to the rate limiter middleware?"
-          ],
-          "example_outputs": "Returns a JSON graph of affected nodes with relationship type and risk level.",
-          "edge_cases": "Requires repo path. If repo is not provided, use the current working directory.",
-          "input_format": "{ query: string, repo?: string }",
-          "parallel_safe": false
-        },
-        "VisionExpert": {
-          "trigger": "Visual content analysis of slides and diagrams.",
-          "logic": "Use when document contains unparsed images, flowcharts, architecture diagrams, or screenshots that need interpretation.",
-          "intent_labels": [
-            "vision",
-            "image_analysis",
-            "diagram"
-          ],
-          "engine": "python3 src/agents/skills/shared/vision_expert.py",
-          "example_inputs": [
-            "Describe the architecture diagram in slide 3",
-            "Extract the data from this screenshot of an Excel table",
-            "What does this flowchart show?"
-          ],
-          "example_outputs": "Returns structured description of the visual content including extracted data if applicable.",
-          "edge_cases": "Requires image path or base64 data. Cannot process password-protected or encrypted images.",
-          "input_format": "{ imagePath?: string, imageBase64?: string }",
-          "parallel_safe": true
-        },
-        "CrossHostBridge": {
-          "trigger": "Cross-app sync: Excel → PPT, Excel → Word, PPT → Word, etc.",
-          "logic": "Use when user wants to transfer, mirror, or synchronise data across Office applications.",
-          "intent_labels": [
-            "cross_app",
-            "sync",
-            "bridge",
-            "export",
-            "transfer"
-          ],
-          "engine": "python3 src/agents/skills/shared/cross_host_bridge.py",
-          "example_inputs": [
-            "Take the sales data from Sheet1 in Excel and create a PPT bar chart",
-            "Export the Excel table to a formatted Word report",
-            "Sync the presentation title with the Word document header"
-          ],
-          "example_outputs": "Returns status object with source_read, transform_applied, and target_written fields.",
-          "edge_cases": "Requires both source and target file paths. If either is missing, infer from officeContext or ask the user.",
-          "input_format": "{ sourceApp: 'excel'|'ppt'|'word', targetApp: 'excel'|'ppt'|'word', sourcePath?: string, targetPath?: string, query: string }",
-          "parallel_safe": false
-        },
-        "DesignReviewer": {
-          "trigger": "5-Dimension Expert Panel review gate for PPT and Word output quality.",
-          "logic": "Automatically applied to ppt/word skill outputs. Scores across Information Architecture (25), Visual Poetry (20), Emotional Resonance (20), Usability & Legibility (20), Brand Consistency (15). Pass threshold: 70/100. On fail, returns structured issues for refinement.",
-          "intent_labels": [
-            "design_review",
-            "quality_gate",
-            "ppt_review",
-            "word_review"
-          ],
-          "engine": "src/agents/skills/molecules/design-reviewer.ts (in-process, no subprocess)",
-          "example_inputs": [
-            "Review this PPT output for design quality",
-            "Check if the Word report meets professional standards",
-            "Score the slide layout against the 5-dimension rubric",
-            "Validate the document structure before sending to user",
-            "Does this presentation pass the quality gate?"
-          ],
-          "example_outputs": "Returns { totalScore, passed, dimensions[], allIssues[], refinementHint } — used internally by skill-orchestrator.",
-          "edge_cases": "Review is always run in-process before returning PPT/Word results. Never exposed directly to end users as a standalone chat command.",
-          "input_format": "{ output: string, domain: 'ppt'|'word'|'excel'|'general' }",
-          "parallel_safe": true
-        },
-        "BrandExtractor": {
-          "trigger": "Extract corporate brand color palette from a company URL for CI-aligned slide and document generation.",
-          "logic": "Use when user provides a company website URL and wants the AI output to match their brand colors. Supports query prefix 'brand: https://...'",
-          "intent_labels": [
-            "brand_intel",
-            "brand_colors",
-            "ci",
-            "corporate_identity",
-            "brand_extract"
-          ],
-          "engine": "src/agents/skills/atoms/brand-extractor.ts (in-process, HTTPS fetch)",
-          "example_inputs": [
-            "brand: https://www.apple.com",
-            "brand: https://www.microsoft.com",
-            "Extract the brand colors from https://company.com and use them in the presentation",
-            "Match our company website colors: https://example.corp",
-            "Use our brand palette from https://design.acme.io"
-          ],
-          "example_outputs": "Returns BrandTokens { primary, secondary, accent, background, text, cssBlock, sourceUrl } for immediate injection into PPT Design Tokens or CSS custom properties.",
-          "edge_cases": "Only HTTPS URLs are supported. Extraction is lightweight (HTML parsing only); for pixel-level analysis delegate to VisionExpert. Falls back to Nexus default palette if extraction yields no non-neutral colors.",
-          "input_format": "{ url: string }",
-          "parallel_safe": true
+          "parameters": {
+            "type": "object",
+            "required": ["output_path", "changes"],
+            "properties": {
+              "input_path": { "type": "string", "description": "Optional existing .docx template." },
+              "output_path": { "type": "string", "description": "Output .docx path." },
+              "changes": { 
+                "type": "array", 
+                "items": { "type": "object" },
+                "description": "Array of semantic edits. Note: insert_ooxml is currently unsupported."
+              },
+              "officeContext": { "type": "object", "description": "Includes glossary, documentOutline, protectedRanges." }
+            }
+          }
         }
       }
     }

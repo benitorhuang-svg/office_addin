@@ -1,15 +1,22 @@
-﻿import type { Tool } from "@github/copilot-sdk";
+import type { Tool } from "@github/copilot-sdk";
 import type { OfficeContext } from "@shared/atoms/ai-core/types.js";
-import { PPTSkillInvoker } from "@agents/expert-ppt/index.js";
-import { createOfficeSkillTool, type OfficeSkillArgs } from "@tools/office-atoms/shared/office-skill-tool.js";
+import { PPTSkillInvoker, pptSkill } from "@agents/expert-ppt/index.js";
+import {
+  createOfficeSkillTool,
+  type OfficeSkillArgs,
+} from "@tools/office-atoms/shared/office-skill-tool.js";
 
-export function createPowerPointSkillTool(sessionOfficeContext?: OfficeContext): Tool<OfficeSkillArgs> {
+export function createPowerPointSkillTool(
+  sessionOfficeContext?: OfficeContext
+): Tool<OfficeSkillArgs> {
   return createOfficeSkillTool(
     {
       name: "powerpoint_skill",
-      description: "Provide the project PowerPoint expert skill so the agent can generate slide structures, layouts, and presentation-ready content.",
+      description:
+        "Provide the project PowerPoint expert skill so the agent can generate slide structures, layouts, and presentation-ready content.",
       domain: "powerpoint",
-      skillName: "PPT-Master",
+      skillName: "PPTExpert",
+      skill: pptSkill,
       category: "ppt_design",
       recommendedHost: "PowerPoint",
       promptPath: PPTSkillInvoker.getPromptPath(),
@@ -19,7 +26,6 @@ export function createPowerPointSkillTool(sessionOfficeContext?: OfficeContext):
         "Use the returned prompt and context to stay aligned with the project's slide design persona.",
       ],
     },
-    sessionOfficeContext,
+    sessionOfficeContext
   );
 }
-

@@ -44,6 +44,12 @@ export interface AgentSkillParameterSchema {
 
 // ── Result ────────────────────────────────────────────────────────────────
 
+export interface AgentSkillExample {
+  input: unknown;
+  output: unknown;
+  reasoning?: string;
+}
+
 export interface AgentSkillResultMeta {
   durationMs?: number;
   skillName?: string;
@@ -55,6 +61,21 @@ export interface AgentSkillResult<TData = unknown> {
   data?: TData;
   error?: string;
   meta?: AgentSkillResultMeta;
+}
+
+export interface AgentSkillRationalization {
+  excuse: string;
+  reality: string;
+}
+
+export interface AgentSkillWorkflow {
+  overview: string;
+  whenToUse: string[];
+  process: string[];
+  rationalizations: AgentSkillRationalization[];
+  redFlags: string[];
+  verification: string[];
+  references?: string[];
 }
 
 // ── Core interface ────────────────────────────────────────────────────────
@@ -84,14 +105,15 @@ export interface AgentSkill<
   readonly trigger?: string;
   readonly logic?: string;
   readonly intent_labels?: string[];
-  readonly example_inputs?: string[];
-  readonly example_outputs?: string;
+  /** Few-shot examples for LLM learning. */
+  readonly examples: AgentSkillExample[];
+  /** Description of tool limitations or special boundaries. */
   readonly edge_cases?: string;
-  readonly parallel_safe?: boolean;
+  /** Whether the tool supports parallel execution. */
+  readonly parallel_safe: boolean;
+  /** Structured workflow guidance for runtime injection and quality gates. */
+  readonly workflow: AgentSkillWorkflow;
 
   /** Execute the skill with validated parameters and optional context. */
-  execute(
-    params: TParams,
-    context?: AgentSkillContext,
-  ): Promise<AgentSkillResult<TData>>;
+  execute(params: TParams, context?: AgentSkillContext): Promise<AgentSkillResult<TData>>;
 }

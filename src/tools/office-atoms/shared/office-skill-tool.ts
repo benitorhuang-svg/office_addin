@@ -1,4 +1,9 @@
-﻿import { defineTool, type Tool } from "@github/copilot-sdk";
+import { defineTool, type Tool } from "@github/copilot-sdk";
+import type { AgentSkill } from "@agents/agent-skill.js";
+import {
+  buildSkillWorkflowPacket,
+  renderSkillWorkflowGuide,
+} from "@agents/shared/workflow-skill-packet.js";
 import type { OfficeContext } from "@shared/atoms/ai-core/types.js";
 import { loadPrompt } from "@tools/office-atoms/shared/prompt-loader.js";
 import { createSuccessToolResult } from "@tools/office-atoms/shared/tool-result.js";
@@ -17,6 +22,7 @@ export interface OfficeSkillDefinition {
   description: string;
   domain: "word" | "excel" | "powerpoint";
   skillName: string;
+  skill: AgentSkill<Record<string, unknown>>;
   category: string;
   recommendedHost: "Word" | "Excel" | "PowerPoint";
   promptPath: string;
@@ -25,7 +31,7 @@ export interface OfficeSkillDefinition {
 
 export function createOfficeSkillTool(
   definition: OfficeSkillDefinition,
-  sessionOfficeContext?: OfficeContext,
+  sessionOfficeContext?: OfficeContext
 ): Tool<OfficeSkillArgs> {
   return defineTool<OfficeSkillArgs>(definition.name, {
     description: definition.description,
@@ -64,11 +70,14 @@ export function createOfficeSkillTool(
         documentText,
       });
       const prompt = includePrompt ? await loadPrompt(definition.promptPath) : "";
+      const workflow = buildSkillWorkflowPacket(definition.skill);
+      const workflowGuide = renderSkillWorkflowGuide(definition.skill, prompt);
 
       return createSuccessToolResult({
         status: "office_skill_ready",
         domain: definition.domain,
         skill: definition.skillName,
+        skillId: definition.skill.name,
         category: definition.category,
         query,
         officeContext: {
@@ -82,9 +91,10 @@ export function createOfficeSkillTool(
         recommendedHost: definition.recommendedHost,
         promptAvailable: includePrompt,
         prompt: includePrompt ? prompt : undefined,
+        workflow,
+        workflowGuide,
         usageHints: definition.usageHints,
       });
     },
   });
 }
-

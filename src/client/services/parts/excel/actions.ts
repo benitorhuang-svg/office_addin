@@ -50,7 +50,7 @@ export async function insertTextIntoExcel(text: string): Promise<void> {
   const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
 
   const delimiters = [/\s*\|\s*/, /\t/, /,/];
-  let bestDelimiter = delimiters[0];
+  let bestDelimiter: RegExp = delimiters[0] as RegExp;
   let maxCount = -1;
 
   for (const d of delimiters) {
@@ -76,7 +76,7 @@ export async function insertTextIntoExcel(text: string): Promise<void> {
       await context.sync();
 
       const rowCount = grid.length;
-      const colCount = grid[0].length;
+      const colCount = grid[0]?.length || 1;
 
       console.log(`[Excel Factory V10] Mapping ${rowCount}x${colCount} grid to Excel...`);
       const targetRange = sheet.getRangeByIndexes(
@@ -239,7 +239,7 @@ export async function createExcelChart(
       .replaceAll("[", "")
       .replaceAll("]", "")
       .replace(/[^\x20-\x7E\s\u4E00-\u9FFF]/g, "");
-    if (cleanTitle.includes("BRIDGE_DISPATCH")) cleanTitle = cleanTitle.split(":")[0];
+    if (cleanTitle.includes("BRIDGE_DISPATCH")) cleanTitle = cleanTitle.split(":")[0] || cleanTitle;
 
     chart.title.text = cleanTitle.trim() || `Industrial Analysis ${index + 1}`;
     chart.title.format.font.bold = true;
@@ -254,9 +254,11 @@ export async function createExcelChart(
 
     for (let i = 0; i < series.items.length; i++) {
       const s = series.items[i];
-      s.format.fill.setSolidColor(palette[i % palette.length]);
+      if (!s) continue;
+      const color = palette[i % palette.length] || "#000000";
+      s.format.fill.setSolidColor(color);
       if (type === "Line") {
-        s.format.line.color = palette[i % palette.length];
+        s.format.line.color = color;
         s.format.line.weight = 2;
       }
       s.hasDataLabels = true;

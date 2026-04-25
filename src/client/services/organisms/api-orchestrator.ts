@@ -3,10 +3,10 @@
  * Orchestrates backend communication using Atoms and Molecules.
  */
 
-import { fetchWithTimeout } from "../atoms/api-client";
-import { resolveLocalApiUrl } from "../molecules/local-server-resolver";
-import { STREAM_DECODER } from "../molecules/stream-decoder";
-import { CopilotResponse, OfficeContextPayload, ServerConfig } from "../atoms/types";
+import { fetchWithTimeout } from "@services/atoms/api-client.js";
+import { resolveLocalApiUrl } from "@services/molecules/local-server-resolver.js";
+import { STREAM_DECODER } from "@services/molecules/stream-decoder.js";
+import { CopilotResponse, OfficeContextPayload, ServerConfig } from "@services/atoms/types.js";
 
 /**
  * Organism: Sends prompt to Copilot via local server.
@@ -85,8 +85,8 @@ export async function getConfig(): Promise<ServerConfig> {
  */
 export async function validateACPToken(
   method: "gemini" | "copilot" | "azure",
-  token: string, 
-  endpoint?: string, 
+  token: string,
+  endpoint?: string,
   deployment?: string
 ): Promise<{ ok: boolean; message?: string }> {
   try {
@@ -124,10 +124,10 @@ export async function validateGeminiApiKey(
   }
 }
 export interface ServerHealth {
-    status: string;
-    timestamp: string;
-    clients: Record<string, unknown>;
-    uptime: number;
+  status: string;
+  timestamp: string;
+  clients: Record<string, unknown>;
+  uptime: number;
 }
 
 /**
@@ -156,11 +156,11 @@ export async function patchSystem(): Promise<{ status: number; detail: string }>
  * Organism: Triggers an AI Gateway warmup.
  */
 export async function warmupSystem(): Promise<{ status: number; detail: string }> {
-    try {
-      const url = await resolveLocalApiUrl("/api/system/warmup");
-      const res = await fetch(url);
-      return (await res.json()) as { status: number; detail: string };
-    } catch (e) {
-      throw new Error((e as Error).message);
-    }
+  try {
+    const url = await resolveLocalApiUrl("/api/system/warmup");
+    const res = await fetch(url);
+    return (await res.json()) as { status: number; detail: string };
+  } catch (e) {
+    throw new Error((e as Error).message);
   }
+}

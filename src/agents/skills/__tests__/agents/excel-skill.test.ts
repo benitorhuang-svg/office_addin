@@ -20,11 +20,13 @@ describe("ExcelSkill (agent interface)", () => {
 
   it("has correct name and version", () => {
     expect(excelSkill.name).toBe("excel_expert");
-    expect(excelSkill.version).toBe("4.0 (Schema-First)");
+    expect(excelSkill.version).toBe("5.1.0");
   });
 
   it("describes when to invoke the skill", () => {
     expect(excelSkill.description.toLowerCase()).toMatch(/excel|spreadsheet/);
+    expect(excelSkill.workflow.process).toHaveLength(3);
+    expect(excelSkill.workflow.rationalizations.length).toBeGreaterThan(0);
   });
 
   it("declares required parameters in JSON-Schema format", () => {
@@ -32,6 +34,7 @@ describe("ExcelSkill (agent interface)", () => {
     expect(parameters.type).toBe("object");
     expect(parameters.required).toContain("output_path");
     expect(parameters.required).toContain("changes");
+    expect(parameters.properties).toHaveProperty("input_path");
     expect(parameters.properties).toHaveProperty("output_path");
     expect(parameters.properties).toHaveProperty("changes");
     expect(parameters.properties).toHaveProperty("officeContext");
@@ -53,13 +56,25 @@ describe("ExcelSkill (agent interface)", () => {
 
   it("passes parameters correctly to invoker", async () => {
     mockInvoke.mockResolvedValue({});
+    const officeContext = {
+      activeSheet: "Revenue",
+      preserveTemplate: true,
+      tableSchemas: [],
+    };
 
     await excelSkill.execute({
+      input_path: "/data/template.xlsx",
       output_path: "/data/output.xlsx",
       changes: [],
+      officeContext,
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith("", "/data/output.xlsx", [], undefined);
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "/data/template.xlsx",
+      "/data/output.xlsx",
+      [],
+      officeContext
+    );
   });
 
   it("returns ok:false with error message on bridge failure", async () => {
@@ -86,4 +101,3 @@ describe("ExcelSkill (agent interface)", () => {
     expect(result.meta?.traceId).toBe("trace-excel-001");
   });
 });
-

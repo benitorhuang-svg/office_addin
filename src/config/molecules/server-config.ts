@@ -1,5 +1,5 @@
-import { BASE_ENV, firstDefinedValue } from '@config/atoms/base-env.js';
-import { logger } from '@shared/logger/index.js';
+import { BASE_ENV, firstDefinedValue } from "@config/atoms/base-env.js";
+import { logger } from "@shared/logger/index.js";
 
 export interface Preset {
   id: string;
@@ -54,59 +54,116 @@ export interface ServerConfig {
 let _cachedFallbackPresets: Preset[] | null = null;
 
 const config: ServerConfig = {
-  get PORT() { return BASE_ENV.PORT; },
-  get COPILOT_AGENT_PORT() { return BASE_ENV.COPILOT_AGENT_PORT; },
-  get GEMINI_CLI_PATH() { return BASE_ENV.GEMINI_CLI_PATH; },
-  get GEMINI_CLI_ARGS() { return BASE_ENV.GEMINI_CLI_ARGS; },
-  get GEMINI_CLI_PORT() { return BASE_ENV.GEMINI_CLI_PORT; },
-  get COPILOT_API_URL() { return BASE_ENV.COPILOT_API_URL; },
-  get GITHUB_MODELS_API_VERSION() { return BASE_ENV.GITHUB_MODELS_API_VERSION; },
-  get COPILOT_MODEL() { return BASE_ENV.COPILOT_MODEL; },
+  get PORT() {
+    return BASE_ENV.PORT;
+  },
+  get COPILOT_AGENT_PORT() {
+    return BASE_ENV.COPILOT_AGENT_PORT;
+  },
+  get GEMINI_CLI_PATH() {
+    return BASE_ENV.GEMINI_CLI_PATH;
+  },
+  get GEMINI_CLI_ARGS() {
+    return BASE_ENV.GEMINI_CLI_ARGS;
+  },
+  get GEMINI_CLI_PORT() {
+    return BASE_ENV.GEMINI_CLI_PORT;
+  },
+  get COPILOT_API_URL() {
+    return BASE_ENV.COPILOT_API_URL;
+  },
+  get GITHUB_MODELS_API_VERSION() {
+    return BASE_ENV.GITHUB_MODELS_API_VERSION;
+  },
+  get COPILOT_MODEL() {
+    return BASE_ENV.COPILOT_MODEL;
+  },
 
   get AVAILABLE_MODELS_GITHUB() {
-      return (process.env.AVAILABLE_MODELS_GITHUB || 'gpt-5-mini,gpt-5.4-mini,gpt-5.4,claude sonnet 4.6')
-        .split(',')
-        .map(m => m.trim());
+    return (
+      process.env.AVAILABLE_MODELS_GITHUB || "gpt-5-mini,gpt-5.4-mini,gpt-5.4,claude sonnet 4.6"
+    )
+      .split(",")
+      .map((m) => m.trim());
   },
   get AVAILABLE_MODELS_GEMINI() {
-      return (process.env.AVAILABLE_MODELS_GEMINI || 'Gemini 3.1 Pro,Gemini 2.5 Pro,Gemini 3 Flash,Gemini 2.5 Flash,Gemini 2 Flash,Gemini 2.5 Flash Lite')
-        .split(',')
-        .map(m => m.trim());
+    return (
+      process.env.AVAILABLE_MODELS_GEMINI ||
+      "Gemini 3.1 Pro,Gemini 2.5 Pro,Gemini 3 Flash,Gemini 2.5 Flash,Gemini 2 Flash,Gemini 2.5 Flash Lite"
+    )
+      .split(",")
+      .map((m) => m.trim());
   },
   get AVAILABLE_MODELS() {
     return [...this.AVAILABLE_MODELS_GITHUB, ...this.AVAILABLE_MODELS_GEMINI];
   },
 
-  get GEMINI_API_KEY() { return BASE_ENV.GEMINI_API_KEY; },
-  get AZURE_OPENAI_API_KEY() { return BASE_ENV.AZURE_OPENAI_API_KEY; },
-  get AZURE_OPENAI_ENDPOINT() { return BASE_ENV.AZURE_OPENAI_ENDPOINT; },
-  get AZURE_OPENAI_API_VERSION() { return BASE_ENV.AZURE_OPENAI_API_VERSION; },
-  get AZURE_OPENAI_DEPLOYMENT() { return BASE_ENV.AZURE_OPENAI_DEPLOYMENT; },
-  get DEFAULT_RESPONSE_LANGUAGE() { return BASE_ENV.DEFAULT_RESPONSE_LANGUAGE; },
-  get DEFAULT_PERSONA() { return BASE_ENV.DEFAULT_PERSONA; },
-  get GITHUB_CLIENT_ID() { return BASE_ENV.GITHUB_CLIENT_ID; },
-  get GITHUB_CLIENT_SECRET() { return BASE_ENV.GITHUB_CLIENT_SECRET; },
-  get GITHUB_MODELS_URL() { return BASE_ENV.GITHUB_MODELS_URL; },
-  get GEMINI_REST_URL() { return BASE_ENV.GEMINI_REST_URL; },
-  get DEFAULT_TEMPERATURE() { return Number(BASE_ENV.DEFAULT_TEMPERATURE); },
-  get MAX_TOKENS() { return Number(BASE_ENV.MAX_TOKENS); },
-  get APP_TITLE() { return BASE_ENV.APP_TITLE; },
-  get FALLBACK_PRESETS() { 
+  get GEMINI_API_KEY() {
+    return BASE_ENV.GEMINI_API_KEY;
+  },
+  get AZURE_OPENAI_API_KEY() {
+    return BASE_ENV.AZURE_OPENAI_API_KEY;
+  },
+  get AZURE_OPENAI_ENDPOINT() {
+    return BASE_ENV.AZURE_OPENAI_ENDPOINT;
+  },
+  get AZURE_OPENAI_API_VERSION() {
+    return BASE_ENV.AZURE_OPENAI_API_VERSION;
+  },
+  get AZURE_OPENAI_DEPLOYMENT() {
+    return BASE_ENV.AZURE_OPENAI_DEPLOYMENT;
+  },
+  get DEFAULT_RESPONSE_LANGUAGE() {
+    return BASE_ENV.DEFAULT_RESPONSE_LANGUAGE;
+  },
+  get DEFAULT_PERSONA() {
+    return BASE_ENV.DEFAULT_PERSONA;
+  },
+  get GITHUB_CLIENT_ID() {
+    return BASE_ENV.GITHUB_CLIENT_ID;
+  },
+  get GITHUB_CLIENT_SECRET() {
+    return BASE_ENV.GITHUB_CLIENT_SECRET;
+  },
+  get GITHUB_MODELS_URL() {
+    return BASE_ENV.GITHUB_MODELS_URL;
+  },
+  get GEMINI_REST_URL() {
+    return BASE_ENV.GEMINI_REST_URL;
+  },
+  get DEFAULT_TEMPERATURE() {
+    return Number(BASE_ENV.DEFAULT_TEMPERATURE);
+  },
+  get MAX_TOKENS() {
+    return Number(BASE_ENV.MAX_TOKENS);
+  },
+  get APP_TITLE() {
+    return BASE_ENV.APP_TITLE;
+  },
+  get FALLBACK_PRESETS() {
     if (!_cachedFallbackPresets) {
       try {
         _cachedFallbackPresets = JSON.parse(BASE_ENV.FALLBACK_PRESETS_JSON);
-        if (!Array.isArray(_cachedFallbackPresets)) throw new Error('Not an array');
-      } catch (e: any) {
-        logger.warn('Failed to parse FALLBACK_PRESETS_JSON, using default:', e?.message || String(e));
+        if (!Array.isArray(_cachedFallbackPresets)) throw new Error("Not an array");
+      } catch (e) {
+        const error = e as Error;
+        logger.warn(
+          "Failed to parse FALLBACK_PRESETS_JSON, using default:",
+          error?.message || String(e)
+        );
         _cachedFallbackPresets = [
-            { id: "general", name: "General", description: "Default", systemPrompt: "" }
+          { id: "general", name: "General", description: "Default", systemPrompt: "" },
         ];
       }
     }
     return _cachedFallbackPresets!;
   },
-  get PREVIEW_MODE_GUIDE_MD() { return BASE_ENV.PREVIEW_MODE_GUIDE_MD; },
-  get DEFAULT_WORD_FONT_STYLE() { return BASE_ENV.DEFAULT_WORD_FONT_STYLE; },
+  get PREVIEW_MODE_GUIDE_MD() {
+    return BASE_ENV.PREVIEW_MODE_GUIDE_MD;
+  },
+  get DEFAULT_WORD_FONT_STYLE() {
+    return BASE_ENV.DEFAULT_WORD_FONT_STYLE;
+  },
 
   getServerPatToken: () => {
     const token = firstDefinedValue(
@@ -117,35 +174,48 @@ const config: ServerConfig = {
       process.env.COPILOT_PAT
     );
     if (!token) {
-      logger.error('ServerConfig', 'Failed to find a valid GitHub PAT in environment variables.');
-      throw new Error('FATAL: A GitHub PAT or Copilot token is required but was not provided.');
+      logger.error("ServerConfig", "Failed to find a valid GitHub PAT in environment variables.");
+      throw new Error("FATAL: A GitHub PAT or Copilot token is required but was not provided.");
     }
     return token;
   },
-  getModelsToken: () => firstDefinedValue(
-    process.env.GITHUB_MODELS_TOKEN,
-    process.env.COPILOT_GITHUB_TOKEN,
-    process.env.GH_TOKEN,
-    process.env.GITHUB_TOKEN,
-    process.env.GITHUB_PAT,
-    process.env.COPILOT_PAT
-  ),
+  getModelsToken: () =>
+    firstDefinedValue(
+      process.env.GITHUB_MODELS_TOKEN,
+      process.env.COPILOT_GITHUB_TOKEN,
+      process.env.GH_TOKEN,
+      process.env.GITHUB_TOKEN,
+      process.env.GITHUB_PAT,
+      process.env.COPILOT_PAT
+    ),
 
   isAzureConfigured: () => !!(config.AZURE_OPENAI_API_KEY && config.AZURE_OPENAI_ENDPOINT),
   isRemoteCliConfigured: () => !!config.COPILOT_AGENT_PORT,
   isGeminiApiConfigured: () => !!config.GEMINI_API_KEY,
-  get AUTO_CONNECT_CLI() { return process.env.AUTO_CONNECT_CLI === 'true' || process.env.NODE_ENV === 'development'; },
-  get RATE_LIMIT_RPM() { return Number(BASE_ENV.RATE_LIMIT_RPM); },
-  get RATE_LIMIT_ENABLED() { return BASE_ENV.RATE_LIMIT_ENABLED; },
-  get IDLE_CLEANUP_MINUTES() { return Number(BASE_ENV.IDLE_CLEANUP_MINUTES); },
-  get FALLBACK_MODELS() { return BASE_ENV.FALLBACK_MODELS; },
-  get LOG_FORMAT() { return BASE_ENV.LOG_FORMAT; },
-  get CORS_ALLOWED_ORIGINS() { 
-    return (process.env.CORS_ALLOWED_ORIGINS || '')
-      .split(',')
-      .map(o => o.trim())
+  get AUTO_CONNECT_CLI() {
+    return process.env.AUTO_CONNECT_CLI === "true" || process.env.NODE_ENV === "development";
+  },
+  get RATE_LIMIT_RPM() {
+    return Number(BASE_ENV.RATE_LIMIT_RPM);
+  },
+  get RATE_LIMIT_ENABLED() {
+    return BASE_ENV.RATE_LIMIT_ENABLED;
+  },
+  get IDLE_CLEANUP_MINUTES() {
+    return Number(BASE_ENV.IDLE_CLEANUP_MINUTES);
+  },
+  get FALLBACK_MODELS() {
+    return BASE_ENV.FALLBACK_MODELS;
+  },
+  get LOG_FORMAT() {
+    return BASE_ENV.LOG_FORMAT;
+  },
+  get CORS_ALLOWED_ORIGINS() {
+    return (process.env.CORS_ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((o) => o.trim())
       .filter(Boolean)
-      .map(o => o.startsWith('/') && o.endsWith('/') ? new RegExp(o.slice(1, -1)) : o);
+      .map((o) => (o.startsWith("/") && o.endsWith("/") ? new RegExp(o.slice(1, -1)) : o));
   },
 };
 

@@ -87,16 +87,19 @@ export async function createIndustrialSlides(rawText: string): Promise<number> {
   const rawParts = rawText.split(slideDelimiter);
 
   for (let i = 1; i < rawParts.length; i++) {
-    const part = rawParts[i].trim();
+    const rawPart = rawParts[i];
+    if (!rawPart) continue;
+
+    const part = rawPart.trim();
     if (part.length < 5) continue;
 
-    const titleMatch = part.match(/\[標�?\]\s*(.+?)(?=\s*\[?�容\]|$)/i);
-    const bodyMatch = part.match(/\[?�容\]\s*([\s\S]*)/i);
+    const titleMatch = part.match(/\[標?\]\s*(.+?)(?=\s*\[?容\]|$)/i);
+    const bodyMatch = part.match(/\[?容\]\s*([\s\S]*)/i);
 
-    if (titleMatch) {
+    if (titleMatch && titleMatch[1]) {
       slideContents.push({
         title: titleMatch[1].replace(/[:：]/g, "").trim(),
-        body: bodyMatch ? bodyMatch[1].trim() : "",
+        body: bodyMatch && bodyMatch[1] ? bodyMatch[1].trim() : "",
       });
     }
   }
@@ -166,8 +169,7 @@ export async function applyPowerPointActions(
   actions: OfficeAction[] | undefined,
   fallbackText: string
 ): Promise<number | void> {
-  const hasSlideMarker =
-    fallbackText.includes("---Slide") || fallbackText.includes("Slide");
+  const hasSlideMarker = fallbackText.includes("---Slide") || fallbackText.includes("Slide");
 
   if (hasSlideMarker) {
     return createIndustrialSlides(fallbackText);
@@ -183,4 +185,3 @@ export async function applyPowerPointActions(
   }
   return insertTextIntoPowerPoint(fullText || fallbackText);
 }
-

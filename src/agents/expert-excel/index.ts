@@ -26,8 +26,11 @@ export async function getCoreInstructions(): Promise<string> {
     const content = await fs.readFile(promptPath, "utf-8");
     cachedInstructions = content;
     return content;
-  } catch (err: any) {
-    logger.warn("ExcelExpertIndex", "Failed to load core instructions from disk", { error: err.message });
+  } catch (err) {
+    const error = err as Error;
+    logger.warn("ExcelExpertIndex", "Failed to load core instructions from disk", {
+      error: error.message,
+    });
     cachedInstructions = ""; // Cache failure as empty string
     return "";
   }

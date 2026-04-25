@@ -15,6 +15,7 @@ import { createRateLimiter } from "@api/molecules/rate-limiter.js";
 import { validateCopilotRequest } from "@api/atoms/request-validator.js";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { skillRegistry } from "@orchestrator/skill-registry.js";
 
 const limiter = createRateLimiter();
 const ACP_VALIDATION_METHODS: Record<string, ACPConnectionMethod> = {
@@ -29,7 +30,7 @@ const ACP_VALIDATION_METHODS: Record<string, ACPConnectionMethod> = {
 
 const apiRouter = Router();
 
-// 🟠 4. Helper to restrict system controls to local or verified environment
+// 🟠 Helper to restrict system controls to local or verified environment
 const isLocalRequest = (req: import("express").Request) => {
   const ip = req.ip || req.socket.remoteAddress || "";
   return (
@@ -52,6 +53,20 @@ apiRouter.get("/config", (_req, res) => {
     DEFAULT_WORD_FONT_STYLE: config.DEFAULT_WORD_FONT_STYLE,
     AUTO_CONNECT_CLI: config.AUTO_CONNECT_CLI,
   });
+});
+
+// Endpoint: Get Skill Registry Snapshot for client-side discovery
+apiRouter.get("/skills", (_req, res) => {
+  try {
+    const snapshot = skillRegistry.getRegistrySnapshot();
+    res.json({
+      version: "Omni-Zenith-Dynamic",
+      timestamp: new Date().toISOString(),
+      skills: snapshot,
+    });
+  } catch (err: unknown) {
+    res.status(500).json({ status: 500, detail: "Registry snapshot failure: " + String(err) });
+  }
 });
 
 // Endpoint: Validate Gemini Direct API Key
@@ -114,7 +129,6 @@ apiRouter.post("/acp/validate", async (req, res) => {
     res.status(401).json({ status: 401, detail });
   } finally {
     if (validationTimer) clearTimeout(validationTimer);
-    // 🟠 8. Fix: Remove validation client from pool to prevent process leaks
     if (client && acpMethod && clientOptions) {
       removeClientByParams(acpMethod, clientOptions).catch(() => {});
     }
@@ -125,13 +139,13 @@ apiRouter.post("/acp/validate", async (req, res) => {
 apiRouter.get("/health", async (_req, res) => {
   try {
     const health = await ModernSDKOrchestrator.healthCheck();
-    res.json({ 
-      status: "ok", 
+    res.json({
+      status: "ok",
       timestamp: new Date().toISOString(),
       uptime: Math.round(process.uptime()),
       node_version: process.version,
-      providers: health, // Detailed status of ACP clients
-      memory: process.memoryUsage().rss
+      providers: health,
+      memory: process.memoryUsage().rss,
     });
   } catch (err: unknown) {
     res.status(500).json({ status: "error", detail: String(err) });
@@ -141,7 +155,7 @@ apiRouter.get("/health", async (_req, res) => {
 // Endpoint: Main Copilot Generation
 apiRouter.post("/copilot", limiter, validateCopilotRequest, handleCopilotRequest);
 
-// --- 🟠 5. AUTH PROTECTED SYSTEM CONTROLS ---
+// --- AUTH PROTECTED SYSTEM CONTROLS ---
 
 apiRouter.post("/system/patch", async (req, res) => {
   if (!isLocalRequest(req)) {
@@ -175,7 +189,6 @@ apiRouter.post("/system/state", (req, res) => {
   }
   const { power, provider, isWarming, isStreaming } = req.body;
 
-  // 🟡 10. Basic body validation
   if (provider && !ACP_VALIDATION_METHODS[provider]) {
     res.status(400).json({ detail: "Invalid provider" });
     return;

@@ -9,11 +9,14 @@ import { logger } from "@shared/logger/index.js";
 
 const execFileAsync = promisify(execFile);
 const PYTHON_TOOL_TIMEOUT_MS = Number(process.env.PYTHON_TOOL_TIMEOUT_MS || 15000);
-const PYTHON_TOOL_MAX_BUFFER_BYTES = Number(process.env.PYTHON_TOOL_MAX_BUFFER_BYTES || 1024 * 1024);
+const PYTHON_TOOL_MAX_BUFFER_BYTES = Number(
+  process.env.PYTHON_TOOL_MAX_BUFFER_BYTES || 1024 * 1024
+);
 
 export function createPythonExecutorTool(): Tool<{ code: string }> {
   return defineTool("python_executor", {
-    description: "Executes industrial Python code for CAGR calculation, trend analysis, and data restructuring. Essential for logic verification.",
+    description:
+      "Executes industrial Python code for CAGR calculation, trend analysis, and data restructuring. Essential for logic verification.",
     parameters: {
       type: "object",
       properties: {
@@ -39,14 +42,16 @@ export function createPythonExecutorTool(): Tool<{ code: string }> {
         const output = (stdout + (stderr || "")).trim();
 
         if (output.includes("[BRIDGE_DISPATCH]: EXCEL_CHART")) {
-          const commandLines = output.split("\n").filter((line) => line.includes("[BRIDGE_DISPATCH]: EXCEL_CHART"));
+          const commandLines = output
+            .split("\n")
+            .filter((line) => line.includes("[BRIDGE_DISPATCH]: EXCEL_CHART"));
           const { NexusSocketRelay } = await import("@infra/services/molecules/nexus-socket.js");
 
           commandLines.forEach((line, index) => {
             const parts = line.split("|").map((part) => part.trim());
             if (parts.length >= 3) {
-              const title = parts[1];
-              const type = parts[2];
+              const title = parts[1] ?? "Untitled Chart";
+              const type = parts[2] ?? "ColumnClustered";
               const range = parts[3] || "AUTO";
 
               logger.info("ToolRegistry", "Dispatching chart from python bridge", {
@@ -56,7 +61,12 @@ export function createPythonExecutorTool(): Tool<{ code: string }> {
                 chartType: type,
               });
 
-              NexusSocketRelay.broadcast("EXCEL_CHART_EXTERNAL", { title, chartType: type, range, index });
+              NexusSocketRelay.broadcast("EXCEL_CHART_EXTERNAL", {
+                title,
+                chartType: type,
+                range,
+                index,
+              });
             }
           });
         }
@@ -82,4 +92,3 @@ export function createPythonExecutorTool(): Tool<{ code: string }> {
     },
   });
 }
-

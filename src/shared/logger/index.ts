@@ -4,7 +4,7 @@
  * Supports requestId (HTTP request correlation) and traceId (cross-service chain tracing).
  */
 
-export type LogLevel = 'info' | 'warn' | 'error';
+export type LogLevel = "info" | "warn" | "error";
 
 const REDACTED_KEYS = /token|api[_-]?key|authorization|bearer|password|secret/i;
 const MAX_DEPTH = 5;
@@ -18,7 +18,7 @@ function sanitizeValue(value: unknown, seen = new WeakSet<object>(), depth = 0):
     return value.toISOString();
   }
 
-  if (typeof value === 'bigint') {
+  if (typeof value === "bigint") {
     return value.toString();
   }
 
@@ -29,19 +29,19 @@ function sanitizeValue(value: unknown, seen = new WeakSet<object>(), depth = 0):
       stack: value.stack,
     };
 
-    if ('cause' in value && value.cause !== undefined) {
+    if ("cause" in value && value.cause !== undefined) {
       errorShape.cause = sanitizeValue(value.cause, seen, depth + 1);
     }
 
     return errorShape;
   }
 
-  if (typeof value !== 'object') {
+  if (typeof value !== "object") {
     return value;
   }
 
   if (seen.has(value)) {
-    return '[Circular]';
+    return "[Circular]";
   }
 
   seen.add(value);
@@ -53,11 +53,14 @@ function sanitizeValue(value: unknown, seen = new WeakSet<object>(), depth = 0):
   const output: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(value)) {
     if (REDACTED_KEYS.test(key)) {
-      output[key] = '[REDACTED]';
-    } else if (typeof entry === 'string' && (REDACTED_KEYS.test(entry) || /^(ghu_|ghp_|gho_|github_pat_|eyJh|bearer\s)/i.test(entry))) {
-      output[key] = '[REDACTED_VALUE]';
-    } else if (typeof entry === 'string' && entry.length > 5000) {
-      output[key] = entry.substring(0, 5000) + '...[TRUNCATED]';
+      output[key] = "[REDACTED]";
+    } else if (
+      typeof entry === "string" &&
+      (REDACTED_KEYS.test(entry) || /^(ghu_|ghp_|gho_|github_pat_|eyJh|bearer\s)/i.test(entry))
+    ) {
+      output[key] = "[REDACTED_VALUE]";
+    } else if (typeof entry === "string" && entry.length > 5000) {
+      output[key] = entry.substring(0, 5000) + "...[TRUNCATED]";
     } else {
       output[key] = sanitizeValue(entry, seen, depth + 1);
     }
@@ -74,10 +77,16 @@ export type LogEntry = {
   requestId?: string;
   traceId?: string;
   data?: unknown;
+  performance?: {
+    durationMs?: number;
+    memoryUsageMb?: number;
+  };
 };
 
 type LogHook = (entry: LogEntry) => void;
 let logHook: LogHook | null = null;
+
+const timers = new Map<string, { startTime: number; startMemory: number }>();
 
 function writeLog(
   level: LogLevel,
@@ -86,6 +95,7 @@ function writeLog(
   data?: unknown,
   requestId?: string,
   traceId?: string,
+  perf?: LogEntry["performance"]
 ): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
@@ -106,6 +116,10 @@ function writeLog(
     entry.data = sanitizeValue(data);
   }
 
+  if (perf) {
+    entry.performance = perf;
+  }
+
   const line = JSON.stringify(entry);
 
   // Invoke hook if registered
@@ -118,10 +132,10 @@ function writeLog(
   }
 
   switch (level) {
-    case 'warn':
+    case "warn":
       console.warn(line);
       break;
-    case 'error':
+    case "error":
       console.error(line);
       break;
     default:
@@ -131,9 +145,44 @@ function writeLog(
 }
 
 export const logger = {
-  info: (tag: string, message: string, data?: unknown) => writeLog('info', tag, message, data),
-  warn: (tag: string, message: string, data?: unknown) => writeLog('warn', tag, message, data),
-  error: (tag: string, message: string, data?: unknown) => writeLog('error', tag, message, data),
+  info: (tag: string, message: string, data?: unknown) => writeLog("info", tag, message, data),
+  warn: (tag: string, message: string, data?: unknown) => writeLog("warn", tag, message, data),
+  error: (tag: string, message: string, data?: unknown) => writeLog("error", tag, message, data),
+
+  /**
+   * Starts a performance timer for an operation.
+   */
+  startTimer: (tag: string, operationId: string) => {
+    const key = `${tag}:${operationId}`;
+    timers.set(key, {
+      startTime: performance.now(),
+      startMemory: typeof process !== "undefined" ? process.memoryUsage().rss : 0,
+    });
+    performance.mark(`${key}-start`);
+  },
+
+  /**
+   * Ends a performance timer and logs the results.
+   */
+  endTimer: (tag: string, operationId: string, message: string, data?: unknown) => {
+    const key = `${tag}:${operationId}`;
+    const startData = timers.get(key);
+    if (!startData) return;
+
+    performance.mark(`${key}-end`);
+    performance.measure(key, `${key}-start`, `${key}-end`);
+
+    const durationMs = performance.now() - startData.startTime;
+    const endMemory = typeof process !== "undefined" ? process.memoryUsage().rss : 0;
+    const memoryUsageMb = (endMemory - startData.startMemory) / 1024 / 1024;
+
+    writeLog("info", tag, message, data, undefined, undefined, {
+      durationMs,
+      memoryUsageMb: Math.max(0, memoryUsageMb),
+    });
+
+    timers.delete(key);
+  },
 
   /**
    * Registers a global hook that receives every log entry.
@@ -147,14 +196,20 @@ export const logger = {
    * Usage: const log = logger.withReqId(req.requestId);
    */
   withReqId: (requestId: string) => ({
-    info:  (tag: string, message: string, data?: unknown) => writeLog('info',  tag, message, data, requestId),
-    warn:  (tag: string, message: string, data?: unknown) => writeLog('warn',  tag, message, data, requestId),
-    error: (tag: string, message: string, data?: unknown) => writeLog('error', tag, message, data, requestId),
+    info: (tag: string, message: string, data?: unknown) =>
+      writeLog("info", tag, message, data, requestId),
+    warn: (tag: string, message: string, data?: unknown) =>
+      writeLog("warn", tag, message, data, requestId),
+    error: (tag: string, message: string, data?: unknown) =>
+      writeLog("error", tag, message, data, requestId),
     /** Attach a traceId to this request-scoped logger for cross-service chain tracing. */
     withTrace: (traceId: string) => ({
-      info:  (tag: string, message: string, data?: unknown) => writeLog('info',  tag, message, data, requestId, traceId),
-      warn:  (tag: string, message: string, data?: unknown) => writeLog('warn',  tag, message, data, requestId, traceId),
-      error: (tag: string, message: string, data?: unknown) => writeLog('error', tag, message, data, requestId, traceId),
+      info: (tag: string, message: string, data?: unknown) =>
+        writeLog("info", tag, message, data, requestId, traceId),
+      warn: (tag: string, message: string, data?: unknown) =>
+        writeLog("warn", tag, message, data, requestId, traceId),
+      error: (tag: string, message: string, data?: unknown) =>
+        writeLog("error", tag, message, data, requestId, traceId),
     }),
   }),
 
@@ -163,9 +218,12 @@ export const logger = {
    * Usage: const log = logger.withTrace(traceId);
    */
   withTrace: (traceId: string) => ({
-    info:  (tag: string, message: string, data?: unknown) => writeLog('info',  tag, message, data, undefined, traceId),
-    warn:  (tag: string, message: string, data?: unknown) => writeLog('warn',  tag, message, data, undefined, traceId),
-    error: (tag: string, message: string, data?: unknown) => writeLog('error', tag, message, data, undefined, traceId),
+    info: (tag: string, message: string, data?: unknown) =>
+      writeLog("info", tag, message, data, undefined, traceId),
+    warn: (tag: string, message: string, data?: unknown) =>
+      writeLog("warn", tag, message, data, undefined, traceId),
+    error: (tag: string, message: string, data?: unknown) =>
+      writeLog("error", tag, message, data, undefined, traceId),
   }),
 };
 
@@ -174,4 +232,3 @@ export type ScopedLogger = ReturnType<typeof logger.withReqId>;
 
 /** Convenience type for trace-scoped loggers (cross-service propagation). */
 export type TraceLogger = ReturnType<typeof logger.withTrace>;
-

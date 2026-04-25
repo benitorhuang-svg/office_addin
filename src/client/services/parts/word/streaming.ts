@@ -26,20 +26,21 @@ export async function insertTextIntoWord(
   // Use a stable range for streaming
   const chunks = text.match(/.{1,30}/g) || [text];
   let accumulated = "";
-  
+
   for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      accumulated += chunk;
+    const chunk = chunks[i] || "";
+    if (!chunk) continue;
+    accumulated += chunk;
 
-      await Word.run(async (context) => {
-          const currentRange = context.document.getSelection();
-          currentRange.insertText(chunk, INSERT_LOCATION.END as Word.InsertLocation);
-          await context.sync();
-      });
+    await Word.run(async (context) => {
+      const currentRange = context.document.getSelection();
+      currentRange.insertText(chunk, INSERT_LOCATION.END as Word.InsertLocation);
+      await context.sync();
+    });
 
-      if (onUpdate) onUpdate(accumulated);
-      
-      // Non-blocking wait to keep Office UI responsive
-      await new Promise((r) => setTimeout(r, 15)); 
+    if (onUpdate) onUpdate(accumulated);
+
+    // Non-blocking wait to keep Office UI responsive
+    await new Promise((r) => setTimeout(r, 15));
   }
 }
